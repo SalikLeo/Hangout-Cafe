@@ -7926,12 +7926,12 @@ window.submitQuickAdjust = function submitQuickAdjust() {
 // ==========================================
 function getDailySoldItemsSummary(dateStr) {
     const sales = Storage.get('sales') || [];
-    const targetDate = dateStr ? new Date(dateStr).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+    const targetDate = dateStr || getLocalISODate();
     
     const daySales = sales.filter(s => {
         if (!s.date) return false;
         try {
-            const sDate = new Date(s.date).toISOString().slice(0, 10);
+            const sDate = s.date.includes('T') ? getLocalISODate(new Date(s.date)) : s.date.slice(0, 10);
             return sDate === targetDate;
         } catch (e) {
             return false;
@@ -7958,11 +7958,12 @@ function getDailySoldItemsSummary(dateStr) {
 }
 
 window.openDailyConsumptionModal = function openDailyConsumptionModal() {
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayStr = getLocalISODate();
     const dateInput = document.getElementById('consumptionDate');
     if (dateInput) {
         dateInput.value = todayStr;
     }
+    updateConsumptionModalDateResetBtn();
 
     const searchInput = document.getElementById('consumptionSearchInput');
     if (searchInput) searchInput.value = '';
@@ -7986,9 +7987,33 @@ window.closeDailyConsumptionModal = function closeDailyConsumptionModal() {
     closeConsumptionDropdown();
 };
 
+window.handleConsumptionModalDateChange = function handleConsumptionModalDateChange() {
+    updateConsumptionModalDateResetBtn();
+    loadDailySalesSummaryForConsumption();
+};
+
+window.updateConsumptionModalDateResetBtn = function updateConsumptionModalDateResetBtn() {
+    const dateInput = document.getElementById('consumptionDate');
+    const resetBtn = document.getElementById('consumptionModalResetDateBtn');
+    if (!dateInput || !resetBtn) return;
+
+    const todayStr = getLocalISODate();
+    const isToday = (dateInput.value === todayStr);
+    resetBtn.style.display = isToday ? 'none' : 'inline-flex';
+};
+
+window.resetConsumptionModalDate = function resetConsumptionModalDate() {
+    const dateInput = document.getElementById('consumptionDate');
+    if (dateInput) {
+        dateInput.value = getLocalISODate();
+    }
+    updateConsumptionModalDateResetBtn();
+    loadDailySalesSummaryForConsumption();
+};
+
 window.loadDailySalesSummaryForConsumption = function loadDailySalesSummaryForConsumption() {
     const dateInput = document.getElementById('consumptionDate');
-    const selectedDate = dateInput ? dateInput.value : new Date().toISOString().slice(0, 10);
+    const selectedDate = (dateInput && dateInput.value) ? dateInput.value : getLocalISODate();
 
     const summary = getDailySoldItemsSummary(selectedDate);
     const ordersEl = document.getElementById('consumptionOrdersSummary');
@@ -8307,7 +8332,7 @@ window.submitDailyConsumption = function submitDailyConsumption() {
     }
 
     const dateInput = document.getElementById('consumptionDate');
-    const consumptionDate = dateInput ? dateInput.value : new Date().toISOString().slice(0, 10);
+    const consumptionDate = (dateInput && dateInput.value) ? dateInput.value : getLocalISODate();
 
     const stocks = syncAndGetStockItems();
     const deductions = [];
