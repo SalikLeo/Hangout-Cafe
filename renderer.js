@@ -2204,10 +2204,24 @@ window.addNextMenuItem = () => {
 
         // Reset fields but keep category and modal open
         const savedCategory = categoryId.toString();
+
+        // Save inline recipe if ingredients were configured
+        const inlineIngs = typeof getAddMenuItemInlineIngredients === 'function' ? getAddMenuItemInlineIngredients() : [];
+        if (inlineIngs.length > 0 && typeof getItemRecipesMap === 'function' && typeof saveItemRecipesMap === 'function') {
+            const recipesMap = getItemRecipesMap();
+            recipesMap[String(newItem.id)] = {
+                menuItemId: String(newItem.id),
+                ingredients: inlineIngs,
+                updatedAt: new Date().toISOString()
+            };
+            saveItemRecipesMap(recipesMap);
+        }
+
         document.getElementById('addMenuItemName').value = '';
         document.getElementById('addMenuItemPrice').value = '';
         document.getElementById('addMenuItemCategory').value = savedCategory;
         clearMenuItemImage();
+        if (typeof resetAddMenuItemInlineRecipe === 'function') resetAddMenuItemInlineRecipe();
         checkAddNextItemButton();
 
         // Refresh the lists
@@ -2230,6 +2244,7 @@ window.closeAddMenuItemModal = () => {
         modal.style.display = 'none';
         document.getElementById('addMenuItemForm').reset();
         clearMenuItemImage();
+        if (typeof resetAddMenuItemInlineRecipe === 'function') resetAddMenuItemInlineRecipe();
     }
 };
 
@@ -2316,6 +2331,18 @@ if (addMenuItemForm) {
             // Automatically create stock item for the new menu item
             createStockItemForMenuItem(newItem.name);
 
+            // Save inline recipe if ingredients were configured
+            const inlineIngs = typeof getAddMenuItemInlineIngredients === 'function' ? getAddMenuItemInlineIngredients() : [];
+            if (inlineIngs.length > 0 && typeof getItemRecipesMap === 'function' && typeof saveItemRecipesMap === 'function') {
+                const recipesMap = getItemRecipesMap();
+                recipesMap[String(newItem.id)] = {
+                    menuItemId: String(newItem.id),
+                    ingredients: inlineIngs,
+                    updatedAt: new Date().toISOString()
+                };
+                saveItemRecipesMap(recipesMap);
+            }
+
             closeAddMenuItemModal();
             loadMenuItemsList();
             loadMenuCategories();
@@ -2401,6 +2428,10 @@ window.loadMenuItemsList = function loadMenuItemsList() {
     if (countEl) countEl.textContent = 'Count: ' + filteredItems.length;
 
     const favorites = Storage.get('favorites') || [];
+    const recipesMap = typeof getItemRecipesMap === 'function' ? getItemRecipesMap() : (Storage.get('itemRecipes') || {});
+    const stocks = typeof syncAndGetStockItems === 'function' ? syncAndGetStockItems() : (Storage.get('stocks') || []);
+    const stockById = {};
+    stocks.forEach(s => { stockById[String(s.id)] = s; });
 
     filteredItems.forEach(item => {
         // Ensure type-safe comparison when finding category
@@ -2410,11 +2441,31 @@ window.loadMenuItemsList = function loadMenuItemsList() {
             return catId === itemCategoryId;
         });
         const isFavorite = favorites.includes(item.id);
+
+        const recipe = recipesMap[String(item.id)] || recipesMap[item.id] || null;
+        const hasRecipe = !!(recipe && Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0);
+        let itemFoodCost = 0;
+        if (hasRecipe) {
+            recipe.ingredients.forEach(ing => {
+                const stock = stockById[String(ing.stockId)] || stocks.find(s => s.itemName && s.itemName.toLowerCase() === (ing.itemName || '').toLowerCase());
+                if (typeof calculateIngredientCost === 'function') {
+                    itemFoodCost += calculateIngredientCost(stock, ing.qty, ing.unit);
+                } else if (stock && stock.unitPrice) {
+                    itemFoodCost += (parseFloat(ing.qty) || 0) * (parseFloat(stock.unitPrice) || 0);
+                }
+            });
+        }
+
         const tr = document.createElement('tr');
         tr.setAttribute('data-item-id', item.id);
         tr.innerHTML = `
             <td class="category-cell">${category ? category.name : 'N/A'}</td>
-            <td class="name-cell">${item.name}</td>
+            <td class="name-cell">
+                <div style="font-weight: 700; color: #1e293b; font-size: 14.5px; margin-bottom: 4px;">${escapeHtml(item.name)}</div>
+                <span class="menu-item-recipe-badge ${hasRecipe ? 'configured' : 'empty'}" onclick="openRecipeCostModal(${item.id})" title="Click to view or edit recipe ingredients">
+                    🥗 ${hasRecipe ? `${recipe.ingredients.length} Ingr (Rs. ${formatNumber(itemFoodCost)} cost)` : '+ Add Recipe / Ingredients'}
+                </span>
+            </td>
             <td class="price-cell">Rs.${formatNumber(item.price)}</td>
             <td class="image-cell" style="text-align: center; padding: 8px;">
                 ${item.image ? `<img src="${item.image}" alt="${item.name}" style="max-width: 60px; max-height: 60px; border-radius: 4px; border: 1px solid #e0e0e0; object-fit: cover;">` : '<span style="color: #999; font-size: 12px;">No image</span>'}
@@ -7631,6 +7682,7 @@ window.openAddStockModal = function openAddStockModal() {
     if (qtyLabel) qtyLabel.textContent = 'Quantity *';
 
     populateStockQuickSearchList();
+    if (typeof filterAddStockPresets === 'function') filterAddStockPresets('meat');
 
     document.getElementById('addStockModal').style.display = 'flex';
     setTimeout(() => {
@@ -17121,8 +17173,13 @@ window.addRecipeIngredientRow = function addRecipeIngredientRow(data = null) {
                 ${stockOptions}
             </select>
         </td>
-        <td style="padding: 8px 6px;">
-            <input type="number" class="recipe-row-input recipe-ing-qty-input" value="${selectedQty}" placeholder="0" min="0" step="any" oninput="recalculateRecipeLiveSummary()" style="text-align: center;">
+        <td style="padding: 8px 6px; text-align: center;">
+            <div style="display: inline-flex; align-items: center; gap: 3px; justify-content: center;">
+                <button type="button" class="recipe-step-btn" onclick="adjustRecipeRowQty(this, -10)" title="Decrease 10">-10</button>
+                <input type="number" class="recipe-row-input recipe-ing-qty-input" value="${selectedQty}" placeholder="0" min="0" step="any" oninput="recalculateRecipeLiveSummary()" style="text-align: center; width: 62px; padding: 6px 4px;">
+                <button type="button" class="recipe-step-btn" onclick="adjustRecipeRowQty(this, 10)" title="Add 10">+10</button>
+                <button type="button" class="recipe-step-btn" onclick="adjustRecipeRowQty(this, 50)" title="Add 50">+50</button>
+            </div>
         </td>
         <td style="padding: 8px 6px;">
             <select class="recipe-row-input recipe-ing-unit-select" onchange="recalculateRecipeLiveSummary()">
@@ -17331,6 +17388,9 @@ window.saveRecipeCosting = function saveRecipeCosting() {
 
     closeRecipeCostModal();
     loadItemProfitTable();
+    if (typeof loadMenuItemsList === 'function') {
+        loadMenuItemsList();
+    }
 
     if (typeof showCustomAlert === 'function') {
         showCustomAlert('Recipe and item costing saved successfully! ✅');
@@ -17619,4 +17679,431 @@ window.printProfitCostReport = function printProfitCostReport() {
 
     openReportPrintWindow(html, 'Item Cost & Profit Analysis Report');
 };
+
+// ==========================================
+// SIMPLIFIED INLINE MENU ITEM RECIPE BUILDER
+// ==========================================
+
+window.toggleAddMenuItemRecipeSection = function toggleAddMenuItemRecipeSection(forceOpen = null) {
+    const body = document.getElementById('addMenuItemRecipeBody');
+    const chevron = document.getElementById('addMenuItemRecipeChevron');
+    if (!body) return;
+
+    const isOpen = forceOpen !== null ? forceOpen : body.style.display !== 'none';
+    if (isOpen) {
+        body.style.display = 'none';
+        if (chevron) {
+            chevron.textContent = '+ Add Recipe';
+            chevron.style.background = '#eff6ff';
+            chevron.style.color = '#2563eb';
+            chevron.style.borderColor = '#bfdbfe';
+        }
+    } else {
+        body.style.display = 'block';
+        if (chevron) {
+            chevron.textContent = '✕ Close';
+            chevron.style.background = '#fee2e2';
+            chevron.style.color = '#dc2626';
+            chevron.style.borderColor = '#fca5a5';
+        }
+        populateAddMenuItemStockChips();
+        if (document.querySelectorAll('#addMenuItemIngredientsTbody tr').length === 0) {
+            addMenuItemInlineIngredientRow();
+        }
+        recalculateNewItemLiveCost();
+    }
+};
+
+window.populateAddMenuItemStockChips = function populateAddMenuItemStockChips() {
+    const container = document.getElementById('addMenuItemQuickChips');
+    if (!container) return;
+    const stocks = typeof syncAndGetStockItems === 'function' ? syncAndGetStockItems() : (Storage.get('stocks') || []);
+    container.innerHTML = stocks.slice(0, 14).map(s => `
+        <span class="recipe-quick-chip" onclick="quickAddStockToNewItem('${s.id}')" title="Stock: ${s.quantity} ${s.unit} @ Rs. ${formatNumber(s.unitPrice)}/${s.unit}">
+            ➕ ${escapeHtml(s.itemName)} <span style="color: #64748b; font-size: 11px;">(${s.unit})</span>
+        </span>
+    `).join('');
+};
+
+window.addMenuItemInlineIngredientRow = function addMenuItemInlineIngredientRow(data = null) {
+    const tbody = document.getElementById('addMenuItemIngredientsTbody');
+    if (!tbody) return;
+
+    const stocks = typeof syncAndGetStockItems === 'function' ? syncAndGetStockItems() : (Storage.get('stocks') || []);
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #e2e8f0';
+
+    const selectedStockId = data ? data.stockId : '';
+    const selectedQty = data ? data.qty : '';
+    const selectedUnit = data ? data.unit : 'g';
+
+    const stockOptions = stocks.map(s => {
+        const isSelected = (selectedStockId && String(s.id) === String(selectedStockId)) || 
+            (!selectedStockId && data && data.itemName && s.itemName.toLowerCase() === data.itemName.toLowerCase());
+        return `<option value="${s.id}" data-unit="${escapeHtml(s.unit)}" data-price="${s.unitPrice}" ${isSelected ? 'selected' : ''}>
+            ${escapeHtml(s.itemName)} (${s.unit} @ Rs. ${formatNumber(s.unitPrice)})
+        </option>`;
+    }).join('');
+
+    tr.innerHTML = `
+        <td style="padding: 6px 8px;">
+            <select class="recipe-row-input inline-ing-stock-select" onchange="onNewItemIngredientChange(this)" style="font-size: 12px; padding: 6px 8px;">
+                <option value="">-- Select Ingredient --</option>
+                ${stockOptions}
+            </select>
+        </td>
+        <td style="padding: 6px 4px;">
+            <input type="number" class="recipe-row-input inline-ing-qty-input" value="${selectedQty}" placeholder="0" min="0" step="any" oninput="recalculateNewItemLiveCost()" style="text-align: center; font-size: 12px; padding: 6px 4px;">
+        </td>
+        <td style="padding: 6px 4px;">
+            <select class="recipe-row-input inline-ing-unit-select" onchange="recalculateNewItemLiveCost()" style="font-size: 12px; padding: 6px 4px;">
+                <option value="g" ${selectedUnit === 'g' ? 'selected' : ''}>g</option>
+                <option value="kg" ${selectedUnit === 'kg' ? 'selected' : ''}>kg</option>
+                <option value="mL" ${selectedUnit === 'mL' || selectedUnit === 'ml' ? 'selected' : ''}>mL</option>
+                <option value="L" ${selectedUnit === 'L' ? 'selected' : ''}>L</option>
+                <option value="pcs" ${selectedUnit === 'pcs' ? 'selected' : ''}>pcs</option>
+                <option value="pack" ${selectedUnit === 'pack' ? 'selected' : ''}>pack</option>
+                <option value="tbsp" ${selectedUnit === 'tbsp' ? 'selected' : ''}>tbsp</option>
+                <option value="tsp" ${selectedUnit === 'tsp' ? 'selected' : ''}>tsp</option>
+            </select>
+        </td>
+        <td style="padding: 6px 8px; text-align: right; color: #dc2626; font-weight: 700; font-size: 12px;">
+            <span class="inline-ing-cost-label">Rs. 0.00</span>
+        </td>
+        <td style="padding: 6px 4px; text-align: center;">
+            <button type="button" class="recipe-row-delete-btn" onclick="removeMenuItemInlineIngredientRow(this)" title="Remove" style="font-size: 12px; padding: 2px 4px;">
+                ✕
+            </button>
+        </td>
+    `;
+
+    tbody.appendChild(tr);
+    const select = tr.querySelector('.inline-ing-stock-select');
+    if (select) onNewItemIngredientChange(select, false);
+    recalculateNewItemLiveCost();
+};
+
+window.quickAddStockToNewItem = function quickAddStockToNewItem(stockId) {
+    const stocks = typeof syncAndGetStockItems === 'function' ? syncAndGetStockItems() : (Storage.get('stocks') || []);
+    const stock = stocks.find(s => String(s.id) === String(stockId));
+    if (!stock) return;
+
+    let defaultQty = 1;
+    let defaultUnit = stock.unit;
+    if (stock.unit === 'kg') {
+        defaultQty = 100;
+        defaultUnit = 'g';
+    } else if (stock.unit === 'L' || stock.unit === 'liter') {
+        defaultQty = 50;
+        defaultUnit = 'mL';
+    }
+
+    addMenuItemInlineIngredientRow({
+        stockId: stock.id,
+        itemName: stock.itemName,
+        qty: defaultQty,
+        unit: defaultUnit
+    });
+};
+
+window.removeMenuItemInlineIngredientRow = function removeMenuItemInlineIngredientRow(btn) {
+    const tr = btn.closest('tr');
+    if (tr) {
+        tr.remove();
+        recalculateNewItemLiveCost();
+    }
+};
+
+window.onNewItemIngredientChange = function onNewItemIngredientChange(selectEl, autoSetUnit = true) {
+    const tr = selectEl.closest('tr');
+    if (!tr) return;
+
+    const opt = selectEl.options[selectEl.selectedIndex];
+    const unit = opt ? opt.getAttribute('data-unit') : '';
+
+    if (autoSetUnit && unit) {
+        const unitSelect = tr.querySelector('.inline-ing-unit-select');
+        if (unitSelect) {
+            const u = unit.toLowerCase();
+            if (u === 'kg') unitSelect.value = 'g';
+            else if (u === 'l' || u === 'liter') unitSelect.value = 'mL';
+            else if (u === 'pcs') unitSelect.value = 'pcs';
+            else if (u === 'pack') unitSelect.value = 'pack';
+            else unitSelect.value = unit;
+        }
+    }
+
+    recalculateNewItemLiveCost();
+};
+
+window.recalculateNewItemLiveCost = function recalculateNewItemLiveCost() {
+    const tbody = document.getElementById('addMenuItemIngredientsTbody');
+    if (!tbody) return;
+
+    const stocks = typeof syncAndGetStockItems === 'function' ? syncAndGetStockItems() : (Storage.get('stocks') || []);
+    const stockById = {};
+    stocks.forEach(s => { stockById[String(s.id)] = s; });
+
+    let totalCost = 0;
+    const rows = tbody.querySelectorAll('tr');
+
+    rows.forEach(tr => {
+        const select = tr.querySelector('.inline-ing-stock-select');
+        const qtyInput = tr.querySelector('.inline-ing-qty-input');
+        const unitSelect = tr.querySelector('.inline-ing-unit-select');
+        const costLabel = tr.querySelector('.inline-ing-cost-label');
+
+        const stockId = select ? select.value : '';
+        const qty = qtyInput ? parseFloat(qtyInput.value) || 0 : 0;
+        const unit = unitSelect ? unitSelect.value : 'g';
+        const stock = stockById[stockId];
+
+        const cost = typeof calculateIngredientCost === 'function' ? calculateIngredientCost(stock, qty, unit) : 0;
+        totalCost += cost;
+
+        if (costLabel) costLabel.textContent = `Rs. ${cost.toFixed(2)}`;
+    });
+
+    const priceInput = document.getElementById('addMenuItemPrice');
+    const sellPrice = priceInput ? parseFloat(priceInput.value) || 0 : 0;
+    const profit = sellPrice - totalCost;
+
+    const costValEl = document.getElementById('addMenuItemLiveCostVal');
+    if (costValEl) costValEl.textContent = `Rs. ${totalCost.toFixed(2)}`;
+
+    const profitValEl = document.getElementById('addMenuItemLiveProfitVal');
+    if (profitValEl) {
+        profitValEl.textContent = `Est. Profit: Rs. ${profit.toFixed(2)} (${sellPrice > 0 ? ((profit / sellPrice) * 100).toFixed(0) : 0}%)`;
+        profitValEl.style.color = profit >= 0 ? '#059669' : '#dc2626';
+    }
+};
+
+function getAddMenuItemInlineIngredients() {
+    const tbody = document.getElementById('addMenuItemIngredientsTbody');
+    if (!tbody) return [];
+
+    const stocks = typeof syncAndGetStockItems === 'function' ? syncAndGetStockItems() : (Storage.get('stocks') || []);
+    const stockById = {};
+    stocks.forEach(s => { stockById[String(s.id)] = s; });
+
+    const ingredients = [];
+    const rows = tbody.querySelectorAll('tr');
+
+    rows.forEach(tr => {
+        const select = tr.querySelector('.inline-ing-stock-select');
+        const qtyInput = tr.querySelector('.inline-ing-qty-input');
+        const unitSelect = tr.querySelector('.inline-ing-unit-select');
+
+        const stockId = select ? select.value : '';
+        const qty = qtyInput ? parseFloat(qtyInput.value) || 0 : 0;
+        const unit = unitSelect ? unitSelect.value : 'g';
+        const stock = stockById[stockId];
+
+        if (stockId && qty > 0) {
+            ingredients.push({
+                stockId: stockId,
+                itemName: stock ? stock.itemName : '',
+                qty: qty,
+                unit: unit
+            });
+        }
+    });
+
+    return ingredients;
+}
+
+window.resetAddMenuItemInlineRecipe = function resetAddMenuItemInlineRecipe() {
+    const tbody = document.getElementById('addMenuItemIngredientsTbody');
+    if (tbody) tbody.innerHTML = '';
+    toggleAddMenuItemRecipeSection(true); // Close it
+};
+
+// ==========================================
+// 1-CLICK RECIPE PRESET TEMPLATES
+// ==========================================
+
+const RECIPE_PRESETS = {
+    burger: [
+        { itemName: 'Burger Buns', qty: 1, unit: 'pcs' },
+        { itemName: 'Chicken', qty: 120, unit: 'g' },
+        { itemName: 'Cheese Slices', qty: 1, unit: 'pcs' },
+        { itemName: 'Mayonnaise', qty: 20, unit: 'g' },
+        { itemName: 'Tomato Ketchup', qty: 15, unit: 'g' }
+    ],
+    karahi: [
+        { itemName: 'Chicken', qty: 500, unit: 'g' },
+        { itemName: 'Cooking Oil', qty: 80, unit: 'mL' },
+        { itemName: 'Tomatoes', qty: 200, unit: 'g' },
+        { itemName: 'Special Masala', qty: 25, unit: 'g' },
+        { itemName: 'Garlic Sauce', qty: 20, unit: 'g' }
+    ],
+    pizza: [
+        { itemName: 'Flour (Atta)', qty: 180, unit: 'g' },
+        { itemName: 'Cheese Slices', qty: 120, unit: 'g' },
+        { itemName: 'Chicken', qty: 100, unit: 'g' },
+        { itemName: 'Tomatoes', qty: 50, unit: 'g' },
+        { itemName: 'Cooking Oil', qty: 20, unit: 'mL' }
+    ],
+    biryani: [
+        { itemName: 'Rice (Basmati)', qty: 250, unit: 'g' },
+        { itemName: 'Chicken', qty: 200, unit: 'g' },
+        { itemName: 'Cooking Oil', qty: 50, unit: 'mL' },
+        { itemName: 'Special Masala', qty: 20, unit: 'g' },
+        { itemName: 'Tomatoes', qty: 50, unit: 'g' }
+    ],
+    sandwich: [
+        { itemName: 'Sandwich Bread', qty: 2, unit: 'pcs' },
+        { itemName: 'Chicken', qty: 80, unit: 'g' },
+        { itemName: 'Mayonnaise', qty: 20, unit: 'g' },
+        { itemName: 'Cheese Slices', qty: 1, unit: 'pcs' },
+        { itemName: 'Tomatoes', qty: 30, unit: 'g' }
+    ],
+    shake_drink: [
+        { itemName: 'Milk (Packed)', qty: 250, unit: 'mL' },
+        { itemName: 'Sugar', qty: 20, unit: 'g' },
+        { itemName: 'Coffee Beans', qty: 10, unit: 'g' }
+    ],
+    fries_fried: [
+        { itemName: 'Potatoes', qty: 250, unit: 'g' },
+        { itemName: 'Cooking Oil', qty: 60, unit: 'mL' },
+        { itemName: 'Special Masala', qty: 5, unit: 'g' },
+        { itemName: 'Tomato Ketchup', qty: 20, unit: 'g' }
+    ]
+};
+
+window.applyRecipePreset = function applyRecipePreset(presetKey) {
+    const list = RECIPE_PRESETS[presetKey];
+    if (!list) return;
+
+    const tbody = document.getElementById('recipeIngredientsTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const stocks = typeof syncAndGetStockItems === 'function' ? syncAndGetStockItems() : (Storage.get('stocks') || []);
+
+    list.forEach(presetItem => {
+        let matchedStock = stocks.find(s => s.itemName && s.itemName.toLowerCase() === presetItem.itemName.toLowerCase());
+        if (!matchedStock) {
+            matchedStock = stocks.find(s => s.itemName && s.itemName.toLowerCase().includes(presetItem.itemName.toLowerCase()));
+        }
+
+        addRecipeIngredientRow({
+            stockId: matchedStock ? matchedStock.id : '',
+            itemName: matchedStock ? matchedStock.itemName : presetItem.itemName,
+            qty: presetItem.qty,
+            unit: presetItem.unit
+        });
+    });
+
+    recalculateRecipeLiveSummary();
+};
+
+window.adjustRecipeRowQty = function adjustRecipeRowQty(btn, delta) {
+    const tr = btn.closest('tr');
+    if (!tr) return;
+    const input = tr.querySelector('.recipe-ing-qty-input');
+    if (!input) return;
+    let val = parseFloat(input.value) || 0;
+    val = Math.max(0, val + delta);
+    input.value = val;
+    recalculateRecipeLiveSummary();
+};
+
+// ==========================================
+// 1-CLICK STOCK PRESET CATEGORIES & INGREDIENTS
+// ==========================================
+
+const STOCK_PRESETS_BY_CAT = {
+    meat: [
+        { name: 'Chicken Boneless', unit: 'kg', min: 5, price: 950 },
+        { name: 'Chicken with Bone', unit: 'kg', min: 10, price: 650 },
+        { name: 'Chicken Wings', unit: 'kg', min: 5, price: 700 },
+        { name: 'Beef Mince (Qeema)', unit: 'kg', min: 5, price: 1400 },
+        { name: 'Beef Meat', unit: 'kg', min: 8, price: 1200 },
+        { name: 'Mutton Meat', unit: 'kg', min: 5, price: 2100 },
+        { name: 'Fish Fillet', unit: 'kg', min: 4, price: 1100 }
+    ],
+    veg: [
+        { name: 'Tomatoes', unit: 'kg', min: 10, price: 120 },
+        { name: 'Potatoes', unit: 'kg', min: 15, price: 90 },
+        { name: 'Onions', unit: 'kg', min: 15, price: 140 },
+        { name: 'Ginger (Adrak)', unit: 'kg', min: 2, price: 600 },
+        { name: 'Garlic (Lehsan)', unit: 'kg', min: 3, price: 500 },
+        { name: 'Green Chillies', unit: 'kg', min: 2, price: 250 },
+        { name: 'Fresh Coriander / Mint', unit: 'pack', min: 5, price: 50 }
+    ],
+    dairy: [
+        { name: 'Milk (Packed)', unit: 'L', min: 12, price: 270 },
+        { name: 'Cheese Slices', unit: 'pack', min: 5, price: 650 },
+        { name: 'Mozzarella Cheese', unit: 'kg', min: 3, price: 1600 },
+        { name: 'Cheddar Cheese', unit: 'kg', min: 3, price: 1700 },
+        { name: 'Butter', unit: 'kg', min: 2, price: 1800 },
+        { name: 'Cooking Cream', unit: 'pack', min: 4, price: 420 },
+        { name: 'Eggs (Dozen)', unit: 'pack', min: 5, price: 340 }
+    ],
+    spices: [
+        { name: 'Cooking Oil', unit: 'L', min: 16, price: 520 },
+        { name: 'Special Masala', unit: 'kg', min: 3, price: 1100 },
+        { name: 'Tomato Ketchup', unit: 'kg', min: 5, price: 450 },
+        { name: 'Mayonnaise', unit: 'kg', min: 5, price: 550 },
+        { name: 'Garlic Sauce', unit: 'kg', min: 4, price: 500 },
+        { name: 'Chilli Sauce', unit: 'bottle', min: 4, price: 350 },
+        { name: 'Soy Sauce', unit: 'bottle', min: 3, price: 300 }
+    ],
+    bakery: [
+        { name: 'Burger Buns', unit: 'pcs', min: 24, price: 45 },
+        { name: 'Sandwich Bread', unit: 'pack', min: 6, price: 160 },
+        { name: 'Rice (Basmati)', unit: 'kg', min: 25, price: 340 },
+        { name: 'Flour (Atta)', unit: 'kg', min: 20, price: 150 },
+        { name: 'Pizza Dough Base', unit: 'pcs', min: 12, price: 120 }
+    ],
+    drinks: [
+        { name: 'Tea Leaves', unit: 'kg', min: 2, price: 1600 },
+        { name: 'Coffee Beans / Powder', unit: 'kg', min: 1, price: 2800 },
+        { name: 'Sugar', unit: 'kg', min: 15, price: 160 },
+        { name: 'Nutella', unit: 'can', min: 2, price: 1800 },
+        { name: 'Chocolate Syrup', unit: 'bottle', min: 3, price: 650 },
+        { name: 'Mineral Water (Large)', unit: 'bottle', min: 24, price: 100 }
+    ]
+};
+
+window.filterAddStockPresets = function filterAddStockPresets(catKey, el) {
+    if (el) {
+        const pills = document.querySelectorAll('.stock-cat-pill');
+        pills.forEach(p => p.classList.remove('active'));
+        el.classList.add('active');
+    }
+    const container = document.getElementById('addStockPresetChipsContainer');
+    if (!container) return;
+
+    const list = STOCK_PRESETS_BY_CAT[catKey] || STOCK_PRESETS_BY_CAT.meat;
+    container.innerHTML = list.map(item => `
+        <span class="popular-ingredient-chip" onclick="selectPresetStockIngredient('${escapeHtml(item.name)}', '${item.unit}', ${item.min}, ${item.price})" style="padding: 4px 10px; font-size: 11.5px;">
+            ➕ ${escapeHtml(item.name)} <span style="opacity: 0.7; font-size: 10px;">(${item.unit})</span>
+        </span>
+    `).join('');
+};
+
+window.selectPresetStockIngredient = function selectPresetStockIngredient(name, unit, alertMin, defaultPrice) {
+    const nameInput = document.getElementById('stockItemName');
+    const unitSelect = document.getElementById('stockUnit');
+    const minInput = document.getElementById('stockMinLevel');
+    const priceInput = document.getElementById('stockUnitPrice');
+
+    if (nameInput) nameInput.value = name;
+    if (unitSelect) unitSelect.value = unit;
+    if (minInput) minInput.value = alertMin;
+
+    if (typeof checkExistingStockItemOnInput === 'function') {
+        checkExistingStockItemOnInput();
+    }
+
+    if (priceInput && (!priceInput.value || parseFloat(priceInput.value) === 0)) {
+        priceInput.value = defaultPrice;
+    }
+
+    const qtyInput = document.getElementById('stockQuantity');
+    if (qtyInput) qtyInput.focus();
+};
+
 

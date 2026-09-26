@@ -662,6 +662,51 @@
                                             Image</button>
                                     </div>
                                 </div>
+
+                                <!-- Optional Ingredients & Recipe Section -->
+                                <div class="inline-recipe-toggle-card">
+                                    <div class="inline-recipe-header" onclick="toggleAddMenuItemRecipeSection()">
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="font-size: 18px;">🥗</span>
+                                            <span style="font-weight: 700; color: #1e293b; font-size: 14.5px;">Add Recipe Ingredients (Optional)</span>
+                                        </div>
+                                        <span id="addMenuItemRecipeChevron" style="font-size: 13px; color: #2563eb; font-weight: 700; background: #eff6ff; padding: 3px 10px; border-radius: 12px; border: 1px solid #bfdbfe;">+ Add Recipe</span>
+                                    </div>
+                                    <div id="addMenuItemRecipeBody" style="display: none; margin-top: 14px; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+                                        <div style="font-size: 12px; color: #64748b; margin-bottom: 10px;">
+                                            Quickly link stock ingredients to calculate this item's cost & profit automatically:
+                                        </div>
+                                        <!-- Quick chips -->
+                                        <div id="addMenuItemQuickChips" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;">
+                                            <!-- Dynamically populated from stock -->
+                                        </div>
+                                        <!-- Ingredients table -->
+                                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 10px;">
+                                            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                                <thead>
+                                                    <tr style="background: #f1f5f9; color: #475569; border-bottom: 1px solid #cbd5e1;">
+                                                        <th style="padding: 6px 8px; text-align: left;">Ingredient</th>
+                                                        <th style="padding: 6px 6px; text-align: center; width: 85px;">Qty</th>
+                                                        <th style="padding: 6px 6px; text-align: left; width: 90px;">Unit</th>
+                                                        <th style="padding: 6px 8px; text-align: right; width: 85px;">Cost</th>
+                                                        <th style="padding: 6px 4px; text-align: center; width: 35px;"></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="addMenuItemIngredientsTbody">
+                                                    <!-- Dynamic rows -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <button type="button" onclick="addMenuItemInlineIngredientRow()"
+                                            style="background: #eff6ff; color: #2563eb; border: 1.5px dashed #93c5fd; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12.5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                            ➕ Add Ingredient Row
+                                        </button>
+                                        <div id="addMenuItemLiveCostSummary" style="margin-top: 10px; padding: 10px 14px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; font-weight: 600;">
+                                            <span>Est. Ingredient Cost: <strong id="addMenuItemLiveCostVal" style="color: #dc2626; font-size: 14px;">Rs. 0.00</strong></span>
+                                            <span id="addMenuItemLiveProfitVal" style="color: #059669; font-size: 14px;">Profit: Rs. 0.00</span>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div
                                     style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; align-items: center;">
                                     <button type="button" onclick="closeAddMenuItemModal()"
@@ -1655,6 +1700,24 @@
                         </div>
                         <div class="modal-body" style="padding: 24px;">
                             <form id="stockForm" style="display: flex; flex-direction: column; width: 100%;">
+                                <!-- 1-Click Fast Ingredient Category & Quick Fill Chips -->
+                                <div style="margin-bottom: 14px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 12px;">
+                                    <label style="font-weight: 700; font-size: 12px; color: #475569; display: block; margin-bottom: 6px; text-transform: uppercase;">
+                                        ⚡ 1-Click Quick Fill (Pick Category & Ingredient):
+                                    </label>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px;">
+                                        <span class="stock-cat-pill active" onclick="filterAddStockPresets('meat', this)">🥩 Meat</span>
+                                        <span class="stock-cat-pill" onclick="filterAddStockPresets('veg', this)">🥦 Veggies</span>
+                                        <span class="stock-cat-pill" onclick="filterAddStockPresets('dairy', this)">🧀 Dairy & Eggs</span>
+                                        <span class="stock-cat-pill" onclick="filterAddStockPresets('spices', this)">🧂 Spices & Oil</span>
+                                        <span class="stock-cat-pill" onclick="filterAddStockPresets('bakery', this)">🍞 Bakery & Rice</span>
+                                        <span class="stock-cat-pill" onclick="filterAddStockPresets('drinks', this)">🧃 Drinks & Sweets</span>
+                                    </div>
+                                    <div id="addStockPresetChipsContainer" style="display: flex; flex-wrap: wrap; gap: 5px;">
+                                        <!-- Dynamically loaded per category -->
+                                    </div>
+                                </div>
+
                                 <div class="modal-form-group" style="margin-bottom: 14px;">
                                     <label style="font-weight: 600; font-size: 14px; color: #1e293b; display: block; margin-bottom: 6px;">Item / Ingredient Name *</label>
                                     <input type="text" id="stockItemName" list="stockCommonIngredients"
@@ -2254,6 +2317,25 @@
                                         <span style="font-size: 11.5px; color: #64748b; font-weight: 600; display: block; text-transform: uppercase;">Profit Margin</span>
                                         <span id="recipeLiveMargin" style="font-size: 18px; font-weight: 800; color: #0284c7;">0.0%</span>
                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- 1-Click Recipe Preset Templates Bar -->
+                            <div style="margin-bottom: 16px; background: #f1f5f9; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 12px 14px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                                    <label style="font-weight: 700; font-size: 12.5px; color: #1e293b; text-transform: uppercase;">
+                                        ⚡ 1-Click Recipe Templates (Auto-fill ingredients):
+                                    </label>
+                                    <span style="font-size: 11px; color: #64748b;">Click to load base recipe</span>
+                                </div>
+                                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                    <button type="button" class="recipe-preset-btn" onclick="applyRecipePreset('burger')">🍔 Burger / Patty</button>
+                                    <button type="button" class="recipe-preset-btn" onclick="applyRecipePreset('karahi')">🍲 Karahi / Handi</button>
+                                    <button type="button" class="recipe-preset-btn" onclick="applyRecipePreset('pizza')">🍕 Pizza</button>
+                                    <button type="button" class="recipe-preset-btn" onclick="applyRecipePreset('biryani')">🍚 Biryani / Rice</button>
+                                    <button type="button" class="recipe-preset-btn" onclick="applyRecipePreset('sandwich')">🥪 Sandwich / Roll</button>
+                                    <button type="button" class="recipe-preset-btn" onclick="applyRecipePreset('shake_drink')">☕ Chai / Shake / Coffee</button>
+                                    <button type="button" class="recipe-preset-btn" onclick="applyRecipePreset('fries_fried')">🍟 Fries / Fast Food</button>
                                 </div>
                             </div>
 
