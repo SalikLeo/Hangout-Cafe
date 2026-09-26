@@ -8710,6 +8710,176 @@ window.printConsumptionLogsReport = function printConsumptionLogsReport() {
     printWindow.document.close();
 };
 
+window.printDailyClosingSummaryReport = function printDailyClosingSummaryReport() {
+    const todayISO = getLocalISODate();
+    const sales = Storage.get('sales') || [];
+    const expenses = (typeof getCombinedExpenses === 'function') ? getCombinedExpenses() : (Storage.get('expenses') || []);
+    const consumptions = Storage.get('stockConsumptions') || [];
+    const stocks = syncAndGetStockItems();
+    const stockMap = {};
+    stocks.forEach(s => { stockMap[String(s.id)] = s; stockMap[(s.itemName || '').toLowerCase()] = s; });
+
+    // Filter Today's sales
+    const todaySales = sales.filter(s => {
+        if (!s.date) return false;
+        const dStr = s.date.includes('T') ? getLocalISODate(new Date(s.date)) : s.date.slice(0, 10);
+        return dStr === todayISO;
+    });
+
+    let grossSales = 0;
+    let cashSales = 0;
+    let onlineSales = 0;
+    let totalTax = 0;
+    let totalDiscount = 0;
+
+    todaySales.forEach(s => {
+        const tot = parseFloat(s.total) || 0;
+        grossSales += tot;
+        totalTax += parseFloat(s.tax) || 0;
+        totalDiscount += (s.discount && s.discount.amount) ? parseFloat(s.discount.amount) : 0;
+        const pm = (s.paymentMethod || s.payment || 'cash').toLowerCase();
+        if (pm === 'online' || pm === 'card' || pm === 'digital' || pm === 'family') {
+            onlineSales += tot;
+        } else {
+            cashSales += tot;
+        }
+    });
+
+    // Today's Operating Expenses
+    const todayExpenses = expenses.filter(e => {
+        if (!e.date) return false;
+        const dStr = e.date.includes('T') ? getLocalISODate(new Date(e.date)) : e.date.slice(0, 10);
+        return dStr === todayISO;
+    });
+    const totalExpenses = todayExpenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+
+    // Today's Ingredient Deductions
+    const todayConsumptions = consumptions.filter(c => {
+        const dStr = c.date || (c.timestamp ? c.timestamp.split('T')[0] : '');
+        return dStr === todayISO;
+    });
+
+    let totalIngredientCost = 0;
+    const ingredientRows = [];
+    todayConsumptions.forEach(c => {
+        (c.items || []).forEach(item => {
+            const qty = parseFloat(item.finalDeductQty || item.enteredQty || item.deductedQty) || 0;
+            const stock = stockMap[String(item.stockId)] || stockMap[(item.itemName || '').toLowerCase()];
+            const price = stock ? (parseFloat(stock.unitPrice) || 0) : 0;
+            const itemCost = qty * price;
+            totalIngredientCost += itemCost;
+            ingredientRows.push({
+                name: item.itemName,
+                qty: `${formatQuantity(qty)} ${item.enteredUnit || item.stockUnit || item.unit || ''}`,
+                cost: itemCost
+            });
+        });
+    });
+
+    const netProfit = grossSales - totalIngredientCost - totalExpenses;
+    const profitMargin = grossSales > 0 ? ((netProfit / grossSales) * 100).toFixed(1) : 0;
+
+    const now = new Date();
+    const dateFormatted = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+    const timeFormatted = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Daily Closing Summary - Hangout Lounge & Co.</title>
+            <style>
+                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 25px; color: #0f172a; max-width: 550px; margin: 0 auto; font-size: 13px; }
+                .header { text-align: center; border-bottom: 2px dashed #94a3b8; padding-bottom: 12px; margin-bottom: 15px; }
+                h1 { margin: 0 0 4px 0; font-size: 22px; color: #0f172a; font-weight: 800; }
+                .badge { display: inline-block; background: #0f172a; color: white; padding: 4px 14px; border-radius: 14px; font-weight: 700; font-size: 11.5px; text-transform: uppercase; margin-top: 5px; }
+                .meta { color: #64748b; font-size: 12px; margin-top: 6px; }
+                .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+                .kpi-card { border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 12px; background: #f8fafc; }
+                .kpi-title { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+                .kpi-val { font-size: 19px; font-weight: 800; color: #0f172a; margin-top: 3px; }
+                .profit-card { grid-column: span 2; border: 2px solid #10b981; background: #ecfdf5; }
+                .profit-val { font-size: 24px; font-weight: 900; color: #059669; }
+                table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+                th, td { padding: 7px 9px; border-bottom: 1px solid #e2e8f0; }
+                th { background: #f1f5f9; text-align: left; font-size: 11px; text-transform: uppercase; color: #475569; font-weight: 700; }
+                .section-title { font-weight: 700; font-size: 13.5px; color: #1e293b; margin-top: 18px; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 4px; }
+                @media print { body { padding: 0; } }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Hangout Lounge & Co.</h1>
+                <div class="badge">🌙 Daily Financial Closing Summary</div>
+                <div class="meta">${dateFormatted} | ${timeFormatted}</div>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-title">💵 Gross Sales Revenue</div>
+                    <div class="kpi-val">Rs. ${formatNumber(grossSales)}</div>
+                    <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Cash: Rs. ${formatNumber(cashSales)} | Online: Rs. ${formatNumber(onlineSales)}</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">🥩 Ingredient Cost (Stock)</div>
+                    <div class="kpi-val" style="color: #dc2626;">Rs. ${formatNumber(totalIngredientCost)}</div>
+                    <div style="font-size: 11px; color: #64748b; margin-top: 2px;">${ingredientRows.length} ingredient(s) deducted</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">🏷️ Operating Expenses</div>
+                    <div class="kpi-val" style="color: #ea580c;">Rs. ${formatNumber(totalExpenses)}</div>
+                    <div style="font-size: 11px; color: #64748b; margin-top: 2px;">${todayExpenses.length} expense entry(s)</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">🧾 Total Orders</div>
+                    <div class="kpi-val" style="color: #2563eb;">${todaySales.length}</div>
+                    <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Discounts: Rs. ${formatNumber(totalDiscount)}</div>
+                </div>
+                <div class="kpi-card profit-card">
+                    <div class="kpi-title" style="color: #047857; display: flex; justify-content: space-between; align-items: center;">
+                        <span>📈 NET ACTUAL PROFIT</span>
+                        <span style="font-size: 11px; background: rgba(16,185,129,0.2); padding: 2px 8px; border-radius: 10px;">Margin: ${profitMargin}%</span>
+                    </div>
+                    <div class="profit-val">Rs. ${formatNumber(netProfit)}</div>
+                    <div style="font-size: 11.5px; color: #065f46; margin-top: 2px;">(Total Revenue - Ingredient Cost - Operating Expenses)</div>
+                </div>
+            </div>
+
+            ${ingredientRows.length > 0 ? `
+                <div class="section-title">Ingredients Deducted Today (${ingredientRows.length})</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ingredient</th>
+                            <th style="text-align: right;">Qty Used</th>
+                            <th style="text-align: right;">Est. Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${ingredientRows.map(r => `
+                            <tr>
+                                <td style="font-weight: 600;">${escapeHtml(r.name)}</td>
+                                <td style="text-align: right;">${escapeHtml(r.qty)}</td>
+                                <td style="text-align: right; font-weight: 700; color: #0f766e;">Rs. ${formatNumber(r.cost)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            ` : ''}
+
+            <script>
+                window.onload = function() { window.print(); window.close(); };
+            <\/script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+};
+
 window.deleteConsumptionRecord = function deleteConsumptionRecord(logId, itemIndex) {
     openActionPasswordModal(() => {
         const consumptions = Storage.get('stockConsumptions') || [];
@@ -10205,6 +10375,88 @@ function loadDashboard() {
     const monthSalesEl = document.getElementById('dashboardMonthSales');
     const monthExpensesEl = document.getElementById('dashboardMonthExpenses');
     const recentSalesEl = document.getElementById('dashboardRecentSales');
+
+    // Calculate Today's Stock Consumptions (Ingredient Cost)
+    const todayISO = getLocalISODate();
+    const consumptions = Storage.get('stockConsumptions') || [];
+    const stockMap = {};
+    syncAndGetStockItems().forEach(s => { stockMap[String(s.id)] = s; stockMap[(s.itemName || '').toLowerCase()] = s; });
+
+    let todayIngredientsCost = 0;
+    let todayIngredientsCount = 0;
+    consumptions.forEach(c => {
+        const cDate = c.date || (c.timestamp ? c.timestamp.split('T')[0] : '');
+        if (cDate === todayISO) {
+            (c.items || []).forEach(item => {
+                const qty = parseFloat(item.finalDeductQty || item.enteredQty || item.deductedQty) || 0;
+                const stock = stockMap[String(item.stockId)] || stockMap[(item.itemName || '').toLowerCase()];
+                const price = stock ? (parseFloat(stock.unitPrice) || 0) : 0;
+                todayIngredientsCost += (qty * price);
+                if (qty > 0) todayIngredientsCount++;
+            });
+        }
+    });
+
+    // Cash vs Online Breakdown for Today
+    let todayCashSales = 0;
+    let todayOnlineSales = 0;
+    const todaySalesList = sales.filter(sale => {
+        if (!sale.date) return false;
+        const saleDate = new Date(sale.date);
+        saleDate.setHours(0, 0, 0, 0);
+        return saleDate.getTime() === today.getTime();
+    });
+
+    todaySalesList.forEach(sale => {
+        let tot = 0;
+        if (sale.total) {
+            tot = sale.total;
+        } else if (sale.items && Array.isArray(sale.items)) {
+            tot = sale.items.reduce((s, item) => s + (item.price * item.quantity), 0);
+        } else {
+            tot = sale.amount || 0;
+        }
+        const pm = (sale.paymentMethod || sale.payment || 'cash').toLowerCase();
+        if (pm === 'online' || pm === 'card' || pm === 'digital' || pm === 'family') {
+            todayOnlineSales += tot;
+        } else {
+            todayCashSales += tot;
+        }
+    });
+
+    const todayNetActualProfit = todaySales - todayIngredientsCost - todayExpenses;
+    const profitMargin = todaySales > 0 ? ((todayNetActualProfit / todaySales) * 100).toFixed(1) : 0;
+
+    // Update EOD Card Elements
+    const eodDateEl = document.getElementById('dashboardClosingDateText');
+    const eodGrossSalesEl = document.getElementById('eodGrossSales');
+    const eodCashSalesEl = document.getElementById('eodCashSales');
+    const eodOnlineSalesEl = document.getElementById('eodOnlineSales');
+    const eodIngredientsCostEl = document.getElementById('eodIngredientsCost');
+    const eodIngredientsItemsCountEl = document.getElementById('eodIngredientsItemsCount');
+    const eodExpensesEl = document.getElementById('eodExpenses');
+    const eodNetProfitEl = document.getElementById('eodNetProfit');
+    const eodProfitMarginBadgeEl = document.getElementById('eodProfitMarginBadge');
+
+    if (eodDateEl) {
+        const formattedToday = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+        eodDateEl.textContent = `Daily Closing for ${formattedToday}`;
+    }
+    if (eodGrossSalesEl) eodGrossSalesEl.textContent = `Rs. ${formatNumber(todaySales)}`;
+    if (eodCashSalesEl) eodCashSalesEl.textContent = `Rs. ${formatNumber(todayCashSales)}`;
+    if (eodOnlineSalesEl) eodOnlineSalesEl.textContent = `Rs. ${formatNumber(todayOnlineSales)}`;
+    if (eodIngredientsCostEl) eodIngredientsCostEl.textContent = `Rs. ${formatNumber(todayIngredientsCost)}`;
+    if (eodIngredientsItemsCountEl) eodIngredientsItemsCountEl.textContent = `${todayIngredientsCount} ingredient(s) deducted today`;
+    if (eodExpensesEl) eodExpensesEl.textContent = `Rs. ${formatNumber(todayExpenses)}`;
+    if (eodNetProfitEl) {
+        eodNetProfitEl.textContent = `Rs. ${formatNumber(todayNetActualProfit)}`;
+        eodNetProfitEl.style.color = todayNetActualProfit >= 0 ? '#34d399' : '#f87171';
+    }
+    if (eodProfitMarginBadgeEl) {
+        eodProfitMarginBadgeEl.textContent = `${profitMargin}% Margin`;
+        eodProfitMarginBadgeEl.style.background = todayNetActualProfit >= 0 ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)';
+        eodProfitMarginBadgeEl.style.color = todayNetActualProfit >= 0 ? '#a7f3d0' : '#fca5a5';
+    }
 
     if (todaySalesEl) todaySalesEl.textContent = `Rs. ${formatNumber(todaySales)}`;
     if (todayExpensesEl) todayExpensesEl.textContent = `Rs. ${formatNumber(todayExpenses)}`;
@@ -15751,6 +16003,27 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
     const cashInHand = netSale - cashOut;
     const averageSale = transactions > 0 ? (netSale / transactions) : 0;
 
+    // Stock Consumptions / Ingredients cost for period
+    const consumptions = Storage.get('stockConsumptions') || [];
+    const stocks = syncAndGetStockItems();
+    const stockMap = {};
+    stocks.forEach(s => { stockMap[String(s.id)] = s; stockMap[(s.itemName || '').toLowerCase()] = s; });
+
+    let periodIngredientCost = 0;
+    consumptions.forEach(log => {
+        const d = parseDateSafe(log.timestamp || log.date);
+        if (d && d >= startDate && d <= endDate) {
+            (log.items || []).forEach(item => {
+                const qty = parseFloat(item.finalDeductQty || item.enteredQty || item.deductedQty) || 0;
+                const stock = stockMap[String(item.stockId)] || stockMap[(item.itemName || '').toLowerCase()];
+                const price = stock ? (parseFloat(stock.unitPrice) || 0) : 0;
+                periodIngredientCost += (qty * price);
+            });
+        }
+    });
+
+    const netActualProfit = netSale - periodIngredientCost - cashOut;
+
     // Expense categories breakdown
     const expCategoryMap = {};
     periodExpenses.forEach(e => {
@@ -15862,16 +16135,16 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
                     padding: 4px 5px; 
                     font-size: 10.5px; 
                     font-weight: 600; 
-                    text-transform: uppercase;
-                    letter-spacing: 0.3px;
+                    text-transform: uppercase; 
+                    letter-spacing: 0.3px; 
                     background: #fff;
                     color: #000;
                 }
                 .report-table td { 
                     padding: 3.5px 5px; 
                     font-size: 11px; 
-                    font-weight: 400;
-                    border-bottom: 1px solid #000;
+                    font-weight: 400; 
+                    border-bottom: 1px solid #000; 
                     color: #000;
                 }
                 .report-table tr:last-child td {
@@ -15896,16 +16169,16 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
                     padding: 2.5px 4px !important; 
                     font-size: 9.5px !important; 
                     font-weight: 700; 
-                    text-transform: uppercase;
-                    letter-spacing: 0.2px;
+                    text-transform: uppercase; 
+                    letter-spacing: 0.2px; 
                     background: #fff;
                     color: #000;
                 }
                 .compact-items-table td { 
                     padding: 1.5px 4px !important; 
                     font-size: 9.5px !important; 
-                    font-weight: 500;
-                    border-bottom: 1px solid #e0e0e0;
+                    font-weight: 500; 
+                    border-bottom: 1px solid #e0e0e0; 
                     color: #000;
                     line-height: 1.15 !important;
                 }
@@ -15991,22 +16264,30 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
                         <td class="text-right bold">Rs. ${formatNumber(discount)}</td>
                     </tr>
                     <tr style="border-top: 1.5px solid #000; background: #fff;">
-                        <td style="border-right: 1px solid #000; font-weight: 600;">Net Sales</td>
+                        <td style="border-right: 1px solid #000; font-weight: 600;">Net Sales Revenue</td>
                         <td class="text-right" style="font-weight: 600;">Rs. ${formatNumber(netSale)}</td>
+                    </tr>
+                    <tr>
+                        <td style="border-right: 1px solid #000;">Ingredient Cost (Stock)</td>
+                        <td class="text-right bold">Rs. ${formatNumber(periodIngredientCost)}</td>
+                    </tr>
+                    <tr>
+                        <td style="border-right: 1px solid #000;">Total Expenses</td>
+                        <td class="text-right bold">Rs. ${formatNumber(cashOut)}</td>
                     </tr>
                     <tr>
                         <td style="border-right: 1px solid #000;">Average Sale</td>
                         <td class="text-right bold">Rs. ${formatNumber(Math.round(averageSale))}</td>
                     </tr>
-                    <tr style="border-top: 1.5px solid #000; background: #fff;">
-                        <td style="border-right: 1px solid #000; font-weight: 600;">Total Expenses</td>
-                        <td class="text-right" style="font-weight: 600;">Rs. ${formatNumber(cashOut)}</td>
-                    </tr>
                 </tbody>
             </table>
             
-            <div class="cash-in-hand-box">
-                <span>CASH IN HAND (PROFIT):</span>
+            <div class="cash-in-hand-box" style="border: 2px solid #000; background: #f8fafc;">
+                <span>NET ACTUAL PROFIT:</span>
+                <span style="font-size: 13px; font-weight: 800;">Rs. ${formatNumber(netActualProfit)}</span>
+            </div>
+            <div class="cash-in-hand-box" style="margin-top: 2px; font-size: 10.5px; font-weight: 600;">
+                <span>CASH IN HAND (REVENUE - EXPENSES):</span>
                 <span>Rs. ${formatNumber(cashInHand)}</span>
             </div>
             

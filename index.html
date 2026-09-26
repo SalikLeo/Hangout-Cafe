@@ -239,6 +239,80 @@
                     </div>
                 </div>
 
+                <!-- End of Day Financial Closing & Summary Card -->
+                <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 16px; padding: 20px 24px; color: white; margin-bottom: 22px; box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15); border: 1px solid rgba(255, 255, 255, 0.08);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; font-size: 22px; border: 1px solid rgba(59, 130, 246, 0.4);">
+                                🌙
+                            </div>
+                            <div>
+                                <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #ffffff; letter-spacing: 0.2px;">Daily Closing & Financial Summary</h3>
+                                <div id="dashboardClosingDateText" style="font-size: 12.5px; color: #94a3b8; font-weight: 500; margin-top: 2px;">Real-time cash in hand, ingredient costs & net profit</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <button type="button" onclick="openDailyConsumptionModal()"
+                                style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);">
+                                📉 Deduct Stock
+                            </button>
+                            <button type="button" onclick="printDailyClosingSummaryReport()"
+                                style="background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);">
+                                🖨️ Print Daily Closing
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 4 Main Financial KPI Columns -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px;">
+                        <!-- 1. Cash in Hand & Revenue -->
+                        <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px 16px;">
+                            <div style="font-size: 12px; font-weight: 600; color: #93c5fd; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                                💵 Total Sales Revenue
+                            </div>
+                            <div id="eodGrossSales" style="font-size: 24px; font-weight: 800; color: #ffffff;">Rs. 0</div>
+                            <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: #cbd5e1; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                                <span>Cash: <strong id="eodCashSales" style="color: #6ee7b7;">Rs. 0</strong></span>
+                                <span>Online: <strong id="eodOnlineSales" style="color: #93c5fd;">Rs. 0</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- 2. Ingredient Cost -->
+                        <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px 16px;">
+                            <div style="font-size: 12px; font-weight: 600; color: #fca5a5; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                                🥩 Ingredient Cost (Stock)
+                            </div>
+                            <div id="eodIngredientsCost" style="font-size: 24px; font-weight: 800; color: #f87171;">Rs. 0</div>
+                            <div style="font-size: 11.5px; color: #94a3b8; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                                <span id="eodIngredientsItemsCount">0 ingredients deducted</span>
+                            </div>
+                        </div>
+
+                        <!-- 3. Operating Expenses -->
+                        <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px 16px;">
+                            <div style="font-size: 12px; font-weight: 600; color: #fdba74; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                                🏷️ Operating Expenses
+                            </div>
+                            <div id="eodExpenses" style="font-size: 24px; font-weight: 800; color: #fb923c;">Rs. 0</div>
+                            <div style="font-size: 11.5px; color: #94a3b8; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                                <span>Shop expenses & bills</span>
+                            </div>
+                        </div>
+
+                        <!-- 4. Net Actual Profit -->
+                        <div style="background: rgba(16, 185, 129, 0.12); border: 1.5px solid rgba(16, 185, 129, 0.4); border-radius: 12px; padding: 14px 16px;">
+                            <div style="font-size: 12px; font-weight: 700; color: #6ee7b7; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                                <span>📈 Net Actual Profit</span>
+                                <span id="eodProfitMarginBadge" style="font-size: 11px; padding: 1px 7px; border-radius: 12px; background: rgba(16, 185, 129, 0.25); color: #a7f3d0; font-weight: 700;">0% Margin</span>
+                            </div>
+                            <div id="eodNetProfit" style="font-size: 24px; font-weight: 900; color: #34d399;">Rs. 0</div>
+                            <div style="font-size: 11.5px; color: #a7f3d0; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(16, 185, 129, 0.2);">
+                                <span>Revenue - Ingredients - Expenses</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Summary Cards Row 1 -->
                 <div
                     style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; margin-bottom: 20px;">
