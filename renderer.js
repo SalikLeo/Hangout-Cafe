@@ -1278,7 +1278,6 @@ function generateFullReceiptHTML(order) {
 
     const waitingTime = (order && order.waitingTime !== undefined && order.waitingTime !== null) ? order.waitingTime : getWaitingTime();
     const receiveTime = calculateReceiveTime(timeStr, orderDateObj, waitingTime);
-    const badgeText = formatLocation(paymentMethod);
 
     const itemsHtml = formatReceiptItems(itemsList);
     const summaryHtml = formatReceiptSummary(subtotal, discountAmount, tax, serviceCharges, total);
@@ -1290,10 +1289,6 @@ function generateFullReceiptHTML(order) {
                 <div style="font-size: 17px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; color: #000; margin-bottom: 2px; font-family: 'Poppins', sans-serif !important;">Hangout Lounge & Co.</div>
                 <div style="font-size: 11px; font-weight: 500; color: #333; line-height: 1.35; font-family: 'Poppins', sans-serif !important;">Wah Cantt</div>
                 <div style="font-size: 11px; font-weight: 500; color: #333; line-height: 1.35; font-family: 'Poppins', sans-serif !important;">Phone: 0300-9509536</div>
-                ${badgeText && badgeText !== 'Gents Hall' && badgeText !== 'Cash' ? `
-                <div style="margin: 6px 0 2px 0;">
-                    <span style="display: inline-block; border: 1.5px solid #000; padding: 2px 14px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.2; font-family: 'Poppins', sans-serif !important;">${badgeText}</span>
-                </div>` : ''}
             </div>
 
             <!-- Dashed Divider -->
@@ -5879,11 +5874,6 @@ window.printSales = () => {
         dateFilterLabel = selectedMonth ? `Month: ${selectedMonth}` : 'Specific Month';
     } else if (dateFilter === 'custom') dateFilterLabel = 'Custom';
 
-    let locationFilterLabel = 'All';
-    if (paymentFilter === 'cash') locationFilterLabel = 'Gents Hall';
-    else if (paymentFilter === 'online') locationFilterLabel = 'Family Hall';
-    else if (paymentFilter === 'delivery') locationFilterLabel = 'Parcel';
-
     const printWindow = window.open('', '_blank');
     const nowFull = new Date();
     const dateStr = nowFull.toLocaleDateString('en-US', {
@@ -5999,7 +5989,7 @@ window.printSales = () => {
                     <div class="separator"></div>
                     <div style="font-size: 11.5px; text-align: left; line-height: 1.5; color: #000;">
                         <div style="display: flex; justify-content: space-between;"><span style="font-weight: 600;">Date:</span> <span style="font-weight: 400; color: #333;">${currentDate}</span></div>
-                        <div style="display: flex; justify-content: space-between;"><span style="font-weight: 600;">Filter:</span> <span style="font-weight: 400; color: #333;">${dateFilterLabel} | ${locationFilterLabel}</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span style="font-weight: 600;">Filter:</span> <span style="font-weight: 400; color: #333;">${dateFilterLabel}</span></div>
                     </div>
                 </div>
 
@@ -12811,7 +12801,6 @@ function holdOrder() {
             <div style="font-size: 16px; font-weight: 900; margin: 3px 0;">====== KOT ======</div>
             <div style="font-size: 14px; margin-bottom: 2px;"><strong>${t('Order No.')} ${displayOrderNumber}</strong></div>
             <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Customer: ${heldOrder.customerName ? escapeHtml(heldOrder.customerName) : '-'}</div>
-            ${formatLocation(heldOrder.paymentMethod) ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">${t('Location')}: ${formatLocation(heldOrder.paymentMethod)}</div>` : ''}
             <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">${t('Date')}: ${heldOrder.date} ${heldOrder.time}</div>
             ${receiveTime ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Order Receive Time: ${receiveTime}</div>` : ''}
             ${heldOrder.tableNo ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Table No: ${escapeHtml(heldOrder.tableNo)}</div>` : ''}
@@ -13505,7 +13494,6 @@ function saveHoldOrderChanges() {
                     <div style="font-size: 16px; font-weight: 900; margin: 3px 0;">====== KOT ======</div>
                     <div style="font-size: 14px; margin-bottom: 2px;"><strong>${t('Order No.')} ${displayOrderNumber}</strong></div>
                     <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Customer: ${customerName ? escapeHtml(customerName) : '-'}</div>
-                    ${formatLocation(paymentMethod) ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">${t('Location')}: ${formatLocation(paymentMethod)}</div>` : ''}
                     <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">${t('Date')}: ${dateStr} ${timeStr}</div>
                     ${receiveTime ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Order Receive Time: ${receiveTime}</div>` : ''}
                     <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Waiter: ${selectedWaiter ? escapeHtml(selectedWaiter) : '-'}</div>
@@ -13733,7 +13721,6 @@ function printReceipt() {
             <div style="font-size: 16px; font-weight: 900; margin: 3px 0;">====== KOT ======</div>
             <div style="font-size: 14px; margin-bottom: 2px;"><strong>${t('Order No.')} ${displayOrderNumber}</strong></div>
             <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Customer: ${customerName ? escapeHtml(customerName) : '-'}</div>
-            ${formatLocation(selectedPaymentMethod) ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">${t('Location')}: ${formatLocation(selectedPaymentMethod)}</div>` : ''}
             <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">${t('Date')}: ${formatDate(now)} ${formatTime(now)}</div>
             ${receiveTime2 ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Order Receive Time: ${receiveTime2}</div>` : ''}
             ${selectedTableNo ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Table No: ${escapeHtml(selectedTableNo)}</div>` : ''}
@@ -13858,7 +13845,6 @@ function saveOrderAndGenerateContent() {
             <div style="font-size: 16px; font-weight: 900; margin: 3px 0;">====== KOT ======</div>
             <div style="font-size: 14px; margin-bottom: 2px;"><strong>${t('Order No.')} ${displayOrderNumber}</strong></div>
             <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Customer: ${customerName ? escapeHtml(customerName) : '-'}</div>
-            ${formatLocation(selectedPaymentMethod) ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">${t('Location')}: ${formatLocation(selectedPaymentMethod)}</div>` : ''}
             <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">${t('Date')}: ${formatDate(now)} ${formatTime(now)}</div>
             ${receiveTime3 ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Order Receive Time: ${receiveTime3}</div>` : ''}
             ${selectedTableNo ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Table No: ${escapeHtml(selectedTableNo)}</div>` : ''}
@@ -14131,7 +14117,6 @@ function holdOrderAndGenerateContent() {
             <div style="font-size: 16px; font-weight: 900; margin: 3px 0;">====== KOT ======</div>
             <div style="font-size: 14px; margin-bottom: 2px;"><strong>${t('Order No.')} ${displayOrderNumber}</strong></div>
             <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Customer: ${customerName ? escapeHtml(customerName) : '-'}</div>
-            ${formatLocation(selectedPaymentMethod) ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">${t('Location')}: ${formatLocation(selectedPaymentMethod)}</div>` : ''}
             <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">${t('Date')}: ${heldOrder.date} ${heldOrder.time}</div>
             ${receiveTime4 ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Order Receive Time: ${receiveTime4}</div>` : ''}
             ${selectedTableNo ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Table No: ${escapeHtml(selectedTableNo)}</div>` : ''}
@@ -14231,7 +14216,6 @@ window.printSeparateKOTs = function () {
                     <div style="font-size: 16px; font-weight: 900; margin: 3px 0;">====== KOT ======</div>
                     <div style="font-size: 14px; margin-bottom: 2px;"><strong>${t('Order No.')} ${displayOrderNumber}</strong></div>
                     <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Customer: ${customerName ? escapeHtml(customerName) : '-'}</div>
-                    ${formatLocation(paymentMethod) ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">${t('Location')}: ${formatLocation(paymentMethod)}</div>` : ''}
                     <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">${t('Date')}: ${dateStr} ${timeStr}</div>
                     ${receiveTime ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Order Receive Time: ${receiveTime}</div>` : ''}
                     ${selectedTableNo ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Table No: ${escapeHtml(selectedTableNo)}</div>` : ''}

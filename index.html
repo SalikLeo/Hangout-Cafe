@@ -879,18 +879,7 @@
                                 <button id="salesResetFilterBtn" class="btn-reset-filter" title="Reset to today"
                                     onclick="resetSalesFilter()" style="display: none;">✕</button>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <label style="font-weight: 600; color: #495057; font-size: 14px;">Location:</label>
-                                <select id="salesPaymentFilter" onchange="if(window.loadSales) window.loadSales();"
-                                    style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; cursor: pointer; min-width: 130px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); outline: none;"
-                                    onfocus="this.style.borderColor='#4a90e2'; this.style.boxShadow='0 0 0 3px rgba(74,144,226,0.1)'"
-                                    onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)'">
-                                    <option value="all">All</option>
-                                    <option value="cash">Gents Hall</option>
-                                    <option value="online">Family Hall</option>
-                                    <option value="delivery">Parcel</option>
-                                </select>
-                            </div>
+
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <label style="font-weight: 600; color: #495057; font-size: 14px;">Tables:</label>
                                 <select id="salesTableFilter" onchange="if(window.loadSales) window.loadSales();"
