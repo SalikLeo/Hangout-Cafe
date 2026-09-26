@@ -8622,23 +8622,87 @@ window.renderConsumptionHistoryList = function renderConsumptionHistoryList() {
 window.printConsumptionLogsReport = function printConsumptionLogsReport() {
     const filterSelect = document.getElementById('consumptionDateFilter');
     const filter = filterSelect ? filterSelect.value : 'all';
+    const searchInput = document.getElementById('consumptionSearchInput');
+    const search = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
     let filterLabel = 'All Time';
+    const consumptions = Storage.get('stockConsumptions') || [];
+    const stocks = syncAndGetStockItems();
+    const stockMap = {};
+    stocks.forEach(s => { stockMap[String(s.id)] = s; stockMap[(s.itemName || '').toLowerCase()] = s; });
+
+    let filtered = [...consumptions];
+
     if (filter === 'today') {
         const dateInput = document.getElementById('consumptionDateInput');
-        filterLabel = `Daily: ${dateInput ? dateInput.value : getLocalISODate()}`;
+        const selectedDate = dateInput ? dateInput.value : getLocalISODate();
+        filterLabel = `Daily: ${selectedDate}`;
+        filtered = filtered.filter(c => {
+            const cDate = c.date || (c.timestamp ? c.timestamp.split('T')[0] : '');
+            return cDate === selectedDate;
+        });
     } else if (filter === 'month') {
         const monthInput = document.getElementById('consumptionMonthInput');
-        filterLabel = `Monthly: ${monthInput ? monthInput.value : getLocalISOMonth()}`;
+        const selectedMonth = monthInput ? monthInput.value : getLocalISOMonth();
+        filterLabel = `Monthly: ${selectedMonth}`;
+        filtered = filtered.filter(c => {
+            const cDate = c.date || (c.timestamp ? c.timestamp.split('T')[0] : '');
+            return cDate.startsWith(selectedMonth);
+        });
     } else if (filter === 'year') {
         const yearInput = document.getElementById('consumptionYearInput');
-        filterLabel = `Annual: ${yearInput ? yearInput.value : new Date().getFullYear()}`;
+        const selectedYear = yearInput ? yearInput.value : String(new Date().getFullYear());
+        filterLabel = `Annual: ${selectedYear}`;
+        filtered = filtered.filter(c => {
+            const cDate = c.date || (c.timestamp ? c.timestamp.split('T')[0] : '');
+            return cDate.startsWith(selectedYear);
+        });
     }
 
-    const tableBody = document.getElementById('consumptionHistoryTableBody');
-    if (!tableBody || tableBody.children.length === 0) {
-        alert('No consumption logs to print.');
+    if (search) {
+        filtered = filtered.filter(c => {
+            const dateStr = (c.date || '').toLowerCase();
+            const noteStr = (c.note || '').toLowerCase();
+            const itemsStr = (c.items || []).map(i => `${i.itemName} ${i.note}`).join(' ').toLowerCase();
+            return dateStr.includes(search) || noteStr.includes(search) || itemsStr.includes(search);
+        });
+    }
+
+    filtered.sort((a, b) => new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date));
+
+    if (filtered.length === 0) {
+        alert('No consumption logs found for the selected period.');
         return;
     }
+
+    let totalItemsDeductedCount = 0;
+    let totalEstimatedValue = 0;
+    const itemRows = [];
+
+    filtered.forEach(log => {
+        const dateObj = new Date(log.timestamp || log.date);
+        const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const formattedTime = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+        (log.items || []).forEach((item) => {
+            const qty = parseFloat(item.finalDeductQty || item.enteredQty || item.deductedQty) || 0;
+            totalItemsDeductedCount += qty > 0 ? 1 : 0;
+            const stock = stockMap[String(item.stockId)] || stockMap[(item.itemName || '').toLowerCase()];
+            const price = stock ? (parseFloat(stock.unitPrice) || 0) : 0;
+            const itemEstimatedValue = qty * price;
+            totalEstimatedValue += itemEstimatedValue;
+            const unitStr = item.enteredUnit || item.stockUnit || item.unit || '';
+            const noteStr = item.note || log.note || 'Daily Sales Consumption';
+
+            itemRows.push({
+                dateTime: `${formattedDate}, ${formattedTime}`,
+                itemName: item.itemName,
+                qtyStr: `-${formatQuantity(qty)} ${unitStr}`,
+                valStr: itemEstimatedValue > 0 ? `Rs. ${formatNumber(itemEstimatedValue)}` : '-',
+                noteStr: noteStr
+            });
+        });
+    });
 
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -8647,36 +8711,236 @@ window.printConsumptionLogsReport = function printConsumptionLogsReport() {
         <!DOCTYPE html>
         <html>
         <head>
+            <meta charset="UTF-8">
             <title>Stock Consumption Report - Hangout Lounge & Co.</title>
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
             <style>
-                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 25px; color: #1e293b; }
-                h1 { margin: 0 0 4px 0; font-size: 22px; color: #0f172a; }
-                p { margin: 0 0 16px 0; color: #64748b; font-size: 13px; }
-                table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
-                th, td { border: 1px solid #cbd5e1; padding: 6px 10px; text-align: left; }
-                th { background: #f1f5f9; font-weight: 700; text-transform: uppercase; font-size: 11px; }
-                @media print { body { padding: 0; } }
+                *, *::before, *::after {
+                    box-sizing: border-box;
+                    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+                }
+                body {
+                    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+                    padding: 8px;
+                    font-size: 11.5px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: flex-start;
+                    align-items: center;
+                    min-height: auto;
+                    margin: 0 auto;
+                    max-width: 80mm;
+                    background: #fff;
+                    color: #000;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+                .header-section {
+                    text-align: center;
+                    margin-bottom: 6px;
+                    width: 100%;
+                }
+                .restaurant-name {
+                    font-size: 17px;
+                    font-weight: 800;
+                    letter-spacing: 0.3px;
+                    text-transform: uppercase;
+                    margin-bottom: 2px;
+                    color: #000;
+                }
+                .report-info {
+                    font-size: 11px;
+                    font-weight: 500;
+                    color: #333;
+                    line-height: 1.35;
+                }
+                .report-title-badge {
+                    display: inline-block;
+                    border: 1.5px solid #000;
+                    padding: 2px 12px;
+                    font-size: 10.5px;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin: 5px 0 3px 0;
+                }
+                .separator {
+                    border-top: 1px dashed #999;
+                    margin: 6px 0;
+                    width: 100%;
+                }
+                .meta-box {
+                    font-size: 11px;
+                    text-align: left;
+                    line-height: 1.5;
+                    color: #000;
+                    width: 100%;
+                }
+                .summary-box {
+                    width: 100%;
+                    font-size: 11.5px;
+                    line-height: 1.55;
+                    color: #000;
+                }
+                .report-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 5px 0;
+                    border: 1.5px solid #000;
+                    background: #fff;
+                    font-size: 10.5px;
+                }
+                .report-table th {
+                    text-align: left;
+                    padding: 4px 4px;
+                    font-size: 10px;
+                    font-weight: 700;
+                    border-bottom: 1.5px solid #000;
+                    border-right: 1px solid #000;
+                    text-transform: uppercase;
+                    color: #000;
+                    background: #f8f9fa;
+                }
+                .report-table th:last-child {
+                    border-right: none;
+                }
+                .report-table td {
+                    padding: 4px 4px;
+                    border-bottom: 1px solid #ccc;
+                    border-right: 1px solid #000;
+                    color: #000;
+                    vertical-align: top;
+                }
+                .report-table td:last-child {
+                    border-right: none;
+                }
+                .report-table tr:last-child td {
+                    border-bottom: none;
+                }
+                .section-title {
+                    font-size: 11.5px;
+                    font-weight: 700;
+                    margin: 6px 0 3px 0;
+                    text-align: left;
+                    width: 100%;
+                    text-transform: uppercase;
+                    letter-spacing: 0.3px;
+                }
+                @media print {
+                    * {
+                        margin: 0;
+                        padding: 0;
+                        box-sizing: border-box;
+                    }
+                    body {
+                        padding: 3mm 0;
+                        margin: 0;
+                        max-width: 100%;
+                        width: 100%;
+                        background: #fff;
+                        color: #000;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                    @page {
+                        size: 80mm auto;
+                        margin: 3mm;
+                    }
+                }
             </style>
         </head>
         <body>
-            <h1>Hangout Lounge & Co.</h1>
-            <p><strong>Stock Consumption Logs Report</strong> | Period: ${escapeHtml(filterLabel)} | Generated: ${new Date().toLocaleString()}</p>
-            <table>
+            <div class="header-section">
+                <div class="restaurant-name">Hangout Lounge & Co.</div>
+                <div class="report-info">Wah Cantt</div>
+                <div class="report-info">Phone: 0300-9509536</div>
+                <div><span class="report-title-badge">STOCK CONSUMPTION REPORT</span></div>
+                <div class="separator"></div>
+                <div class="meta-box">
+                    <div style="display: flex; justify-content: space-between;"><span style="font-weight: 600;">Period:</span> <span style="font-weight: 400; color: #333;">${filterLabel}</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span style="font-weight: 600;">Date:</span> <span style="font-weight: 400; color: #333;">${new Date().toLocaleString()}</span></div>
+                </div>
+            </div>
+
+            <div class="separator"></div>
+
+            <div class="summary-box">
+                <div style="display: flex; justify-content: space-between;"><span style="font-weight: 400; color: #444;">Total Log Entries:</span> <span style="font-weight: 600; color: #111;">${filtered.length}</span></div>
+                <div style="display: flex; justify-content: space-between;"><span style="font-weight: 400; color: #444;">Items / Batches Deducted:</span> <span style="font-weight: 600; color: #111;">${totalItemsDeductedCount}</span></div>
+                <div style="display: flex; justify-content: space-between;"><span style="font-weight: 600; color: #000;">Total Estimated Value:</span> <span style="font-weight: 700; color: #000;">Rs. ${formatNumber(totalEstimatedValue)}</span></div>
+            </div>
+
+            <div class="separator"></div>
+            <div class="section-title">Consumption Details</div>
+
+            <table class="report-table">
                 <thead>
                     <tr>
-                        <th style="width: 170px;">Date & Time</th>
-                        <th>Ingredient</th>
-                        <th style="width: 130px; text-align: right;">Deducted Qty</th>
-                        <th style="width: 110px; text-align: right;">Est. Value</th>
-                        <th style="width: 180px;">Reason / Note</th>
+                        <th style="width: 45%;">Item / Time</th>
+                        <th style="width: 25%; text-align: right;">Deducted</th>
+                        <th style="width: 30%; text-align: right;">Est. Value</th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${tableBody.innerHTML.replace(/<td style="padding: [^"]*?text-align: center;[^"]*?">[\s\S]*?<\/td>/gi, '')}
+                    ${itemRows.map(r => `
+                        <tr>
+                            <td>
+                                <div style="font-weight: 700; color: #000;">${escapeHtml(r.itemName)}</div>
+                                <div style="font-size: 9.5px; color: #555;">${escapeHtml(r.dateTime)}</div>
+                                ${r.noteStr ? `<div style="font-size: 9px; color: #777; font-style: italic;">${escapeHtml(r.noteStr)}</div>` : ''}
+                            </td>
+                            <td style="text-align: right; font-weight: 600; color: #000; white-space: nowrap;">
+                                ${escapeHtml(r.qtyStr)}
+                            </td>
+                            <td style="text-align: right; font-weight: 700; color: #000; white-space: nowrap;">
+                                ${escapeHtml(r.valStr)}
+                            </td>
+                        </tr>
+                    `).join('')}
                 </tbody>
             </table>
+
+            <div class="separator"></div>
+            <div style="text-align: center; font-size: 10px; font-weight: 500; color: #555; margin-top: 4px;">
+                Report Generated Successfully
+            </div>
+
             <script>
-                window.onload = function() { window.print(); window.close(); };
+                var hasPrinted = false;
+                function triggerPrint() {
+                    if (hasPrinted) return;
+                    hasPrinted = true;
+                    try {
+                        window.focus();
+                        window.print();
+                    } catch(e) {
+                        console.error(e);
+                    }
+                }
+                window.addEventListener('afterprint', function() {
+                    setTimeout(function() {
+                        try { window.close(); } catch(e) {}
+                    }, 150);
+                });
+                function schedulePrint() {
+                    if (document.fonts && document.fonts.ready) {
+                        document.fonts.ready.then(function() {
+                            setTimeout(triggerPrint, 350);
+                        }).catch(function() {
+                            setTimeout(triggerPrint, 350);
+                        });
+                    } else {
+                        setTimeout(triggerPrint, 350);
+                    }
+                }
+                if (document.readyState === 'complete') {
+                    schedulePrint();
+                } else {
+                    window.addEventListener('load', schedulePrint, { once: true });
+                    setTimeout(schedulePrint, 500);
+                }
             <\/script>
         </body>
         </html>
