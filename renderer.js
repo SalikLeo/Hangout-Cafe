@@ -8114,24 +8114,14 @@ window.addConsumptionRow = function addConsumptionRow(prefillStockId = '', prefi
             <div id="${rowId}_balancePreview" class="cons-live-balance-preview" style="display: none; margin-top: 5px;"></div>
         </td>
         <td style="padding: 10px 12px;">
-            <input type="number" class="cons-qty-input" step="any" min="0.001" placeholder="e.g. 5 or 25" value="${prefillQty}" required
-                oninput="updateConsumptionRowBalance('${rowId}')"
-                style="width: 100%; padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; font-weight: 700; height: 42px; line-height: normal; color: #0f172a;">
-        </td>
-        <td style="padding: 10px 12px;">
-            <select class="cons-unit-select" onchange="updateConsumptionRowBalance('${rowId}')"
-                style="width: 100%; padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; background: white; font-weight: 600; height: 42px; line-height: normal; color: #0f172a; box-sizing: border-box;">
-                <option value="kg">kg (Kilograms)</option>
-                <option value="g">g (Grams)</option>
-                <option value="L">L (Liters)</option>
-                <option value="mL">mL (Milliliters)</option>
-                <option value="pcs">pcs (Pieces)</option>
-                <option value="pack">pack (Packets)</option>
-                <option value="box">box (Boxes)</option>
-                <option value="bottle">bottle (Bottles)</option>
-                <option value="portion">portion (Portions)</option>
-                <option value="other">other</option>
-            </select>
+            <div style="display: flex; align-items: center; position: relative;">
+                <input type="number" class="cons-qty-input" step="any" min="0.001" placeholder="e.g. 0.3 or 5" value="${prefillQty}" required
+                    oninput="updateConsumptionRowBalance('${rowId}')"
+                    style="width: 100%; padding: 8px 56px 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; font-weight: 700; height: 42px; line-height: normal; color: #0f172a;">
+                <span id="${rowId}_unitBadge" style="position: absolute; right: 8px; font-size: 12px; font-weight: 700; color: #475569; background: #f1f5f9; padding: 3px 8px; border-radius: 5px; pointer-events: none; border: 1px solid #cbd5e1;">
+                    --
+                </span>
+            </div>
         </td>
         <td style="padding: 10px 12px;">
             <input type="text" class="cons-note-input" placeholder="e.g. Daily sales deduction" value="${escapeHtml(prefillNote)}"
@@ -8157,12 +8147,12 @@ window.onConsumptionItemChange = function onConsumptionItemChange(rowId) {
     if (!row) return;
 
     const select = row.querySelector('.cons-item-select');
-    const unitSelect = row.querySelector('.cons-unit-select');
-    const selectedOption = select.options[select.selectedIndex];
-    const stockUnit = selectedOption?.dataset?.unit || 'kg';
+    const badge = document.getElementById(`${rowId}_unitBadge`);
+    const selectedOption = select?.options[select.selectedIndex];
+    const stockUnit = selectedOption?.dataset?.unit || '';
 
-    if (unitSelect && stockUnit) {
-        unitSelect.value = stockUnit;
+    if (badge) {
+        badge.textContent = stockUnit ? stockUnit : '--';
     }
 
     updateConsumptionRowBalance(rowId);
@@ -8174,24 +8164,21 @@ window.updateConsumptionRowBalance = function updateConsumptionRowBalance(rowId)
 
     const select = row.querySelector('.cons-item-select');
     const qtyInput = row.querySelector('.cons-qty-input');
-    const unitSelect = row.querySelector('.cons-unit-select');
     const previewEl = document.getElementById(`${rowId}_balancePreview`);
 
     if (!previewEl) return;
 
-    const selectedOption = select.options[select.selectedIndex];
+    const selectedOption = select?.options[select.selectedIndex];
     if (!selectedOption || !selectedOption.value) {
         previewEl.style.display = 'none';
         return;
     }
 
     const availableQty = parseFloat(selectedOption.dataset.available || 0);
-    const stockUnit = selectedOption.dataset.unit || 'kg';
+    const stockUnit = selectedOption.dataset.unit || '';
     const enteredQty = parseFloat(qtyInput.value) || 0;
-    const enteredUnit = unitSelect.value || stockUnit;
 
-    const convertedDeduct = convertDeductionToStockUnit(enteredQty, enteredUnit, stockUnit);
-    const remaining = availableQty - convertedDeduct;
+    const remaining = availableQty - enteredQty;
 
     previewEl.style.display = 'flex';
     if (remaining >= 0) {
@@ -8225,7 +8212,7 @@ function convertDeductionToStockUnit(deductQty, deductUnit, stockUnit) {
     const sUnit = (stockUnit || '').toLowerCase().trim();
     const qty = parseFloat(deductQty) || 0;
 
-    if (dUnit === sUnit) return qty;
+    if (!dUnit || dUnit === sUnit) return qty;
 
     // Weight conversions
     if (dUnit === 'g' && sUnit === 'kg') return qty / 1000;
@@ -8258,12 +8245,10 @@ window.submitDailyConsumption = function submitDailyConsumption() {
     rows.forEach(row => {
         const itemSelect = row.querySelector('.cons-item-select');
         const qtyInput = row.querySelector('.cons-qty-input');
-        const unitSelect = row.querySelector('.cons-unit-select');
         const noteInput = row.querySelector('.cons-note-input');
 
         const stockId = itemSelect.value;
         const qtyVal = parseFloat(qtyInput.value);
-        const deductUnit = unitSelect.value;
         const note = (noteInput.value || '').trim();
 
         if (!stockId) {
@@ -8285,13 +8270,13 @@ window.submitDailyConsumption = function submitDailyConsumption() {
             return;
         }
 
-        const finalDeductInStockUnit = convertDeductionToStockUnit(qtyVal, deductUnit, stockItem.unit);
+        const finalDeductInStockUnit = qtyVal;
 
         deductions.push({
             stockId: stockItem.id,
             itemName: stockItem.itemName,
             enteredQty: qtyVal,
-            enteredUnit: deductUnit,
+            enteredUnit: stockItem.unit,
             finalDeductQty: finalDeductInStockUnit,
             stockUnit: stockItem.unit,
             note: note
@@ -8308,7 +8293,7 @@ window.submitDailyConsumption = function submitDailyConsumption() {
             const currentQty = parseFloat(stockItem.quantity) || 0;
             const newQty = Math.max(0, currentQty - d.finalDeductQty);
             if (currentQty < d.finalDeductQty) {
-                warningMsg += `\n• ${stockItem.itemName}: available was ${currentQty} ${stockItem.unit}, deducted ${d.finalDeductQty.toFixed(3)} ${stockItem.unit}.`;
+                warningMsg += `\n• ${stockItem.itemName}: available was ${currentQty} ${stockItem.unit}, deducted ${d.finalDeductQty} ${stockItem.unit}.`;
             }
             stockItem.quantity = newQty;
             stockItem.updatedAt = new Date().toISOString();
@@ -8324,7 +8309,7 @@ window.submitDailyConsumption = function submitDailyConsumption() {
                 resultingQty: newQty,
                 unit: stockItem.unit,
                 unitPrice: stockItem.unitPrice || 0,
-                note: (d.note ? `${d.note} — ` : '') + `Daily sales deduction (Entered: ${d.enteredQty} ${d.enteredUnit})`,
+                note: (d.note ? `${d.note} — ` : '') + `Daily sales deduction (${d.finalDeductQty} ${d.stockUnit})`,
                 date: consumptionDate,
                 timestamp: new Date().toISOString()
             });
