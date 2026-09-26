@@ -7528,12 +7528,18 @@ function updateStockSummary(stocks) {
     if (lowStockEl) lowStockEl.textContent = lowStockCount;
 }
 
-// Helper to populate datalist for quick ingredient search
+// Helper to populate datalist and select dropdown for quick ingredient search
 function populateStockQuickSearchList() {
-    const dataList = document.getElementById('stockQuickSearchList');
-    if (!dataList) return;
     const stocks = syncAndGetStockItems();
-    dataList.innerHTML = stocks.map(s => `<option value="${escapeHtml(s.itemName)}">${escapeHtml(s.itemName)} (${formatQuantity(s.quantity)} ${s.unit} available)</option>`).join('');
+    const select = document.getElementById('consumptionQuickSelect');
+    if (select) {
+        select.innerHTML = '<option value="">-- Choose Ingredient to Add (e.g. Eggs, Oil, Potatoes) --</option>' +
+            stocks.map(s => `<option value="${s.id}">${escapeHtml(s.itemName)} (Available: ${formatQuantity(s.quantity)} ${s.unit})</option>`).join('');
+    }
+    const dataList = document.getElementById('stockQuickSearchList');
+    if (dataList) {
+        dataList.innerHTML = stocks.map(s => `<option value="${escapeHtml(s.itemName)}">${escapeHtml(s.itemName)} (${formatQuantity(s.quantity)} ${s.unit} available)</option>`).join('');
+    }
 }
 
 // Auto-check and show previous price when user types or chooses an item in Add Stock
@@ -7961,15 +7967,13 @@ window.openDailyConsumptionModal = function openDailyConsumptionModal() {
     populateStockQuickSearchList();
     loadDailySalesSummaryForConsumption();
 
-    // Clear and add first empty row
+    // Clear and add placeholder
     const container = document.getElementById('consumptionRowsContainer');
     if (container) {
         container.innerHTML = '';
-        addConsumptionRow();
+        checkAndRenderEmptyConsumptionPlaceholder();
+        updateConsumptionRowCount();
     }
-
-    const quickSearchInput = document.getElementById('consumptionQuickSearchInput');
-    if (quickSearchInput) quickSearchInput.value = '';
 
     document.getElementById('dailyConsumptionModal').style.display = 'flex';
 };
@@ -7984,57 +7988,60 @@ window.loadDailySalesSummaryForConsumption = function loadDailySalesSummaryForCo
 
     const summary = getDailySoldItemsSummary(selectedDate);
     const ordersEl = document.getElementById('consumptionOrdersSummary');
-    const chipsEl = document.getElementById('consumptionSoldItemsChips');
 
     if (ordersEl) {
         ordersEl.textContent = `Total Orders: ${summary.totalOrders}`;
     }
-
-    if (chipsEl) {
-        if (summary.items.length === 0) {
-            chipsEl.innerHTML = '<span style="color: #94a3b8; font-size: 13px; font-style: italic;">No sales recorded for this date.</span>';
-        } else {
-            chipsEl.innerHTML = summary.items.map(item => `
-                <span style="display: inline-flex; align-items: center; gap: 6px; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 4px 10px; border-radius: 9999px; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all 0.15s;"
-                    onclick="prefillConsumptionRowFromChip('${escapeHtml(item.name)}', ${item.quantity})"
-                    title="Click to add a deduction row for ${escapeHtml(item.name)}">
-                    <strong style="color: #0284c7;">${item.quantity}x</strong> ${escapeHtml(item.name)}
-                </span>
-            `).join('');
-        }
-    }
 };
 
-window.prefillConsumptionRowFromChip = function prefillConsumptionRowFromChip(itemName, qty) {
-    addConsumptionRow('', '', '', `For ${qty}x ${itemName}`);
-};
+window.handleQuickSelectIngredient = function handleQuickSelectIngredient(selectEl) {
+    if (!selectEl) return;
+    const stockId = selectEl.value;
+    if (!stockId) return;
 
-// 1-Click addition by ingredient name (e.g. from popular chips or quick search)
-window.addConsumptionRowByName = function addConsumptionRowByName(ingredientName) {
-    const stocks = syncAndGetStockItems();
-    const target = stocks.find(s => s.itemName.trim().toLowerCase() === ingredientName.trim().toLowerCase() || s.itemName.toLowerCase().includes(ingredientName.toLowerCase()));
-
-    if (target) {
-        const rowId = addConsumptionRow(target.id, '', target.unit, '');
-        // Focus the newly added quantity input
-        setTimeout(() => {
-            const row = document.getElementById(rowId);
-            if (row) {
-                const qtyInput = row.querySelector('.cons-qty-input');
-                if (qtyInput) qtyInput.focus();
+    // Check if ingredient already exists in table
+    const existingHidden = document.querySelector(`#consumptionRowsContainer input.cons-stock-id[value="${stockId}"]`);
+    if (existingHidden) {
+        const existingRow = existingHidden.closest('tr');
+        if (existingRow) {
+            existingRow.style.transition = 'background-color 0.3s ease';
+            existingRow.style.backgroundColor = '#fef3c7';
+            setTimeout(() => { existingRow.style.backgroundColor = ''; }, 1000);
+            const qtyInput = existingRow.querySelector('.cons-qty-input');
+            if (qtyInput) {
+                qtyInput.focus();
+                qtyInput.select();
             }
-        }, 50);
-    } else {
-        addConsumptionRow('', '', 'kg', `For ${ingredientName}`);
+        }
+        selectEl.value = '';
+        return;
     }
+
+    addConsumptionRow(stockId);
+    selectEl.value = '';
 };
 
-window.handleQuickIngredientSearchKey = function handleQuickIngredientSearchKey(event) {
-    if (event.key === 'Enter') {
-        const input = document.getElementById('consumptionQuickSearchInput');
-        if (input && input.value.trim()) {
-            addConsumptionRowByName(input.value.trim());
-            input.value = '';
+window.addAllStockToConsumption = function addAllStockToConsumption() {
+    const stocks = syncAndGetStockItems();
+    if (stocks.length === 0) {
+        alert('No stock ingredients found in inventory.');
+        return;
+    }
+
+    let addedCount = 0;
+    stocks.forEach(stock => {
+        const existingHidden = document.querySelector(`#consumptionRowsContainer input.cons-stock-id[value="${stock.id}"]`);
+        if (!existingHidden) {
+            addConsumptionRow(stock.id);
+            addedCount++;
+        }
+    });
+
+    if (addedCount === 0) {
+        if (typeof showCustomAlert === 'function') {
+            showCustomAlert('Already Added', 'All stock ingredients are already in your deduction list.', 'info');
+        } else {
+            alert('All stock ingredients are already in your deduction list.');
         }
     }
 };
@@ -8043,44 +8050,52 @@ window.addConsumptionRow = function addConsumptionRow(prefillStockId = '', prefi
     const container = document.getElementById('consumptionRowsContainer');
     if (!container) return;
 
+    // Remove empty placeholder row if present
+    const emptyRow = document.getElementById('consumptionEmptyRow');
+    if (emptyRow) emptyRow.remove();
+
     const stocks = syncAndGetStockItems();
+    let stock = null;
+    if (prefillStockId) {
+        stock = stocks.find(s => String(s.id) === String(prefillStockId) || s.itemName.toLowerCase() === String(prefillStockId).toLowerCase());
+    }
+    if (!stock && stocks.length > 0) {
+        stock = stocks.find(s => !document.querySelector(`#consumptionRowsContainer input.cons-stock-id[value="${s.id}"]`)) || stocks[0];
+    }
+    if (!stock) return;
+
     const rowId = 'c_row_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
 
     const tr = document.createElement('tr');
     tr.id = rowId;
     tr.style.borderBottom = '1px solid #e2e8f0';
 
-    let optionsHtml = '<option value="">-- Select Ingredient --</option>';
-    stocks.forEach(stock => {
-        const isSelected = prefillStockId && (String(stock.id) === String(prefillStockId) || stock.itemName.toLowerCase() === String(prefillStockId).toLowerCase());
-        optionsHtml += `<option value="${stock.id}" data-unit="${escapeHtml(stock.unit)}" data-available="${stock.quantity}" ${isSelected ? 'selected' : ''}>
-            ${escapeHtml(stock.itemName)} (Available: ${formatQuantity(stock.quantity)} ${stock.unit})
-        </option>`;
-    });
-
     tr.innerHTML = `
-        <td style="padding: 10px 12px;">
-            <select class="cons-item-select" onchange="onConsumptionItemChange('${rowId}')" required
-                style="width: 100%; padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; background: white; font-weight: 600; height: 42px; line-height: normal; color: #0f172a; box-sizing: border-box;">
-                ${optionsHtml}
-            </select>
-            <div id="${rowId}_balancePreview" class="cons-live-balance-preview" style="display: none; margin-top: 5px;"></div>
+        <td style="padding: 12px 14px;">
+            <div style="font-weight: 700; color: #0f172a; font-size: 15px; margin-bottom: 2px;">
+                ${escapeHtml(stock.itemName)}
+            </div>
+            <div style="font-size: 12px; color: #64748b; font-weight: 500;">
+                Available in Stock: <strong style="color: #059669;">${formatQuantity(stock.quantity)} ${stock.unit}</strong>
+            </div>
+            <input type="hidden" class="cons-stock-id" value="${stock.id}" data-name="${escapeHtml(stock.itemName)}" data-available="${stock.quantity}" data-unit="${escapeHtml(stock.unit)}">
+            <div id="${rowId}_balancePreview" class="cons-live-balance-preview" style="display: none; margin-top: 6px;"></div>
         </td>
-        <td style="padding: 10px 12px;">
+        <td style="padding: 12px 14px;">
             <div style="display: flex; align-items: center; position: relative;">
                 <input type="number" class="cons-qty-input" step="any" min="0.001" placeholder="e.g. 0.3 or 5" value="${prefillQty}" required
                     oninput="updateConsumptionRowBalance('${rowId}')"
                     style="width: 100%; padding: 8px 56px 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; font-weight: 700; height: 42px; line-height: normal; color: #0f172a;">
                 <span id="${rowId}_unitBadge" style="position: absolute; right: 8px; font-size: 12px; font-weight: 700; color: #475569; background: #f1f5f9; padding: 3px 8px; border-radius: 5px; pointer-events: none; border: 1px solid #cbd5e1;">
-                    --
+                    ${escapeHtml(stock.unit)}
                 </span>
             </div>
         </td>
-        <td style="padding: 10px 12px;">
+        <td style="padding: 12px 14px;">
             <input type="text" class="cons-note-input" placeholder="e.g. Daily sales deduction" value="${escapeHtml(prefillNote)}"
                 style="width: 100%; padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; box-sizing: border-box; font-family: inherit; height: 42px; line-height: normal; color: #334155;">
         </td>
-        <td style="padding: 10px 12px; text-align: center;">
+        <td style="padding: 12px 14px; text-align: center;">
             <button type="button" onclick="removeConsumptionRow('${rowId}')"
                 style="background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s;"
                 title="Remove row">✕</button>
@@ -8089,47 +8104,40 @@ window.addConsumptionRow = function addConsumptionRow(prefillStockId = '', prefi
 
     container.appendChild(tr);
 
-    // Trigger change to set default unit matching the stock item
-    onConsumptionItemChange(rowId);
-    updateConsumptionRowCount();
-    return rowId;
-};
-
-window.onConsumptionItemChange = function onConsumptionItemChange(rowId) {
-    const row = document.getElementById(rowId);
-    if (!row) return;
-
-    const select = row.querySelector('.cons-item-select');
-    const badge = document.getElementById(`${rowId}_unitBadge`);
-    const selectedOption = select?.options[select.selectedIndex];
-    const stockUnit = selectedOption?.dataset?.unit || '';
-
-    if (badge) {
-        badge.textContent = stockUnit ? stockUnit : '--';
+    if (prefillQty) {
+        updateConsumptionRowBalance(rowId);
     }
+    updateConsumptionRowCount();
 
-    updateConsumptionRowBalance(rowId);
+    setTimeout(() => {
+        const row = document.getElementById(rowId);
+        if (row) {
+            const qtyInput = row.querySelector('.cons-qty-input');
+            if (qtyInput) qtyInput.focus();
+        }
+    }, 50);
+
+    return rowId;
 };
 
 window.updateConsumptionRowBalance = function updateConsumptionRowBalance(rowId) {
     const row = document.getElementById(rowId);
     if (!row) return;
 
-    const select = row.querySelector('.cons-item-select');
+    const hiddenStockInput = row.querySelector('.cons-stock-id');
     const qtyInput = row.querySelector('.cons-qty-input');
     const previewEl = document.getElementById(`${rowId}_balancePreview`);
 
-    if (!previewEl) return;
+    if (!previewEl || !hiddenStockInput) return;
 
-    const selectedOption = select?.options[select.selectedIndex];
-    if (!selectedOption || !selectedOption.value) {
+    const availableQty = parseFloat(hiddenStockInput.dataset.available || 0);
+    const stockUnit = hiddenStockInput.dataset.unit || '';
+    const enteredQty = parseFloat(qtyInput.value) || 0;
+
+    if (!qtyInput.value || isNaN(enteredQty)) {
         previewEl.style.display = 'none';
         return;
     }
-
-    const availableQty = parseFloat(selectedOption.dataset.available || 0);
-    const stockUnit = selectedOption.dataset.unit || '';
-    const enteredQty = parseFloat(qtyInput.value) || 0;
 
     const remaining = availableQty - enteredQty;
 
@@ -8147,12 +8155,28 @@ window.removeConsumptionRow = function removeConsumptionRow(rowId) {
     const row = document.getElementById(rowId);
     if (row) {
         row.remove();
+        checkAndRenderEmptyConsumptionPlaceholder();
         updateConsumptionRowCount();
     }
 };
 
+function checkAndRenderEmptyConsumptionPlaceholder() {
+    const container = document.getElementById('consumptionRowsContainer');
+    if (!container) return;
+    const rows = container.querySelectorAll('tr:not(#consumptionEmptyRow)');
+    if (rows.length === 0) {
+        container.innerHTML = `
+            <tr id="consumptionEmptyRow">
+                <td colspan="4" style="text-align: center; padding: 32px 16px; color: #64748b; font-size: 14px; background: #ffffff;">
+                    👆 Choose an ingredient from the dropdown above to add it to your deduction list.
+                </td>
+            </tr>
+        `;
+    }
+}
+
 function updateConsumptionRowCount() {
-    const rows = document.querySelectorAll('#consumptionRowsContainer tr');
+    const rows = document.querySelectorAll('#consumptionRowsContainer tr:not(#consumptionEmptyRow)');
     const countEl = document.getElementById('consumptionTotalRowsCount');
     if (countEl) {
         countEl.textContent = rows.length;
@@ -8182,9 +8206,9 @@ function convertDeductionToStockUnit(deductQty, deductUnit, stockUnit) {
 }
 
 window.submitDailyConsumption = function submitDailyConsumption() {
-    const rows = document.querySelectorAll('#consumptionRowsContainer tr');
+    const rows = document.querySelectorAll('#consumptionRowsContainer tr:not(#consumptionEmptyRow)');
     if (rows.length === 0) {
-        alert('Please add at least one ingredient row to deduct.');
+        alert('Please select at least one ingredient to deduct.');
         return;
     }
 
@@ -8196,29 +8220,33 @@ window.submitDailyConsumption = function submitDailyConsumption() {
     let hasError = false;
 
     rows.forEach(row => {
-        const itemSelect = row.querySelector('.cons-item-select');
+        const hiddenStockInput = row.querySelector('.cons-stock-id');
         const qtyInput = row.querySelector('.cons-qty-input');
         const noteInput = row.querySelector('.cons-note-input');
 
-        const stockId = itemSelect.value;
+        if (!hiddenStockInput || !qtyInput) return;
+
+        const stockId = hiddenStockInput.value;
+        const itemName = hiddenStockInput.dataset.name || 'Ingredient';
         const qtyVal = parseFloat(qtyInput.value);
-        const note = (noteInput.value || '').trim();
+        const note = (noteInput ? noteInput.value : '').trim();
 
         if (!stockId) {
-            alert('Please select a stock ingredient for all rows.');
+            alert('Please select an ingredient for all rows.');
             hasError = true;
             return;
         }
 
         if (isNaN(qtyVal) || qtyVal <= 0) {
-            alert('Please enter a valid quantity greater than 0 for all rows.');
+            alert(`Please enter a valid quantity greater than 0 for "${itemName}".`);
             hasError = true;
+            qtyInput.focus();
             return;
         }
 
         const stockItem = stocks.find(s => String(s.id) === String(stockId));
         if (!stockItem) {
-            alert('Selected stock item not found.');
+            alert(`Stock item "${itemName}" not found.`);
             hasError = true;
             return;
         }
@@ -8286,7 +8314,7 @@ window.submitDailyConsumption = function submitDailyConsumption() {
 
     const successMsg = `Daily stock consumption for ${consumptionDate} recorded successfully! ${deductions.length} ingredient(s) subtracted from stock.` + (warningMsg ? `\n\nStock Alert:${warningMsg}` : '');
     if (typeof showCustomAlert === 'function') {
-        showCustomAlert(successMsg, 'Consumption Recorded');
+        showCustomAlert('Stock Deducted Successfully', successMsg, 'success');
     } else {
         alert(successMsg);
     }
