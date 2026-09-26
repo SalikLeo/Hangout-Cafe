@@ -894,11 +894,6 @@ function switchToTab(tab) {
             loadExpenses();
         }
         else if (tab === 'stock') loadStock();
-        else if (tab === 'profit') {
-            if (typeof loadItemProfitSection === 'function') {
-                loadItemProfitSection();
-            }
-        }
         else if (tab === 'tables') loadTables();
         else if (tab === 'reports') {
             const today = getLocalISODate();
