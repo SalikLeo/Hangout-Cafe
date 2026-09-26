@@ -2205,23 +2205,10 @@ window.addNextMenuItem = () => {
         // Reset fields but keep category and modal open
         const savedCategory = categoryId.toString();
 
-        // Save inline recipe if ingredients were configured
-        const inlineIngs = typeof getAddMenuItemInlineIngredients === 'function' ? getAddMenuItemInlineIngredients() : [];
-        if (inlineIngs.length > 0 && typeof getItemRecipesMap === 'function' && typeof saveItemRecipesMap === 'function') {
-            const recipesMap = getItemRecipesMap();
-            recipesMap[String(newItem.id)] = {
-                menuItemId: String(newItem.id),
-                ingredients: inlineIngs,
-                updatedAt: new Date().toISOString()
-            };
-            saveItemRecipesMap(recipesMap);
-        }
-
         document.getElementById('addMenuItemName').value = '';
         document.getElementById('addMenuItemPrice').value = '';
         document.getElementById('addMenuItemCategory').value = savedCategory;
         clearMenuItemImage();
-        if (typeof resetAddMenuItemInlineRecipe === 'function') resetAddMenuItemInlineRecipe();
         checkAddNextItemButton();
 
         // Refresh the lists
@@ -2331,18 +2318,6 @@ if (addMenuItemForm) {
             // Automatically create stock item for the new menu item
             createStockItemForMenuItem(newItem.name);
 
-            // Save inline recipe if ingredients were configured
-            const inlineIngs = typeof getAddMenuItemInlineIngredients === 'function' ? getAddMenuItemInlineIngredients() : [];
-            if (inlineIngs.length > 0 && typeof getItemRecipesMap === 'function' && typeof saveItemRecipesMap === 'function') {
-                const recipesMap = getItemRecipesMap();
-                recipesMap[String(newItem.id)] = {
-                    menuItemId: String(newItem.id),
-                    ingredients: inlineIngs,
-                    updatedAt: new Date().toISOString()
-                };
-                saveItemRecipesMap(recipesMap);
-            }
-
             closeAddMenuItemModal();
             loadMenuItemsList();
             loadMenuCategories();
@@ -2442,29 +2417,12 @@ window.loadMenuItemsList = function loadMenuItemsList() {
         });
         const isFavorite = favorites.includes(item.id);
 
-        const recipe = recipesMap[String(item.id)] || recipesMap[item.id] || null;
-        const hasRecipe = !!(recipe && Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0);
-        let itemFoodCost = 0;
-        if (hasRecipe) {
-            recipe.ingredients.forEach(ing => {
-                const stock = stockById[String(ing.stockId)] || stocks.find(s => s.itemName && s.itemName.toLowerCase() === (ing.itemName || '').toLowerCase());
-                if (typeof calculateIngredientCost === 'function') {
-                    itemFoodCost += calculateIngredientCost(stock, ing.qty, ing.unit);
-                } else if (stock && stock.unitPrice) {
-                    itemFoodCost += (parseFloat(ing.qty) || 0) * (parseFloat(stock.unitPrice) || 0);
-                }
-            });
-        }
-
         const tr = document.createElement('tr');
         tr.setAttribute('data-item-id', item.id);
         tr.innerHTML = `
             <td class="category-cell">${category ? category.name : 'N/A'}</td>
             <td class="name-cell">
-                <div style="font-weight: 700; color: #1e293b; font-size: 14.5px; margin-bottom: 4px;">${escapeHtml(item.name)}</div>
-                <span class="menu-item-recipe-badge ${hasRecipe ? 'configured' : 'empty'}" onclick="openRecipeCostModal(${item.id})" title="Click to view or edit recipe ingredients">
-                    🥗 ${hasRecipe ? `${recipe.ingredients.length} Ingr (Rs. ${formatNumber(itemFoodCost)} cost)` : '+ Add Recipe / Ingredients'}
-                </span>
+                <div style="font-weight: 700; color: #1e293b; font-size: 14.5px;">${escapeHtml(item.name)}</div>
             </td>
             <td class="price-cell">Rs.${formatNumber(item.price)}</td>
             <td class="image-cell" style="text-align: center; padding: 8px;">
