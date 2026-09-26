@@ -1764,6 +1764,89 @@
                     </div>
                 </div>
 
+                <!-- Dedicated Stock Item Ledger Page / Full Table View -->
+                <div id="stockItemLedgerSection" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 14px;">
+                            <button onclick="switchStockView('inventory')"
+                                style="background: #e2e8f0; color: #1e293b; border: 1px solid #cbd5e1; padding: 9px 16px; border-radius: 10px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                                ← Back to Stock Inventory
+                            </button>
+                            <div>
+                                <h2 id="pageItemLedgerTitle" style="margin: 0; font-weight: 800; font-size: 22px;">Stock Item Ledger</h2>
+                                <div id="pageItemLedgerSubtitle" style="font-size: 12.5px; color: #64748b; font-weight: 600; margin-top: 2px;">Transaction History & Balance Movements</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <button type="button" onclick="exportStockLedgerToCSV()"
+                                style="background: #10b981; color: white; border: none; padding: 9px 16px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);">
+                                📥 Export Excel (CSV)
+                            </button>
+                            <button type="button" onclick="printStockItemLedgerReport()"
+                                style="background: #e67e22; color: white; border: none; padding: 9px 16px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(230, 126, 34, 0.4);">
+                                🖨️ Print Ledger
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Top Summary Cards -->
+                    <div class="summary-section">
+                        <div class="summary-card">
+                            <h4>Current Available</h4>
+                            <p id="ledgerCurrentStockQty" style="font-size: 20px; font-weight: 800; color: #0f172a;">0</p>
+                        </div>
+                        <div class="summary-card">
+                            <h4>Total Added (+)</h4>
+                            <p id="ledgerTotalAddedQty" style="font-size: 20px; font-weight: 800; color: #16a34a;">0</p>
+                        </div>
+                        <div class="summary-card">
+                            <h4>Total Deducted (-)</h4>
+                            <p id="ledgerTotalDeductedQty" style="font-size: 20px; font-weight: 800; color: #dc2626;">0</p>
+                        </div>
+                        <div class="summary-card">
+                            <h4>Total Transactions</h4>
+                            <p id="ledgerTotalTransactions" style="font-size: 20px; font-weight: 800; color: #6366f1;">0</p>
+                        </div>
+                    </div>
+
+                    <!-- Table Section -->
+                    <div class="table-section" style="margin-top: 18px;">
+                        <div class="filter-section" style="margin-bottom: 15px; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 12px 16px; background: #f8f9fa; border-radius: 10px; border: 1px solid #e2e8f0;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 260px;">
+                                <input type="text" id="ledgerSearchInput" placeholder="Filter by note, date, or type..." oninput="filterStockItemLedgerTable()"
+                                    style="padding: 8px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; width: 100%; max-width: 280px; background: white;">
+                                <select id="ledgerTypeFilter" onchange="filterStockItemLedgerTable()"
+                                    style="padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; background: white; cursor: pointer;">
+                                    <option value="all">All Movements (In & Out)</option>
+                                    <option value="in">Additions / Increases (+)</option>
+                                    <option value="out">Deductions / Consumptions (-)</option>
+                                </select>
+                            </div>
+                            <div style="font-size: 12.5px; color: #64748b; font-weight: 500;">
+                                💡 All additions, consumption deductions, and quick adjustments are recorded chronologically.
+                            </div>
+                        </div>
+
+                        <table id="stockLedgerTable" style="width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 45px; text-align: center;">#</th>
+                                    <th style="width: 155px; text-align: left;">Date & Time</th>
+                                    <th style="width: 170px; text-align: center;">Action Type</th>
+                                    <th style="width: 115px; text-align: right;">Qty Changed</th>
+                                    <th style="width: 105px; text-align: right;">Prev Stock</th>
+                                    <th style="width: 115px; text-align: right;">Balance Stock</th>
+                                    <th style="width: 80px; text-align: center;">Unit</th>
+                                    <th>Notes / Reference</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stockLedgerTableBody">
+                                <!-- Dynamic Ledger Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- Add/Edit Stock Modal -->
                 <div id="addStockModal" class="modal" style="display: none;">
                     <div class="modal-content" style="max-width: 580px; width: 92%; border-radius: 14px; overflow: hidden;">
@@ -2023,94 +2106,7 @@
 
 
 
-                <!-- Stock Item Ledger / History Modal (Excel-like view) -->
-                <div id="itemStockLedgerModal" class="modal" style="display: none;">
-                    <div class="modal-content" style="max-width: 1050px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
-                        <div class="modal-header" style="background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%); color: white; padding: 16px 24px;">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <div style="background: rgba(255, 255, 255, 0.15); padding: 8px; border-radius: 8px; font-size: 20px;">📊</div>
-                                <div>
-                                    <h3 id="itemStockLedgerTitle" style="margin: 0; font-size: 19px; font-weight: 700; color: white;">Stock Item Ledger</h3>
-                                    <div id="itemStockLedgerSubtitle" style="font-size: 12px; color: #94a3b8; margin-top: 2px;">Transaction History & Balance Movements</div>
-                                </div>
-                            </div>
-                            <span class="modal-close" onclick="closeStockItemLedgerModal()" style="font-size: 24px; cursor: pointer; color: white;">&times;</span>
-                        </div>
-                        <div class="modal-body" style="padding: 20px; overflow-y: auto; flex: 1; background: #f8fafc;">
-                            <!-- Top Summary Cards -->
-                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px;">
-                                <div style="background: white; padding: 14px 16px; border-radius: 10px; border: 1.5px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-                                    <div style="font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase;">Current Available</div>
-                                    <div id="ledgerCurrentStockQty" style="font-size: 20px; font-weight: 800; color: #0f172a; margin-top: 4px;">0</div>
-                                </div>
-                                <div style="background: white; padding: 14px 16px; border-radius: 10px; border: 1.5px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-                                    <div style="font-size: 11.5px; font-weight: 700; color: #16a34a; text-transform: uppercase;">Total Added (+)</div>
-                                    <div id="ledgerTotalAddedQty" style="font-size: 20px; font-weight: 800; color: #16a34a; margin-top: 4px;">0</div>
-                                </div>
-                                <div style="background: white; padding: 14px 16px; border-radius: 10px; border: 1.5px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-                                    <div style="font-size: 11.5px; font-weight: 700; color: #dc2626; text-transform: uppercase;">Total Deducted (-)</div>
-                                    <div id="ledgerTotalDeductedQty" style="font-size: 20px; font-weight: 800; color: #dc2626; margin-top: 4px;">0</div>
-                                </div>
-                                <div style="background: white; padding: 14px 16px; border-radius: 10px; border: 1.5px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-                                    <div style="font-size: 11.5px; font-weight: 700; color: #6366f1; text-transform: uppercase;">Total Transactions</div>
-                                    <div id="ledgerTotalTransactions" style="font-size: 20px; font-weight: 800; color: #6366f1; margin-top: 4px;">0</div>
-                                </div>
-                            </div>
 
-                            <!-- Filter and Actions Toolbar -->
-                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap;">
-                                <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 260px;">
-                                    <input type="text" id="ledgerSearchInput" placeholder="Filter by note, date, or type..." oninput="filterStockItemLedgerTable()"
-                                        style="padding: 8px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; width: 100%; max-width: 280px; background: white;">
-                                    <select id="ledgerTypeFilter" onchange="filterStockItemLedgerTable()"
-                                        style="padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; background: white; cursor: pointer;">
-                                        <option value="all">All Movements (In & Out)</option>
-                                        <option value="in">Additions / Increases (+)</option>
-                                        <option value="out">Deductions / Consumptions (-)</option>
-                                    </select>
-                                </div>
-                                <div style="display: flex; gap: 8px; align-items: center;">
-                                    <button type="button" onclick="exportStockLedgerToCSV()"
-                                        style="background: #10b981; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);">
-                                        📥 Export Excel (CSV)
-                                    </button>
-                                    <button type="button" onclick="printStockItemLedgerReport()"
-                                        style="background: #e67e22; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(230, 126, 34, 0.25);">
-                                        🖨️ Print Ledger
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Excel-style Table -->
-                            <div class="stock-ledger-table-wrap">
-                                <table class="stock-ledger-table" id="stockLedgerTable">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 45px; text-align: center;">#</th>
-                                            <th style="width: 145px; text-align: left;">Date & Time</th>
-                                            <th style="width: 130px; text-align: center;">Action Type</th>
-                                            <th style="width: 110px; text-align: right;">Qty Changed</th>
-                                            <th style="width: 110px; text-align: right;">Prev Stock</th>
-                                            <th style="width: 110px; text-align: right;">Balance Stock</th>
-                                            <th style="width: 80px; text-align: center;">Unit</th>
-                                            <th style="text-align: left;">Notes / Reference</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="stockLedgerTableBody">
-                                        <!-- Dynamic Ledger Rows -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <div class="modal-footer" style="padding: 14px 24px; border-top: 1px solid #e2e8f0; background: #ffffff; display: flex; justify-content: space-between; align-items: center;">
-                            <div style="font-size: 12px; color: #64748b;">
-                                💡 <em>All stock additions, daily consumption deductions, and quick adjustments are recorded chronologically.</em>
-                            </div>
-                            <button type="button" onclick="closeStockItemLedgerModal()"
-                                style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;">Close</button>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Quick Adjust Stock Modal -->
                 <div id="quickStockAdjustModal" class="modal" style="display: none;">

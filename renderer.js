@@ -8357,21 +8357,28 @@ window.submitDailyConsumption = function submitDailyConsumption() {
 // ==========================================
 // CONSUMPTION HISTORY LOGS
 // ==========================================
-// Switch between Stock Inventory table and Daily Consumption Logs page
+// Switch between Stock Inventory table, Daily Consumption Logs page, and Item Ledger page
 window.switchStockView = function switchStockView(view) {
     const invSection = document.getElementById('stockInventorySection');
     const logsSection = document.getElementById('stockConsumptionLogsSection');
+    const ledgerSection = document.getElementById('stockItemLedgerSection');
 
     if (view === 'consumption') {
         if (invSection) invSection.style.display = 'none';
+        if (ledgerSection) ledgerSection.style.display = 'none';
         if (logsSection) logsSection.style.display = 'block';
         if (typeof handleConsumptionDateFilterChange === 'function') {
             handleConsumptionDateFilterChange();
         } else {
             renderConsumptionHistoryList();
         }
+    } else if (view === 'ledger') {
+        if (invSection) invSection.style.display = 'none';
+        if (logsSection) logsSection.style.display = 'none';
+        if (ledgerSection) ledgerSection.style.display = 'block';
     } else {
         if (logsSection) logsSection.style.display = 'none';
+        if (ledgerSection) ledgerSection.style.display = 'none';
         if (invSection) invSection.style.display = 'block';
         loadStock();
     }
@@ -8715,8 +8722,8 @@ window.openStockItemLedgerModal = function openStockItemLedgerModal(stockId) {
     currentLedgerStockItem = item;
 
     // Set title and subtitle
-    const titleEl = document.getElementById('itemStockLedgerTitle');
-    const subtitleEl = document.getElementById('itemStockLedgerSubtitle');
+    const titleEl = document.getElementById('pageItemLedgerTitle') || document.getElementById('itemStockLedgerTitle');
+    const subtitleEl = document.getElementById('pageItemLedgerSubtitle') || document.getElementById('itemStockLedgerSubtitle');
     if (titleEl) titleEl.textContent = `${item.itemName} — Excel Stock Ledger`;
     if (subtitleEl) subtitleEl.textContent = `Unit: ${item.unit} | Unit Cost: Rs. ${formatNumber(item.unitPrice || 0)} | Min Alert: ${item.minLevel || 0} ${item.unit}`;
 
@@ -8804,11 +8811,11 @@ window.openStockItemLedgerModal = function openStockItemLedgerModal(stockId) {
     if (txEl) txEl.textContent = `${itemLogs.length} Records`;
 
     renderStockItemLedgerTable(itemLogs);
-    document.getElementById('itemStockLedgerModal').style.display = 'flex';
+    switchStockView('ledger');
 };
 
 window.closeStockItemLedgerModal = function closeStockItemLedgerModal() {
-    document.getElementById('itemStockLedgerModal').style.display = 'none';
+    switchStockView('inventory');
     currentLedgerStockItem = null;
     currentLedgerEntries = [];
 };
@@ -14675,7 +14682,7 @@ function handleTableFormSubmit(e) {
 if (!window.__globalModalKeyHandlersInstalled) {
     window.__globalModalKeyHandlersInstalled = true;
 
-    // Global ESC key listener to close topmost open modal (or return from consumption view)
+    // Global ESC key listener to close topmost open modal (or return from consumption / ledger views)
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' || e.keyCode === 27) {
             const topModal = getTopmostOpenModal();
@@ -14684,10 +14691,17 @@ if (!window.__globalModalKeyHandlersInstalled) {
                 return;
             }
 
-            // If on Stock consumption logs page, Esc returns to stock inventory
+            // If on Stock item ledger or consumption logs page, Esc returns to stock inventory
+            const ledgerSection = document.getElementById('stockItemLedgerSection');
+            if (ledgerSection && ledgerSection.style.display !== 'none') {
+                switchStockView('inventory');
+                return;
+            }
+
             const consumptionSection = document.getElementById('stockConsumptionLogsSection');
             if (consumptionSection && consumptionSection.style.display !== 'none') {
                 switchStockView('inventory');
+                return;
             }
         }
     }, true);
