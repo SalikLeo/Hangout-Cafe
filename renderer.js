@@ -8574,54 +8574,49 @@ window.renderConsumptionHistoryList = function renderConsumptionHistoryList() {
     tbody.innerHTML = '';
 
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 35px; color: #94a3b8; font-size: 14px;">No consumption logs found for the selected period.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 35px; color: #94a3b8; font-size: 14px;">No consumption logs found for the selected period.</td></tr>';
         return;
     }
 
     filtered.forEach(log => {
-        const tr = document.createElement('tr');
-        tr.style.borderBottom = '1px solid #f1f5f9';
-
         const dateObj = new Date(log.timestamp || log.date);
         const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         const formattedTime = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 
-        let logEstimatedValue = 0;
-        const itemsListHtml = (log.items || []).map(i => {
-            const entered = `${formatQuantity(i.enteredQty || i.deductedQty)} ${i.enteredUnit || i.unit}`;
-            const stock = stockMap[String(i.stockId)] || stockMap[(i.itemName || '').toLowerCase()];
+        (log.items || []).forEach((item, itemIdx) => {
+            const qty = parseFloat(item.finalDeductQty || item.enteredQty || item.deductedQty) || 0;
+            const stock = stockMap[String(item.stockId)] || stockMap[(item.itemName || '').toLowerCase()];
             const price = stock ? (parseFloat(stock.unitPrice) || 0) : 0;
-            const itemQty = parseFloat(i.finalDeductQty || i.enteredQty || i.deductedQty) || 0;
-            logEstimatedValue += (itemQty * price);
-            const noteSuffix = i.note ? ` <span style="color: #64748b; font-size: 11px;">(${escapeHtml(i.note)})</span>` : '';
-            return `<div style="margin: 2px 0; display: inline-block; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 2px 8px; margin-right: 6px; margin-bottom: 3px;">
-                <strong>${escapeHtml(i.itemName)}:</strong> <span style="color: #dc2626; font-weight: 700;">-${entered}</span>${noteSuffix}
-            </div>`;
-        }).join('');
+            const itemEstimatedValue = qty * price;
+            const unitStr = item.enteredUnit || item.stockUnit || item.unit || '';
+            const noteStr = item.note || log.note || 'Daily Sales Consumption';
 
-        const generalNote = log.note || (log.items && log.items.find(i => i.note)?.note) || 'Daily Sales Consumption';
-
-        tr.innerHTML = `
-            <td style="padding: 7px 10px; font-weight: 600; color: #1e293b; white-space: nowrap;">
-                <div style="font-size: 12.5px; font-weight: 700;">${formattedDate}</div>
-                <div style="font-size: 11.5px; color: #64748b; font-weight: 500;">${formattedTime}</div>
-            </td>
-            <td style="padding: 7px 10px;">
-                ${itemsListHtml || '<span style="color: #999;">No details</span>'}
-            </td>
-            <td style="padding: 7px 10px; text-align: right; font-weight: 700; color: #0f766e; font-size: 12.5px; white-space: nowrap;">
-                ${logEstimatedValue > 0 ? `Rs. ${formatNumber(logEstimatedValue)}` : '-'}
-            </td>
-            <td style="padding: 7px 10px; color: #475569; font-size: 12px;">
-                ${escapeHtml(generalNote)}
-            </td>
-            <td style="padding: 7px 10px; text-align: center; white-space: nowrap;">
-                <button type="button" onclick="deleteConsumptionRecord('${log.id}')"
-                    style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 3px 8px; border-radius: 5px; cursor: pointer; font-size: 11.5px; font-weight: 700;"
-                    title="Revert and delete this consumption log">Revert</button>
-            </td>
-        `;
-        tbody.appendChild(tr);
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid #f1f5f9';
+            tr.innerHTML = `
+                <td style="padding: 10px 12px; font-weight: 600; color: #1e293b; white-space: nowrap; font-size: 13px;">
+                    ${formattedDate}, <span style="color: #64748b; font-size: 12px; font-weight: 500;">${formattedTime}</span>
+                </td>
+                <td style="padding: 10px 12px; font-weight: 700; color: #0f172a; font-size: 13.5px;">
+                    ${escapeHtml(item.itemName)}
+                </td>
+                <td style="padding: 10px 12px; text-align: right; white-space: nowrap;">
+                    <span style="color: #dc2626; font-weight: 700; font-size: 13px;">-${formatQuantity(qty)} ${escapeHtml(unitStr)}</span>
+                </td>
+                <td style="padding: 10px 12px; text-align: right; font-weight: 700; color: #0f766e; font-size: 13px; white-space: nowrap;">
+                    ${itemEstimatedValue > 0 ? `Rs. ${formatNumber(itemEstimatedValue)}` : '-'}
+                </td>
+                <td style="padding: 10px 12px; color: #475569; font-size: 12.5px;">
+                    ${escapeHtml(noteStr)}
+                </td>
+                <td style="padding: 10px 12px; text-align: center; white-space: nowrap;">
+                    <button type="button" onclick="deleteConsumptionRecord('${log.id}', ${itemIdx})"
+                        style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 700;"
+                        title="Revert this item deduction">Revert</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
     });
 };
 
@@ -8670,14 +8665,15 @@ window.printConsumptionLogsReport = function printConsumptionLogsReport() {
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 140px;">Date & Time</th>
-                        <th>Deducted Ingredients & Quantities</th>
-                        <th style="width: 120px; text-align: right;">Est. Value</th>
-                        <th style="width: 200px;">Reference / Note</th>
+                        <th style="width: 170px;">Date & Time</th>
+                        <th>Ingredient</th>
+                        <th style="width: 130px; text-align: right;">Deducted Qty</th>
+                        <th style="width: 110px; text-align: right;">Est. Value</th>
+                        <th style="width: 180px;">Reason / Note</th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${tableBody.innerHTML.replace(/<button[\s\S]*?<\/button>/gi, '').replace(/<td style="padding: 7px 10px; text-align: center; white-space: nowrap;">[\s\S]*?<\/td>/gi, '')}
+                    ${tableBody.innerHTML.replace(/<td style="padding: [^"]*?text-align: center;[^"]*?">[\s\S]*?<\/td>/gi, '')}
                 </tbody>
             </table>
             <script>
@@ -8689,15 +8685,24 @@ window.printConsumptionLogsReport = function printConsumptionLogsReport() {
     printWindow.document.close();
 };
 
-window.deleteConsumptionRecord = function deleteConsumptionRecord(logId) {
+window.deleteConsumptionRecord = function deleteConsumptionRecord(logId, itemIndex) {
     openActionPasswordModal(() => {
         const consumptions = Storage.get('stockConsumptions') || [];
         const log = consumptions.find(c => c.id === logId);
         if (!log) return;
 
-        if (confirm('Do you want to revert this consumption log and restore the deducted quantities back to inventory?')) {
+        const isSingleItem = itemIndex !== undefined && itemIndex !== null && log.items && log.items[itemIndex];
+        const targetItem = isSingleItem ? log.items[itemIndex] : null;
+
+        const confirmMsg = targetItem 
+            ? `Do you want to revert the deduction of ${targetItem.itemName} (${formatQuantity(targetItem.finalDeductQty || targetItem.enteredQty || targetItem.deductedQty)} ${targetItem.enteredUnit || targetItem.unit || ''}) and restore it to stock?`
+            : 'Do you want to revert this consumption log and restore the deducted quantities back to inventory?';
+
+        if (confirm(confirmMsg)) {
             const stocks = syncAndGetStockItems();
-            (log.items || []).forEach(item => {
+            const itemsToRevert = targetItem ? [targetItem] : (log.items || []);
+
+            itemsToRevert.forEach(item => {
                 const stockItem = stocks.find(s => String(s.id) === String(item.stockId) || s.itemName.toLowerCase() === (item.itemName || '').toLowerCase());
                 if (stockItem) {
                     const restoreQty = parseFloat(item.finalDeductQty || item.enteredQty || item.deductedQty) || 0;
@@ -8717,7 +8722,7 @@ window.deleteConsumptionRecord = function deleteConsumptionRecord(logId) {
                         resultingQty: newQty,
                         unit: stockItem.unit,
                         unitPrice: stockItem.unitPrice || 0,
-                        note: 'Reverted daily consumption log',
+                        note: `Reverted daily deduction: ${item.itemName}`,
                         date: getLocalISODate(),
                         timestamp: new Date().toISOString()
                     });
@@ -8726,13 +8731,18 @@ window.deleteConsumptionRecord = function deleteConsumptionRecord(logId) {
 
             Storage.set('stocks', stocks);
 
-            const filteredLogs = consumptions.filter(c => c.id !== logId);
-            Storage.set('stockConsumptions', filteredLogs);
+            if (targetItem && log.items.length > 1) {
+                log.items.splice(itemIndex, 1);
+                Storage.set('stockConsumptions', consumptions);
+            } else {
+                const filteredLogs = consumptions.filter(c => c.id !== logId);
+                Storage.set('stockConsumptions', filteredLogs);
+            }
 
             renderConsumptionHistoryList();
             loadStock();
             if (typeof showCustomAlert === 'function') {
-                showCustomAlert('Consumption log reverted and stock quantities restored.', 'Restored');
+                showCustomAlert('Consumption record reverted and stock quantity restored.', 'Restored');
             }
         }
     });
