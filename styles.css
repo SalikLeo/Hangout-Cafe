@@ -1028,9 +1028,14 @@ button[onclick="openAddExpenseModal()"]:hover {
 .modal-form-group textarea,
 .modal-form-row input,
 .modal-form-row select,
-.modal-form-row textarea {
+.modal-form-row textarea,
+.modal select,
+.modal input[type="text"],
+.modal input[type="number"],
+.modal input[type="date"],
+.modal input[type="password"] {
     width: 100%;
-    padding: 10px 14px;
+    padding: 9px 13px;
     border: 1.5px solid #cbd5e1;
     border-radius: 8px;
     font-size: 14px;
@@ -1038,9 +1043,29 @@ button[onclick="openAddExpenseModal()"]:hover {
     box-sizing: border-box;
     background: #ffffff;
     color: #0f172a;
-    line-height: 1.4;
-    height: 42px;
+    line-height: normal;
+    height: 44px;
+    min-height: 44px;
     transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.modal-form-group select,
+.modal-form-row select,
+.modal select,
+select {
+    padding: 8px 12px;
+    height: 44px;
+    min-height: 44px;
+    line-height: normal;
+    background-color: #ffffff;
+    color: #0f172a;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    vertical-align: middle;
+    font-family: inherit;
+    font-size: 14px;
+    box-sizing: border-box;
+    cursor: pointer;
 }
 
 .modal-form-group textarea,
@@ -1048,6 +1073,7 @@ button[onclick="openAddExpenseModal()"]:hover {
     height: auto;
     min-height: 80px;
     resize: vertical;
+    line-height: 1.5;
 }
 
 .modal-form-group input:focus,
@@ -1055,7 +1081,9 @@ button[onclick="openAddExpenseModal()"]:hover {
 .modal-form-group textarea:focus,
 .modal-form-row input:focus,
 .modal-form-row select:focus,
-.modal-form-row textarea:focus {
+.modal-form-row textarea:focus,
+.modal select:focus,
+.modal input:focus {
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
     outline: none;
@@ -2924,13 +2952,18 @@ input[type="text"].pos-search-input::placeholder {
 
 .recipe-row-input {
     width: 100%;
-    padding: 8px 10px;
+    padding: 6px 10px;
+    height: 38px;
+    line-height: normal;
     border: 1.5px solid #cbd5e1;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 13.5px;
     box-sizing: border-box;
     outline: none;
-    font-family: 'Poppins', 'Inter', sans-serif;
+    font-family: inherit;
+    background-color: #ffffff;
+    color: #0f172a;
+    vertical-align: middle;
 }
 
 .recipe-row-input:focus {

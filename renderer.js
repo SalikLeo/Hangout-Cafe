@@ -8106,40 +8106,40 @@ window.addConsumptionRow = function addConsumptionRow(prefillStockId = '', prefi
     });
 
     tr.innerHTML = `
-        <td style="padding: 10px 14px;">
+        <td style="padding: 10px 12px;">
             <select class="cons-item-select" onchange="onConsumptionItemChange('${rowId}')" required
-                style="width: 100%; padding: 8px 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; font-family: inherit; background: white; font-weight: 600;">
+                style="width: 100%; padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; background: white; font-weight: 600; height: 42px; line-height: normal; color: #0f172a; box-sizing: border-box;">
                 ${optionsHtml}
             </select>
-            <div id="${rowId}_balancePreview" class="cons-live-balance-preview" style="display: none;"></div>
+            <div id="${rowId}_balancePreview" class="cons-live-balance-preview" style="display: none; margin-top: 5px;"></div>
         </td>
-        <td style="padding: 10px 14px;">
-            <input type="number" class="cons-qty-input" step="any" min="0.001" placeholder="e.g. 2.3 or 25" value="${prefillQty}" required
+        <td style="padding: 10px 12px;">
+            <input type="number" class="cons-qty-input" step="any" min="0.001" placeholder="e.g. 5 or 25" value="${prefillQty}" required
                 oninput="updateConsumptionRowBalance('${rowId}')"
-                style="width: 100%; padding: 8px 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 14px; box-sizing: border-box; font-family: inherit; font-weight: 600;">
+                style="width: 100%; padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; font-weight: 700; height: 42px; line-height: normal; color: #0f172a;">
         </td>
-        <td style="padding: 10px 14px;">
+        <td style="padding: 10px 12px;">
             <select class="cons-unit-select" onchange="updateConsumptionRowBalance('${rowId}')"
-                style="width: 100%; padding: 8px 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; font-family: inherit; background: white; font-weight: 500;">
-                <option value="kg">kg (Kilogram)</option>
-                <option value="g">g (Gram)</option>
-                <option value="L">L (Liter)</option>
-                <option value="mL">mL (Milli-liter)</option>
+                style="width: 100%; padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; background: white; font-weight: 600; height: 42px; line-height: normal; color: #0f172a; box-sizing: border-box;">
+                <option value="kg">kg (Kilograms)</option>
+                <option value="g">g (Grams)</option>
+                <option value="L">L (Liters)</option>
+                <option value="mL">mL (Milliliters)</option>
                 <option value="pcs">pcs (Pieces)</option>
-                <option value="pack">pack</option>
-                <option value="box">box</option>
-                <option value="bottle">bottle</option>
-                <option value="portion">portion</option>
+                <option value="pack">pack (Packets)</option>
+                <option value="box">box (Boxes)</option>
+                <option value="bottle">bottle (Bottles)</option>
+                <option value="portion">portion (Portions)</option>
                 <option value="other">other</option>
             </select>
         </td>
-        <td style="padding: 10px 14px;">
-            <input type="text" class="cons-note-input" placeholder="e.g. For 8 loaded fries / kitchen" value="${escapeHtml(prefillNote)}"
-                style="width: 100%; padding: 8px 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; box-sizing: border-box; font-family: inherit;">
+        <td style="padding: 10px 12px;">
+            <input type="text" class="cons-note-input" placeholder="e.g. Daily sales deduction" value="${escapeHtml(prefillNote)}"
+                style="width: 100%; padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; box-sizing: border-box; font-family: inherit; height: 42px; line-height: normal; color: #334155;">
         </td>
-        <td style="padding: 10px 14px; text-align: center;">
+        <td style="padding: 10px 12px; text-align: center;">
             <button type="button" onclick="removeConsumptionRow('${rowId}')"
-                style="background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; width: 32px; height: 32px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s;"
+                style="background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s;"
                 title="Remove row">✕</button>
         </td>
     `;
@@ -12137,11 +12137,19 @@ function updateQuantity(dishId, change) {
 
 // Show discount modal
 function showDiscountModal() {
-    document.getElementById('discountModal').style.display = 'block';
+    document.getElementById('discountModal').style.display = 'flex';
     document.getElementById('discountValue').value = '';
     document.getElementById('discountError').style.display = 'none';
     document.getElementById('discountType').value = 'fixed';
+    setTimeout(() => {
+        document.getElementById('discountValue')?.focus();
+    }, 50);
 }
+
+window.closeDiscountModal = function closeDiscountModal() {
+    const modal = document.getElementById('discountModal');
+    if (modal) modal.style.display = 'none';
+};
 
 // Apply discount to the cart
 function applyDiscount() {
