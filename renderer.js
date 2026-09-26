@@ -7661,9 +7661,9 @@ window.updateStockQtyLabel = function updateStockQtyLabel() {
     if (!qtyLabel) return;
 
     if (modeAdd === 'add') {
-        qtyLabel.textContent = 'Quantity to Add (نئی خریدی گئی مقدار) *';
+        qtyLabel.textContent = 'Quantity to Add *';
     } else if (modeAdd === 'set') {
-        qtyLabel.textContent = 'Total Stock Quantity (کل نیا اسٹاک) *';
+        qtyLabel.textContent = 'Total Stock Quantity *';
     } else {
         qtyLabel.textContent = 'Quantity *';
     }
