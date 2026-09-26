@@ -454,15 +454,16 @@ thead {
 }
 
 th {
-    padding: 7px 12px;
+    padding: 6px 10px !important;
     text-align: left;
     font-weight: 600;
-    font-size: 12.5px;
+    font-size: 12px !important;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     border-right: 1px solid rgba(255, 255, 255, 0.12);
     border-bottom: 2px solid #0f1e33;
     white-space: nowrap;
+    line-height: 1.3 !important;
 }
 
 th:last-child {
@@ -470,12 +471,13 @@ th:last-child {
 }
 
 td {
-    padding: 6px 12px;
+    padding: 5px 10px !important;
     border-bottom: 1px solid #edf2f7;
     border-right: 1px solid #edf2f7;
     color: #334155;
-    font-size: 13px;
+    font-size: 12.5px !important;
     vertical-align: middle;
+    line-height: 1.35 !important;
 }
 
 td:last-child {
@@ -484,6 +486,7 @@ td:last-child {
 
 tbody tr {
     transition: background-color 0.15s ease;
+    height: auto !important;
 }
 
 tbody tr:nth-child(even) {
@@ -496,6 +499,12 @@ tbody tr:hover {
 
 tbody tr:last-child td {
     border-bottom: none;
+}
+
+/* Compact action buttons in tables */
+.btn-action, .table-actions-cell button, .table-actions-cell .btn-action {
+    padding: 3px 6px !important;
+    font-size: 11.5px !important;
 }
 
 /* Receipt Preview & Thermal Print Isolation */

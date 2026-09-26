@@ -7508,29 +7508,29 @@ window.loadStock = function loadStock() {
         }
 
         tr.innerHTML = `
-            <td style="padding: 12px 14px; font-size: 14.5px;">
+            <td style="padding: 6px 10px; font-size: 13px;">
                 <a href="javascript:void(0)" onclick="openStockItemLedgerModal('${stock.id}')"
-                    style="color: #2563eb; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 7px; cursor: pointer; transition: all 0.15s;"
+                    style="color: #2563eb; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.15s;"
                     onmouseover="this.style.textDecoration='underline'; this.style.color='#1d4ed8';"
                     onmouseout="this.style.textDecoration='none'; this.style.color='#2563eb';"
                     title="Click to view Excel stock ledger & full add/removal history">
                     <span>${escapeHtml(stock.itemName || 'N/A')}</span>
-                    <span style="font-size: 13px; color: #2563eb; opacity: 0.85;">📊</span>
+                    <span style="font-size: 12px; color: #2563eb; opacity: 0.85;">📊</span>
                 </a>
             </td>
-            <td style="padding: 12px 14px; text-align: right; font-weight: 700; color: #0f172a; font-size: 14.5px;">${formatQuantity(quantity)}</td>
-            <td style="padding: 12px 14px; color: #64748b; font-weight: 600;">${escapeHtml(stock.unit || 'pcs')}</td>
-            <td style="padding: 12px 14px; text-align: right; color: #334155; font-weight: 500;">Rs. ${formatNumber(unitPrice)}</td>
-            <td style="padding: 12px 14px; text-align: right; font-weight: 700; color: #0f766e;">Rs. ${formatNumber(totalValue)}</td>
-            <td style="padding: 12px 14px; text-align: right; color: #64748b; font-weight: 500;">${minLevel > 0 ? formatNumber(minLevel) : '-'}</td>
-            <td style="padding: 12px 14px; text-align: center;">
-                <span style="display: inline-block; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 700; letter-spacing: 0.2px; ${statusStyle}">
+            <td style="padding: 6px 10px; text-align: right; font-weight: 700; color: #0f172a; font-size: 13px;">${formatQuantity(quantity)}</td>
+            <td style="padding: 6px 10px; color: #64748b; font-weight: 600; font-size: 12.5px;">${escapeHtml(stock.unit || 'pcs')}</td>
+            <td style="padding: 6px 10px; text-align: right; color: #334155; font-weight: 500; font-size: 12.5px;">Rs. ${formatNumber(unitPrice)}</td>
+            <td style="padding: 6px 10px; text-align: right; font-weight: 700; color: #0f766e; font-size: 13px;">Rs. ${formatNumber(totalValue)}</td>
+            <td style="padding: 6px 10px; text-align: right; color: #64748b; font-weight: 500; font-size: 12.5px;">${minLevel > 0 ? formatNumber(minLevel) : '-'}</td>
+            <td style="padding: 6px 10px; text-align: center;">
+                <span style="display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.2px; ${statusStyle}">
                     ${statusText}
                 </span>
             </td>
-            <td style="padding: 10px 14px; text-align: center;">
-                <div class="table-actions-cell center" style="display: flex; gap: 6px; justify-content: center; align-items: center;">
-                    <button class="btn-action" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 6px;" onclick="openQuickAdjustModal('${stock.id}')" title="Quick +/- Adjust Stock">+/-</button>
+            <td style="padding: 5px 10px; text-align: center;">
+                <div class="table-actions-cell center" style="display: flex; gap: 4px; justify-content: center; align-items: center;">
+                    <button class="btn-action" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; font-size: 11.5px; font-weight: 700; padding: 2px 6px; border-radius: 5px;" onclick="openQuickAdjustModal('${stock.id}')" title="Quick +/- Adjust Stock">+/-</button>
                     <button class="btn-action btn-action-edit" onclick="editStock('${stock.id}')" title="Edit Item Details">${ICONS.edit}</button>
                     <button class="btn-action btn-action-delete" onclick="deleteStock('${stock.id}', this)" title="Delete Stock Item">${ICONS.delete}</button>
                 </div>
@@ -8357,13 +8357,76 @@ window.submitDailyConsumption = function submitDailyConsumption() {
 // ==========================================
 // CONSUMPTION HISTORY LOGS
 // ==========================================
+// Switch between Stock Inventory table and Daily Consumption Logs page
+window.switchStockView = function switchStockView(view) {
+    const invSection = document.getElementById('stockInventorySection');
+    const logsSection = document.getElementById('stockConsumptionLogsSection');
+
+    if (view === 'consumption') {
+        if (invSection) invSection.style.display = 'none';
+        if (logsSection) logsSection.style.display = 'block';
+        if (typeof handleConsumptionDateFilterChange === 'function') {
+            handleConsumptionDateFilterChange();
+        } else {
+            renderConsumptionHistoryList();
+        }
+    } else {
+        if (logsSection) logsSection.style.display = 'none';
+        if (invSection) invSection.style.display = 'block';
+        loadStock();
+    }
+};
+
 window.openConsumptionHistoryModal = function openConsumptionHistoryModal() {
-    renderConsumptionHistoryList();
-    document.getElementById('consumptionHistoryModal').style.display = 'flex';
+    switchStockView('consumption');
 };
 
 window.closeConsumptionHistoryModal = function closeConsumptionHistoryModal() {
-    document.getElementById('consumptionHistoryModal').style.display = 'none';
+    switchStockView('inventory');
+};
+
+// Consumption Date Filters
+window.handleConsumptionDateFilterChange = function handleConsumptionDateFilterChange() {
+    const filterSelect = document.getElementById('consumptionDateFilter');
+    const container = document.getElementById('consumptionTimeValueContainer');
+    if (!filterSelect || !container) return;
+
+    const filter = filterSelect.value;
+    const todayStr = getLocalISODate();
+    const monthStr = getLocalISOMonth();
+    const currentYear = new Date().getFullYear();
+
+    if (filter === 'today') {
+        container.innerHTML = `<input type="date" id="consumptionDateInput" value="${todayStr}" onchange="renderConsumptionHistoryList(); updateConsumptionResetBtn();" style="padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 13.5px; background: white; outline: none; font-family: 'Inter', sans-serif;">`;
+    } else if (filter === 'month') {
+        container.innerHTML = `<input type="month" id="consumptionMonthInput" value="${monthStr}" onchange="renderConsumptionHistoryList(); updateConsumptionResetBtn();" style="padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 13.5px; background: white; outline: none; font-family: 'Inter', sans-serif;">`;
+    } else if (filter === 'year') {
+        container.innerHTML = `<select id="consumptionYearInput" onchange="renderConsumptionHistoryList(); updateConsumptionResetBtn();" style="padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 13.5px; background: white; outline: none; font-family: 'Inter', sans-serif; cursor: pointer;">${getFilterYearOptions(currentYear)}</select>`;
+    } else {
+        container.innerHTML = '';
+    }
+
+    updateConsumptionResetBtn();
+    renderConsumptionHistoryList();
+};
+
+window.updateConsumptionResetBtn = function updateConsumptionResetBtn() {
+    const filterSelect = document.getElementById('consumptionDateFilter');
+    const resetBtn = document.getElementById('consumptionResetFilterBtn');
+    if (!filterSelect || !resetBtn) return;
+
+    const filter = filterSelect.value;
+    const dateInput = document.getElementById('consumptionDateInput');
+    const todayStr = getLocalISODate();
+
+    let isDefault = (filter === 'today' && (!dateInput || dateInput.value === todayStr));
+    resetBtn.style.display = isDefault ? 'none' : 'inline-flex';
+};
+
+window.resetConsumptionFilter = function resetConsumptionFilter() {
+    const filterSelect = document.getElementById('consumptionDateFilter');
+    if (filterSelect) filterSelect.value = 'today';
+    handleConsumptionDateFilterChange();
 };
 
 window.renderConsumptionHistoryList = function renderConsumptionHistoryList() {
@@ -8371,11 +8434,43 @@ window.renderConsumptionHistoryList = function renderConsumptionHistoryList() {
     if (!tbody) return;
 
     const consumptions = Storage.get('stockConsumptions') || [];
-    const search = (document.getElementById('consumptionLogSearch')?.value || '').toLowerCase().trim();
+    const search = (document.getElementById('consumptionPageSearch')?.value || document.getElementById('consumptionLogSearch')?.value || '').toLowerCase().trim();
+    const filterSelect = document.getElementById('consumptionDateFilter');
+    const filter = filterSelect ? filterSelect.value : 'all';
+
+    const stocks = syncAndGetStockItems();
+    const stockMap = {};
+    stocks.forEach(s => { stockMap[String(s.id)] = s; stockMap[s.itemName.toLowerCase()] = s; });
 
     let filtered = consumptions;
+
+    // Apply Date Filtering
+    if (filter === 'today') {
+        const dateInput = document.getElementById('consumptionDateInput');
+        const selectedDate = dateInput ? dateInput.value : getLocalISODate();
+        filtered = filtered.filter(c => {
+            const cDate = c.date || (c.timestamp ? c.timestamp.split('T')[0] : '');
+            return cDate === selectedDate;
+        });
+    } else if (filter === 'month') {
+        const monthInput = document.getElementById('consumptionMonthInput');
+        const selectedMonth = monthInput ? monthInput.value : getLocalISOMonth();
+        filtered = filtered.filter(c => {
+            const cDate = c.date || (c.timestamp ? c.timestamp.split('T')[0] : '');
+            return cDate.startsWith(selectedMonth);
+        });
+    } else if (filter === 'year') {
+        const yearInput = document.getElementById('consumptionYearInput');
+        const selectedYear = yearInput ? yearInput.value : String(new Date().getFullYear());
+        filtered = filtered.filter(c => {
+            const cDate = c.date || (c.timestamp ? c.timestamp.split('T')[0] : '');
+            return cDate.startsWith(selectedYear);
+        });
+    }
+
+    // Apply Search Filtering
     if (search) {
-        filtered = consumptions.filter(c => {
+        filtered = filtered.filter(c => {
             const dateStr = (c.date || '').toLowerCase();
             const noteStr = (c.note || '').toLowerCase();
             const itemsStr = (c.items || []).map(i => `${i.itemName} ${i.note}`).join(' ').toLowerCase();
@@ -8383,13 +8478,36 @@ window.renderConsumptionHistoryList = function renderConsumptionHistoryList() {
         });
     }
 
-    const countEl = document.getElementById('consumptionLogCount');
-    if (countEl) countEl.textContent = `Total Logs: ${filtered.length}`;
+    // Sort newest first
+    filtered.sort((a, b) => new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date));
+
+    // Update Summary Cards
+    let totalItemsDeductedCount = 0;
+    let totalEstimatedValue = 0;
+
+    filtered.forEach(log => {
+        (log.items || []).forEach(item => {
+            const qty = parseFloat(item.finalDeductQty || item.enteredQty || item.deductedQty) || 0;
+            totalItemsDeductedCount += qty > 0 ? 1 : 0;
+            const stock = stockMap[String(item.stockId)] || stockMap[(item.itemName || '').toLowerCase()];
+            const price = stock ? (parseFloat(stock.unitPrice) || 0) : 0;
+            totalEstimatedValue += (qty * price);
+        });
+    });
+
+    const logsCountEl = document.getElementById('totalConsumptionLogsCount');
+    if (logsCountEl) logsCountEl.textContent = filtered.length;
+
+    const itemsCountEl = document.getElementById('totalConsumptionItemsCount');
+    if (itemsCountEl) itemsCountEl.textContent = totalItemsDeductedCount;
+
+    const valEl = document.getElementById('totalConsumptionValueDeducted');
+    if (valEl) valEl.textContent = `Rs. ${formatNumber(totalEstimatedValue)}`;
 
     tbody.innerHTML = '';
 
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px; color: #94a3b8;">No consumption logs found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 35px; color: #94a3b8; font-size: 14px;">No consumption logs found for the selected period.</td></tr>';
         return;
     }
 
@@ -8401,33 +8519,107 @@ window.renderConsumptionHistoryList = function renderConsumptionHistoryList() {
         const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         const formattedTime = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 
+        let logEstimatedValue = 0;
         const itemsListHtml = (log.items || []).map(i => {
             const entered = `${formatQuantity(i.enteredQty || i.deductedQty)} ${i.enteredUnit || i.unit}`;
-            const noteSuffix = i.note ? ` <span style="color: #64748b; font-size: 12px;">(${escapeHtml(i.note)})</span>` : '';
-            return `<div style="margin: 2px 0;"><strong>${escapeHtml(i.itemName)}:</strong> <span style="color: #dc2626; font-weight: 600;">-${entered}</span>${noteSuffix}</div>`;
+            const stock = stockMap[String(i.stockId)] || stockMap[(i.itemName || '').toLowerCase()];
+            const price = stock ? (parseFloat(stock.unitPrice) || 0) : 0;
+            const itemQty = parseFloat(i.finalDeductQty || i.enteredQty || i.deductedQty) || 0;
+            logEstimatedValue += (itemQty * price);
+            const noteSuffix = i.note ? ` <span style="color: #64748b; font-size: 11px;">(${escapeHtml(i.note)})</span>` : '';
+            return `<div style="margin: 2px 0; display: inline-block; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 2px 8px; margin-right: 6px; margin-bottom: 3px;">
+                <strong>${escapeHtml(i.itemName)}:</strong> <span style="color: #dc2626; font-weight: 700;">-${entered}</span>${noteSuffix}
+            </div>`;
         }).join('');
 
         const generalNote = log.note || (log.items && log.items.find(i => i.note)?.note) || 'Daily Sales Consumption';
 
         tr.innerHTML = `
-            <td style="padding: 12px 14px; font-weight: 600; color: #1e293b;">
-                <div>${formattedDate}</div>
-                <div style="font-size: 12px; color: #64748b; font-weight: 500;">${formattedTime}</div>
+            <td style="padding: 7px 10px; font-weight: 600; color: #1e293b; white-space: nowrap;">
+                <div style="font-size: 12.5px; font-weight: 700;">${formattedDate}</div>
+                <div style="font-size: 11.5px; color: #64748b; font-weight: 500;">${formattedTime}</div>
             </td>
-            <td style="padding: 12px 14px;">
+            <td style="padding: 7px 10px;">
                 ${itemsListHtml || '<span style="color: #999;">No details</span>'}
             </td>
-            <td style="padding: 12px 14px; color: #475569; font-size: 13px;">
+            <td style="padding: 7px 10px; text-align: right; font-weight: 700; color: #0f766e; font-size: 12.5px; white-space: nowrap;">
+                ${logEstimatedValue > 0 ? `Rs. ${formatNumber(logEstimatedValue)}` : '-'}
+            </td>
+            <td style="padding: 7px 10px; color: #475569; font-size: 12px;">
                 ${escapeHtml(generalNote)}
             </td>
-            <td style="padding: 12px 14px; text-align: center;">
+            <td style="padding: 7px 10px; text-align: center; white-space: nowrap;">
                 <button type="button" onclick="deleteConsumptionRecord('${log.id}')"
-                    style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;"
-                    title="Revert and delete this log">Revert</button>
+                    style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 3px 8px; border-radius: 5px; cursor: pointer; font-size: 11.5px; font-weight: 700;"
+                    title="Revert and delete this consumption log">Revert</button>
             </td>
         `;
         tbody.appendChild(tr);
     });
+};
+
+window.printConsumptionLogsReport = function printConsumptionLogsReport() {
+    const filterSelect = document.getElementById('consumptionDateFilter');
+    const filter = filterSelect ? filterSelect.value : 'all';
+    let filterLabel = 'All Time';
+    if (filter === 'today') {
+        const dateInput = document.getElementById('consumptionDateInput');
+        filterLabel = `Daily: ${dateInput ? dateInput.value : getLocalISODate()}`;
+    } else if (filter === 'month') {
+        const monthInput = document.getElementById('consumptionMonthInput');
+        filterLabel = `Monthly: ${monthInput ? monthInput.value : getLocalISOMonth()}`;
+    } else if (filter === 'year') {
+        const yearInput = document.getElementById('consumptionYearInput');
+        filterLabel = `Annual: ${yearInput ? yearInput.value : new Date().getFullYear()}`;
+    }
+
+    const tableBody = document.getElementById('consumptionHistoryTableBody');
+    if (!tableBody || tableBody.children.length === 0) {
+        alert('No consumption logs to print.');
+        return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Stock Consumption Report - Hangout Lounge & Co.</title>
+            <style>
+                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 25px; color: #1e293b; }
+                h1 { margin: 0 0 4px 0; font-size: 22px; color: #0f172a; }
+                p { margin: 0 0 16px 0; color: #64748b; font-size: 13px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
+                th, td { border: 1px solid #cbd5e1; padding: 6px 10px; text-align: left; }
+                th { background: #f1f5f9; font-weight: 700; text-transform: uppercase; font-size: 11px; }
+                @media print { body { padding: 0; } }
+            </style>
+        </head>
+        <body>
+            <h1>Hangout Lounge & Co.</h1>
+            <p><strong>Stock Consumption Logs Report</strong> | Period: ${escapeHtml(filterLabel)} | Generated: ${new Date().toLocaleString()}</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 140px;">Date & Time</th>
+                        <th>Deducted Ingredients & Quantities</th>
+                        <th style="width: 120px; text-align: right;">Est. Value</th>
+                        <th style="width: 200px;">Reference / Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableBody.innerHTML.replace(/<button[\s\S]*?<\/button>/gi, '').replace(/<td style="padding: 7px 10px; text-align: center; white-space: nowrap;">[\s\S]*?<\/td>/gi, '')}
+                </tbody>
+            </table>
+            <script>
+                window.onload = function() { window.print(); window.close(); };
+            <\/script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
 };
 
 window.deleteConsumptionRecord = function deleteConsumptionRecord(logId) {
@@ -14480,10 +14672,26 @@ function handleTableFormSubmit(e) {
 }
 
 // Install global handlers immediately (and only once)
-if (!window.__outsideModalCloseInstalled) {
-    window.__outsideModalCloseInstalled = true;
-    // Inside app: click/tap outside modal content closes it
-    document.addEventListener('pointerdown', handleGlobalModalOutsideClick, true);
+if (!window.__globalModalKeyHandlersInstalled) {
+    window.__globalModalKeyHandlersInstalled = true;
+
+    // Global ESC key listener to close topmost open modal (or return from consumption view)
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' || e.keyCode === 27) {
+            const topModal = getTopmostOpenModal();
+            if (topModal) {
+                closeModalById(topModal.id);
+                return;
+            }
+
+            // If on Stock consumption logs page, Esc returns to stock inventory
+            const consumptionSection = document.getElementById('stockConsumptionLogsSection');
+            if (consumptionSection && consumptionSection.style.display !== 'none') {
+                switchStockView('inventory');
+            }
+        }
+    }, true);
+
     // Prevent refresh on Book Table submit (Electron can reload if submit isn't handled)
     document.addEventListener('submit', (e) => {
         const form = e.target;
@@ -14494,15 +14702,6 @@ if (!window.__outsideModalCloseInstalled) {
             handleTableFormSubmit(e);
         }
     }, true);
-    // Outside app: when window loses focus, close any open modal.
-    // BUT: ignore blur/hidden events triggered by native alert/confirm dialogs.
-    window.addEventListener('blur', () => {
-        if (window.__inNativeDialog) return;
-        closeAllOpenModals();
-    });
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden && !window.__inNativeDialog) closeAllOpenModals();
-    });
 }
 
 // Make functions globally available
