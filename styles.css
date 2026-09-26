@@ -1854,14 +1854,14 @@ input[type="text"].pos-search-input::placeholder {
     align-items: flex-start;
     margin-bottom: 0;
     line-height: 1.25;
-    height: 34px;
-    min-height: 34px;
-    max-height: 34px;
+    height: 36px;
+    min-height: 36px;
+    max-height: 36px;
     overflow: hidden;
 }
 
 .menu-item-name {
-    font-size: 13.5px;
+    font-size: 14.5px;
     font-weight: 600;
     color: #2c3e50;
     flex: 1;
