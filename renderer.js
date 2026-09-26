@@ -7964,7 +7964,10 @@ window.openDailyConsumptionModal = function openDailyConsumptionModal() {
         dateInput.value = todayStr;
     }
 
-    populateStockQuickSearchList();
+    const searchInput = document.getElementById('consumptionSearchInput');
+    if (searchInput) searchInput.value = '';
+    closeConsumptionDropdown();
+
     loadDailySalesSummaryForConsumption();
 
     // Clear and add placeholder
@@ -7980,6 +7983,7 @@ window.openDailyConsumptionModal = function openDailyConsumptionModal() {
 
 window.closeDailyConsumptionModal = function closeDailyConsumptionModal() {
     document.getElementById('dailyConsumptionModal').style.display = 'none';
+    closeConsumptionDropdown();
 };
 
 window.loadDailySalesSummaryForConsumption = function loadDailySalesSummaryForConsumption() {
@@ -7994,9 +7998,116 @@ window.loadDailySalesSummaryForConsumption = function loadDailySalesSummaryForCo
     }
 };
 
-window.handleQuickSelectIngredient = function handleQuickSelectIngredient(selectEl) {
-    if (!selectEl) return;
-    const stockId = selectEl.value;
+let highlightedDropdownIndex = -1;
+
+window.openConsumptionDropdown = function openConsumptionDropdown() {
+    const menu = document.getElementById('consumptionDropdownMenu');
+    if (!menu) return;
+    menu.style.display = 'block';
+    filterConsumptionDropdown();
+};
+
+window.closeConsumptionDropdown = function closeConsumptionDropdown() {
+    const menu = document.getElementById('consumptionDropdownMenu');
+    if (menu) menu.style.display = 'none';
+    highlightedDropdownIndex = -1;
+};
+
+window.toggleConsumptionDropdown = function toggleConsumptionDropdown() {
+    const menu = document.getElementById('consumptionDropdownMenu');
+    const input = document.getElementById('consumptionSearchInput');
+    if (!menu) return;
+    if (menu.style.display === 'block') {
+        closeConsumptionDropdown();
+    } else {
+        if (input) input.focus();
+        openConsumptionDropdown();
+    }
+};
+
+window.filterConsumptionDropdown = function filterConsumptionDropdown() {
+    const input = document.getElementById('consumptionSearchInput');
+    const menu = document.getElementById('consumptionDropdownMenu');
+    if (!menu) return;
+
+    const query = (input ? input.value : '').toLowerCase().trim();
+    const stocks = syncAndGetStockItems();
+
+    const filtered = stocks.filter(s => {
+        if (!query) return true;
+        return s.itemName.toLowerCase().includes(query) || (s.unit && s.unit.toLowerCase().includes(query));
+    });
+
+    if (filtered.length === 0) {
+        menu.innerHTML = `<div style="padding: 14px; color: #94a3b8; font-size: 13px; text-align: center;">No matching ingredients found for "${escapeHtml(query)}"</div>`;
+        highlightedDropdownIndex = -1;
+        return;
+    }
+
+    highlightedDropdownIndex = 0;
+    menu.innerHTML = filtered.map((stock, idx) => `
+        <div class="cons-dropdown-item ${idx === 0 ? 'active' : ''}" data-id="${stock.id}" data-idx="${idx}"
+            onclick="selectConsumptionDropdownItem('${stock.id}')"
+            onmouseenter="setDropdownItemHover(${idx})"
+            style="padding: 10px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; font-size: 13.5px; transition: background 0.1s; background: ${idx === 0 ? '#f0fdf4' : 'transparent'};">
+            <span style="font-weight: 700; color: #0f172a;">${escapeHtml(stock.itemName)}</span>
+            <span style="font-size: 12px; font-weight: 600; color: #059669; background: #ecfdf5; padding: 2px 8px; border-radius: 6px; border: 1px solid #d1fae5;">Available: ${formatQuantity(stock.quantity)} ${stock.unit}</span>
+        </div>
+    `).join('');
+};
+
+window.setDropdownItemHover = function setDropdownItemHover(idx) {
+    highlightedDropdownIndex = idx;
+    const items = document.querySelectorAll('.cons-dropdown-item');
+    items.forEach((item, i) => {
+        item.style.background = i === idx ? '#f0fdf4' : 'transparent';
+    });
+};
+
+window.handleConsumptionSearchKeydown = function handleConsumptionSearchKeydown(event) {
+    const menu = document.getElementById('consumptionDropdownMenu');
+    const items = document.querySelectorAll('.cons-dropdown-item');
+
+    if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        if (menu.style.display !== 'block') {
+            openConsumptionDropdown();
+            return;
+        }
+        if (items.length > 0) {
+            highlightedDropdownIndex = (highlightedDropdownIndex + 1) % items.length;
+            setDropdownItemHover(highlightedDropdownIndex);
+            items[highlightedDropdownIndex].scrollIntoView({ block: 'nearest' });
+        }
+    } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (items.length > 0) {
+            highlightedDropdownIndex = (highlightedDropdownIndex - 1 + items.length) % items.length;
+            setDropdownItemHover(highlightedDropdownIndex);
+            items[highlightedDropdownIndex].scrollIntoView({ block: 'nearest' });
+        }
+    } else if (event.key === 'Enter') {
+        event.preventDefault();
+        if (items.length > 0 && highlightedDropdownIndex >= 0 && items[highlightedDropdownIndex]) {
+            const stockId = items[highlightedDropdownIndex].dataset.id;
+            if (stockId) selectConsumptionDropdownItem(stockId);
+        } else {
+            const input = document.getElementById('consumptionSearchInput');
+            const q = (input ? input.value : '').toLowerCase().trim();
+            if (q) {
+                const stocks = syncAndGetStockItems();
+                const matched = stocks.find(s => s.itemName.toLowerCase() === q || s.itemName.toLowerCase().includes(q));
+                if (matched) {
+                    selectConsumptionDropdownItem(matched.id);
+                }
+            }
+        }
+    } else if (event.key === 'Escape') {
+        closeConsumptionDropdown();
+    }
+};
+
+window.selectConsumptionDropdownItem = function selectConsumptionDropdownItem(stockId) {
     if (!stockId) return;
 
     // Check if ingredient already exists in table
@@ -8013,38 +8124,24 @@ window.handleQuickSelectIngredient = function handleQuickSelectIngredient(select
                 qtyInput.select();
             }
         }
-        selectEl.value = '';
-        return;
+    } else {
+        addConsumptionRow(stockId);
     }
 
-    addConsumptionRow(stockId);
-    selectEl.value = '';
+    const input = document.getElementById('consumptionSearchInput');
+    if (input) input.value = '';
+    closeConsumptionDropdown();
 };
 
-window.addAllStockToConsumption = function addAllStockToConsumption() {
-    const stocks = syncAndGetStockItems();
-    if (stocks.length === 0) {
-        alert('No stock ingredients found in inventory.');
-        return;
-    }
-
-    let addedCount = 0;
-    stocks.forEach(stock => {
-        const existingHidden = document.querySelector(`#consumptionRowsContainer input.cons-stock-id[value="${stock.id}"]`);
-        if (!existingHidden) {
-            addConsumptionRow(stock.id);
-            addedCount++;
-        }
-    });
-
-    if (addedCount === 0) {
-        if (typeof showCustomAlert === 'function') {
-            showCustomAlert('Already Added', 'All stock ingredients are already in your deduction list.', 'info');
-        } else {
-            alert('All stock ingredients are already in your deduction list.');
+document.addEventListener('click', function(e) {
+    const searchContainer = document.getElementById('consumptionSearchInput');
+    const menu = document.getElementById('consumptionDropdownMenu');
+    if (menu && menu.style.display === 'block') {
+        if (searchContainer && !searchContainer.contains(e.target) && !menu.contains(e.target)) {
+            closeConsumptionDropdown();
         }
     }
-};
+});
 
 window.addConsumptionRow = function addConsumptionRow(prefillStockId = '', prefillQty = '', prefillUnit = '', prefillNote = '') {
     const container = document.getElementById('consumptionRowsContainer');
