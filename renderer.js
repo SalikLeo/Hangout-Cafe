@@ -1276,7 +1276,8 @@ function generateFullReceiptHTML(order) {
         timeStr = formatTime(orderDateObj);
     }
 
-    const receiveTime = calculateReceiveTime(timeStr, orderDateObj);
+    const waitingTime = (order && order.waitingTime !== undefined && order.waitingTime !== null) ? order.waitingTime : getWaitingTime();
+    const receiveTime = calculateReceiveTime(timeStr, orderDateObj, waitingTime);
     const badgeText = formatLocation(paymentMethod);
 
     const itemsHtml = formatReceiptItems(itemsList);
@@ -1527,7 +1528,7 @@ function formatTime(date) {
 }
 
 // Calculate order receive time (add 40 minutes to order time)
-function calculateReceiveTime(orderTime, orderDate) {
+function calculateReceiveTime(orderTime, orderDate, customWaitingMinutes) {
     if (!orderTime && !orderDate) return '';
 
     let orderDateTime;
@@ -1582,34 +1583,45 @@ function calculateReceiveTime(orderTime, orderDate) {
         }
     } else if (!orderTime && orderDate instanceof Date) {
         // If no time string but we have a date object, use its time
-        // (already set above, no need to change)
     }
 
     // Validate that we have a valid date/time
     if (isNaN(orderDateTime.getTime())) {
-        // Fallback: use current time if date parsing failed
         orderDateTime = new Date();
     }
 
-    // Add 40 minutes
-    orderDateTime.setMinutes(orderDateTime.getMinutes() + 40);
+    // Determine waiting minutes to add
+    let minutesToAdd = null;
+    if (typeof customWaitingMinutes === 'number' && !isNaN(customWaitingMinutes)) {
+        minutesToAdd = customWaitingMinutes;
+    } else if (typeof getWaitingTime === 'function') {
+        const inputMinutes = getWaitingTime();
+        if (inputMinutes !== null) {
+            minutesToAdd = inputMinutes;
+        }
+    }
 
-    // Format and return - ensure we always return a valid time string
+    // Default to 40 minutes if not specified
+    if (minutesToAdd === null || minutesToAdd === undefined) {
+        minutesToAdd = 40;
+    }
+
+    orderDateTime.setMinutes(orderDateTime.getMinutes() + minutesToAdd);
+
+    // Format and return
     try {
         const receiveTime = orderDateTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
         if (receiveTime && receiveTime.trim()) {
             return receiveTime;
         }
     } catch (e) {
-        // If formatting fails, fallback to current time + 40 minutes
         const fallbackTime = new Date();
-        fallbackTime.setMinutes(fallbackTime.getMinutes() + 40);
+        fallbackTime.setMinutes(fallbackTime.getMinutes() + minutesToAdd);
         return fallbackTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     }
 
-    // Final fallback
     const fallbackTime = new Date();
-    fallbackTime.setMinutes(fallbackTime.getMinutes() + 40);
+    fallbackTime.setMinutes(fallbackTime.getMinutes() + minutesToAdd);
     return fallbackTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 }
 
@@ -5296,6 +5308,22 @@ function resetCustomerName() {
         inputEl.value = '';
     }
     currentCustomerName = '';
+}
+
+function getWaitingTime() {
+    const inputEl = document.getElementById('waitingTimeInput');
+    if (inputEl && inputEl.value !== '') {
+        const val = parseInt(inputEl.value, 10);
+        return (!isNaN(val) && val >= 0) ? val : null;
+    }
+    return null;
+}
+
+function resetWaitingTime() {
+    const inputEl = document.getElementById('waitingTimeInput');
+    if (inputEl) {
+        inputEl.value = '';
+    }
 }
 
 // Load waiters into the POS dropdown
@@ -12650,6 +12678,8 @@ function clearCart() {
     if (!cart || cart.length === 0) return;
     showCustomConfirm('Clear all items from cart?', () => {
         cart = [];
+        resetCustomerName();
+        resetWaitingTime();
         updateCart();
     }, null, { title: 'Clear Cart', confirmText: 'Clear All', type: 'warning' });
 }
@@ -13362,6 +13392,14 @@ function editHoldOrderInternal(orderId, order) {
             customerNameInput.value = '';
         }
 
+        // Set waiting time if order has one
+        const waitingTimeInput = document.getElementById('waitingTimeInput');
+        if (waitingTimeInput && order.waitingTime !== undefined && order.waitingTime !== null) {
+            waitingTimeInput.value = order.waitingTime;
+        } else if (waitingTimeInput) {
+            waitingTimeInput.value = '';
+        }
+
         // Update cart display after switching (to ensure it shows the loaded order)
         updateCart();
         loadMenuItems();
@@ -13428,6 +13466,7 @@ function saveHoldOrderChanges() {
     holdOrders[orderIndex].waiter = selectedWaiter || null;
     holdOrders[orderIndex].tableNo = selectedTableNo || null;
     holdOrders[orderIndex].customerName = getCustomerName() || null;
+    holdOrders[orderIndex].waitingTime = getWaitingTime();
     holdOrders[orderIndex].updatedAt = new Date().toISOString();
 
     // Identify newly added items or increased quantities for the Kitchen
@@ -13455,7 +13494,7 @@ function saveHoldOrderChanges() {
         const customerName = getCustomerName() || holdOrders[orderIndex].customerName;
         const dateStr = formatDate(now);
         const timeStr = formatTime(now);
-        const receiveTime = calculateReceiveTime(timeStr, now);
+        const receiveTime = calculateReceiveTime(timeStr, now, holdOrders[orderIndex].waitingTime);
         const paymentMethod = selectedPaymentMethod;
 
         newItemsForKOT.forEach((item, index) => {
@@ -13667,6 +13706,7 @@ function printReceipt() {
         waiter: selectedWaiter || null,
         tableNo: selectedTableNo || null,
         customerName: getCustomerName() || null,
+        waitingTime: getWaitingTime(),
         date: new Date().toISOString()
     };
 
@@ -13685,7 +13725,7 @@ function printReceipt() {
 
     // Create KOT (Kitchen Order Ticket) - same details, items without prices
     const kotItemsTable2 = formatKOTItems(cart);
-    const receiveTime2 = calculateReceiveTime(formatTime(now), now);
+    const receiveTime2 = calculateReceiveTime(formatTime(now), now, newSale.waitingTime);
     const kotHTML2 = `
         <div style="text-align: center; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; width: 100%; line-height: 1.2;">
             <div style="font-size: 20px; font-weight: 900; margin-bottom: 2px;">Hangout Lounge & Co.</div>
@@ -13718,6 +13758,7 @@ function printReceipt() {
     resetWaiterSelection();
     resetTableSelection();
     resetCustomerName();
+    resetWaitingTime();
 
     // Refresh sales if on sales tab
     if (document.getElementById('sales')?.classList.contains('active')) {
@@ -13788,6 +13829,7 @@ function saveOrderAndGenerateContent() {
         waiter: selectedWaiter || null,
         tableNo: selectedTableNo || null,
         customerName: getCustomerName() || null,
+        waitingTime: getWaitingTime(),
         date: new Date().toISOString()
     };
 
@@ -13808,7 +13850,7 @@ function saveOrderAndGenerateContent() {
 
     // Create KOT (Kitchen Order Ticket) - same details, items without prices
     const kotItemsTable3 = formatKOTItems(cart);
-    const receiveTime3 = calculateReceiveTime(formatTime(now), now);
+    const receiveTime3 = calculateReceiveTime(formatTime(now), now, newSale.waitingTime);
     const kotHTML3 = `
         <div style="text-align: center; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; width: 100%; line-height: 1.2;">
             <div style="font-size: 20px; font-weight: 900; margin-bottom: 2px;">Hangout Lounge & Co.</div>
@@ -13844,8 +13886,9 @@ function saveOrderAndGenerateContent() {
     resetWaiterSelection();
     resetTableSelection();
 
-    // Reset customer name
+    // Reset customer name and waiting time
     resetCustomerName();
+    resetWaitingTime();
 
     // Refresh sales if on sales tab
     if (document.getElementById('sales')?.classList.contains('active')) {
@@ -14062,6 +14105,7 @@ function holdOrderAndGenerateContent() {
         waiter: selectedWaiter || null,
         tableNo: selectedTableNo || null,
         customerName: getCustomerName() || null,
+        waitingTime: getWaitingTime(),
         status: 'pending',
         createdAt: now.toISOString()
     };
@@ -14079,7 +14123,7 @@ function holdOrderAndGenerateContent() {
 
     // Create KOT (Kitchen Order Ticket) - same details, items without prices
     const kotItemsTable4 = formatKOTItems(cart);
-    const receiveTime4 = calculateReceiveTime(heldOrder.time, heldOrder.date);
+    const receiveTime4 = calculateReceiveTime(heldOrder.time, heldOrder.date, heldOrder.waitingTime);
     const kotHTML4 = `
         <div style="text-align: center; font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; width: 100%; line-height: 1.2;">
             <div style="font-size: 20px; font-weight: 900; margin-bottom: 2px;">Hangout Lounge & Co.</div>
@@ -14115,8 +14159,9 @@ function holdOrderAndGenerateContent() {
     resetWaiterSelection();
     resetTableSelection();
 
-    // Reset customer name
+    // Reset customer name and waiting time
     resetCustomerName();
+    resetWaitingTime();
 
     // Refresh hold orders if on hold orders tab
     if (document.getElementById('holdOrders')?.classList.contains('active')) {
@@ -14286,6 +14331,7 @@ window.processCashOrder = function () {
         waiter: selectedWaiter || null,
         tableNo: selectedTableNo || null,
         customerName: getCustomerName() || null,
+        waitingTime: getWaitingTime(),
         date: new Date().toISOString()
     };
 
@@ -14313,8 +14359,9 @@ window.processCashOrder = function () {
     resetWaiterSelection();
     resetTableSelection();
 
-    // Reset customer name
+    // Reset customer name and waiting time
     resetCustomerName();
+    resetWaitingTime();
 
     // Refresh sales if on sales tab
     if (document.getElementById('sales')?.classList.contains('active')) {
