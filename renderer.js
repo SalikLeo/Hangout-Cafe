@@ -15814,61 +15814,6 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
                     background: #fff;
                 }
 
-                .view-receipt-toolbar {
-                    position: sticky;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    background: #1e293b;
-                    color: #fff;
-                    padding: 8px 12px;
-                    margin: -8px -8px 10px -8px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    border-radius: 6px 6px 0 0;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-                    z-index: 1000;
-                }
-                .tb-title {
-                    font-size: 12px;
-                    font-weight: 700;
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
-                    color: #f8fafc;
-                }
-                .tb-btn-group {
-                    display: flex;
-                    gap: 6px;
-                }
-                .tb-btn {
-                    border: none;
-                    border-radius: 6px;
-                    padding: 5px 12px;
-                    font-size: 11px;
-                    font-weight: 700;
-                    cursor: pointer;
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 4px;
-                    transition: all 0.15s ease;
-                }
-                .tb-btn-print {
-                    background: #3b82f6;
-                    color: #ffffff;
-                }
-                .tb-btn-print:hover {
-                    background: #2563eb;
-                }
-                .tb-btn-close {
-                    background: #475569;
-                    color: #ffffff;
-                }
-                .tb-btn-close:hover {
-                    background: #ef4444;
-                }
-                
                 @media print {
                     * {
                         margin: 0;
@@ -15885,29 +15830,10 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
                         size: 80mm auto;
                         margin: 3mm;
                     }
-                    .view-receipt-toolbar {
-                        display: none !important;
-                    }
                 }
             </style>
         </head>
         <body>
-            ${isViewOnly ? `
-            <div class="view-receipt-toolbar">
-                <div class="tb-title">
-                    <span>👁️</span>
-                    <span>Receipt Preview</span>
-                </div>
-                <div class="tb-btn-group">
-                    <button class="tb-btn tb-btn-print" onclick="window.print()">
-                        <span>🖨️</span> Print
-                    </button>
-                    <button class="tb-btn tb-btn-close" onclick="window.close()">
-                        <span>✕</span> Close
-                    </button>
-                </div>
-            </div>
-            ` : ''}
             <div class="header">
                 <h1>Hangout Lounge & Co.</h1>
                 <p>Contact: 0300-9509536</p>
