@@ -2779,42 +2779,6 @@ function updateMenuItemWithImage(id, newCategoryId, newName, newPrice, imageData
             });
             updateCart();
         }
-
-        // Update stock item name if menu item name changed
-        if (oldName !== newName) {
-            const stocks = Storage.get('stocks') || [];
-            const stockItem = stocks.find(s => s.itemName && s.itemName.toLowerCase() === oldName.toLowerCase());
-            if (stockItem) {
-                stockItem.itemName = newName;
-                stockItem.updatedAt = new Date().toISOString();
-                Storage.set('stocks', stocks);
-
-                // Refresh stock list if on stock tab
-                if (document.getElementById('stock')?.classList.contains('active')) {
-                    loadStock();
-                }
-            }
-        }
-
-        // Update stock item price if menu item price changed
-        if (oldPrice !== newPrice) {
-            const stocks = Storage.get('stocks') || [];
-            // Find stock item by current name (could be oldName or newName if name also changed)
-            const stockItem = stocks.find(s => {
-                const stockName = s.itemName ? s.itemName.toLowerCase() : '';
-                return stockName === oldName.toLowerCase() || stockName === newName.toLowerCase();
-            });
-            if (stockItem) {
-                stockItem.unitPrice = newPrice;
-                stockItem.updatedAt = new Date().toISOString();
-                Storage.set('stocks', stocks);
-
-                // Refresh stock list if on stock tab
-                if (document.getElementById('stock')?.classList.contains('active')) {
-                    loadStock();
-                }
-            }
-        }
     }
 
     Storage.set('menuItems', menuItems);
@@ -2890,24 +2854,6 @@ function deleteMenuItemConfirmed(id) {
         // Remove from 'all' category order
         if (itemOrder['all']) {
             itemOrder['all'] = itemOrder['all'].filter(itemId => itemId !== id);
-        }
-
-        // Delete corresponding stock item if it exists
-        const itemName = itemToDelete.name || itemToDelete.dishName;
-        if (itemName) {
-            const stocks = Storage.get('stocks') || [];
-            const filteredStocks = stocks.filter(s => {
-                // Case-insensitive comparison
-                const stockItemName = s.itemName ? s.itemName.toLowerCase() : '';
-                const menuItemName = itemName.toLowerCase();
-                return stockItemName !== menuItemName;
-            });
-            Storage.set('stocks', filteredStocks);
-
-            // Refresh stock list if on stock tab
-            if (document.getElementById('stock')?.classList.contains('active')) {
-                loadStock();
-            }
         }
 
         Storage.set('menuItemOrder', itemOrder);
@@ -7364,36 +7310,82 @@ let editingStockId = null;
 let currentQuickAdjustStockId = null;
 let currentQuickAdjustType = 'add';
 
-// Default starter cafe raw materials & ingredients
+// Default starter cafe raw materials & ingredients for Hangout Lounge & Co.
 const DEFAULT_CAFE_STOCK_ITEMS = [
-    { itemName: "Potatoes", quantity: 30, unit: "kg", unitPrice: 90, minLevel: 5 },
-    { itemName: "Chicken (Boneless / Chunks)", quantity: 20, unit: "kg", unitPrice: 650, minLevel: 3 },
-    { itemName: "Chicken (With Bone)", quantity: 15, unit: "kg", unitPrice: 420, minLevel: 3 },
-    { itemName: "Mayonnaise", quantity: 10, unit: "kg", unitPrice: 380, minLevel: 2 },
-    { itemName: "Special Masala / Spices", quantity: 5, unit: "kg", unitPrice: 850, minLevel: 1 },
-    { itemName: "Cooking Oil", quantity: 25, unit: "L", unitPrice: 450, minLevel: 5 },
-    { itemName: "Cheese Slices", quantity: 100, unit: "pcs", unitPrice: 35, minLevel: 15 },
-    { itemName: "Burger Buns", quantity: 50, unit: "pcs", unitPrice: 40, minLevel: 10 },
-    { itemName: "Sandwich Bread", quantity: 20, unit: "pack", unitPrice: 120, minLevel: 4 },
-    { itemName: "Eggs", quantity: 120, unit: "pcs", unitPrice: 28, minLevel: 24 },
-    { itemName: "Milk (Packed)", quantity: 30, unit: "L", unitPrice: 260, minLevel: 6 },
-    { itemName: "Tea Leaves", quantity: 5, unit: "kg", unitPrice: 1200, minLevel: 1 },
-    { itemName: "Coffee Beans / Powder", quantity: 3, unit: "kg", unitPrice: 2800, minLevel: 0.5 },
-    { itemName: "Flour (Atta / Maida)", quantity: 40, unit: "kg", unitPrice: 140, minLevel: 10 },
-    { itemName: "Sugar", quantity: 25, unit: "kg", unitPrice: 160, minLevel: 5 },
-    { itemName: "Tomato Ketchup / Sauce", quantity: 8, unit: "kg", unitPrice: 320, minLevel: 2 },
-    { itemName: "Garlic Mayo Sauce", quantity: 6, unit: "kg", unitPrice: 420, minLevel: 1.5 },
-    { itemName: "Fish Fillet", quantity: 10, unit: "kg", unitPrice: 950, minLevel: 2 },
+    // Poultry, Meat & Seafood
+    { itemName: "Chicken (Boneless)", quantity: 25, unit: "kg", unitPrice: 650, minLevel: 5 },
+    { itemName: "Chicken (With Bone)", quantity: 20, unit: "kg", unitPrice: 420, minLevel: 5 },
     { itemName: "Chicken Wings", quantity: 12, unit: "kg", unitPrice: 480, minLevel: 3 },
-    { itemName: "Rice (Basmati)", quantity: 25, unit: "kg", unitPrice: 320, minLevel: 5 },
-    { itemName: "Nutella", quantity: 4, unit: "kg", unitPrice: 1800, minLevel: 1 }
+    { itemName: "Chicken Patty (Zinger / Burger)", quantity: 50, unit: "pcs", unitPrice: 110, minLevel: 15 },
+    { itemName: "Beef Meat (Boneless)", quantity: 15, unit: "kg", unitPrice: 1050, minLevel: 3 },
+    { itemName: "Beef Mince / Qeema", quantity: 12, unit: "kg", unitPrice: 1100, minLevel: 3 },
+    { itemName: "Mutton Meat", quantity: 10, unit: "kg", unitPrice: 1800, minLevel: 2 },
+    { itemName: "Fish Fillet", quantity: 10, unit: "kg", unitPrice: 950, minLevel: 2 },
+
+    // Fresh Vegetables & Herbs
+    { itemName: "Potatoes (Aloo)", quantity: 40, unit: "kg", unitPrice: 90, minLevel: 10 },
+    { itemName: "Tomatoes (Tamatar)", quantity: 25, unit: "kg", unitPrice: 120, minLevel: 5 },
+    { itemName: "Onions (Piyaz)", quantity: 30, unit: "kg", unitPrice: 110, minLevel: 8 },
+    { itemName: "Garlic & Ginger Paste", quantity: 10, unit: "kg", unitPrice: 450, minLevel: 2 },
+    { itemName: "Green Chillies (Hari Mirch)", quantity: 5, unit: "kg", unitPrice: 180, minLevel: 1 },
+    { itemName: "Fresh Coriander & Mint", quantity: 15, unit: "pack", unitPrice: 40, minLevel: 3 },
+    { itemName: "Capsicum (Shimla Mirch)", quantity: 8, unit: "kg", unitPrice: 160, minLevel: 2 },
+    { itemName: "Iceberg / Salad Lettuce", quantity: 6, unit: "kg", unitPrice: 220, minLevel: 2 },
+    { itemName: "Lemons", quantity: 4, unit: "kg", unitPrice: 200, minLevel: 1 },
+    { itemName: "Mushrooms (Sliced)", quantity: 8, unit: "can", unitPrice: 320, minLevel: 2 },
+    { itemName: "Black Olives & Jalapenos", quantity: 8, unit: "can", unitPrice: 380, minLevel: 2 },
+
+    // Dairy & Eggs
+    { itemName: "Eggs", quantity: 150, unit: "pcs", unitPrice: 28, minLevel: 30 },
+    { itemName: "Milk (Fresh / Packed)", quantity: 40, unit: "L", unitPrice: 260, minLevel: 10 },
+    { itemName: "Mozzarella Cheese", quantity: 15, unit: "kg", unitPrice: 1400, minLevel: 3 },
+    { itemName: "Cheddar Cheese Slices", quantity: 20, unit: "pack", unitPrice: 550, minLevel: 5 },
+    { itemName: "Cooking Cream (Tetra)", quantity: 20, unit: "pack", unitPrice: 210, minLevel: 5 },
+    { itemName: "Yogurt / Dahi", quantity: 15, unit: "kg", unitPrice: 220, minLevel: 3 },
+    { itemName: "Butter / Makhan", quantity: 8, unit: "kg", unitPrice: 950, minLevel: 2 },
+
+    // Bakery, Breads & Grains
+    { itemName: "Burger Buns", quantity: 60, unit: "pcs", unitPrice: 40, minLevel: 15 },
+    { itemName: "Sandwich Bread", quantity: 20, unit: "pack", unitPrice: 130, minLevel: 5 },
+    { itemName: "Tortilla / Shawarma Wraps", quantity: 15, unit: "pack", unitPrice: 280, minLevel: 4 },
+    { itemName: "Pizza Dough Base / Maida", quantity: 30, unit: "kg", unitPrice: 140, minLevel: 8 },
+    { itemName: "Basmati Rice", quantity: 35, unit: "kg", unitPrice: 320, minLevel: 8 },
+    { itemName: "Flour (Atta / Maida)", quantity: 40, unit: "kg", unitPrice: 130, minLevel: 10 },
+
+    // Cooking Oils, Sauces & Condiments
+    { itemName: "Cooking Oil", quantity: 40, unit: "L", unitPrice: 460, minLevel: 10 },
+    { itemName: "Mayonnaise", quantity: 15, unit: "kg", unitPrice: 380, minLevel: 3 },
+    { itemName: "Tomato Ketchup / Sauce", quantity: 12, unit: "kg", unitPrice: 320, minLevel: 3 },
+    { itemName: "Garlic Mayo Sauce", quantity: 8, unit: "kg", unitPrice: 420, minLevel: 2 },
+    { itemName: "Pizza Sauce", quantity: 10, unit: "kg", unitPrice: 480, minLevel: 2 },
+    { itemName: "BBQ Sauce", quantity: 8, unit: "bottle", unitPrice: 350, minLevel: 2 },
+    { itemName: "Chilli Garlic Sauce", quantity: 10, unit: "kg", unitPrice: 340, minLevel: 2 },
+    { itemName: "Soy Sauce & Vinegar", quantity: 10, unit: "bottle", unitPrice: 160, minLevel: 3 },
+
+    // Spices, Seasonings & Dry Goods
+    { itemName: "Special Karahi / Handi Masala", quantity: 6, unit: "kg", unitPrice: 850, minLevel: 1.5 },
+    { itemName: "Biryani Masala Mix", quantity: 5, unit: "kg", unitPrice: 750, minLevel: 1 },
+    { itemName: "Red Chilli, Salt & Turmeric", quantity: 10, unit: "kg", unitPrice: 550, minLevel: 2 },
+    { itemName: "Black Pepper & White Pepper", quantity: 4, unit: "kg", unitPrice: 1200, minLevel: 1 },
+    { itemName: "Oregano & Herbs", quantity: 6, unit: "pack", unitPrice: 280, minLevel: 1 },
+
+    // Beverages, Tea, Coffee & Sweets
+    { itemName: "Tea Leaves (Patti)", quantity: 8, unit: "kg", unitPrice: 1200, minLevel: 2 },
+    { itemName: "Green Tea / Kehwa Leaves", quantity: 10, unit: "pack", unitPrice: 250, minLevel: 2 },
+    { itemName: "Coffee Beans / Powder", quantity: 4, unit: "kg", unitPrice: 2800, minLevel: 1 },
+    { itemName: "Sugar", quantity: 35, unit: "kg", unitPrice: 160, minLevel: 10 },
+    { itemName: "Nutella / Chocolate Spread", quantity: 6, unit: "kg", unitPrice: 1800, minLevel: 1.5 },
+    { itemName: "Ice Cream Base / Falooda Mix", quantity: 15, unit: "L", unitPrice: 600, minLevel: 3 },
+    { itemName: "Rooh Afza / Syrups", quantity: 8, unit: "bottle", unitPrice: 320, minLevel: 2 }
 ];
 
 // Retrieve or initialize stocks
 function syncAndGetStockItems() {
     let savedStocks = Storage.get('stocks');
+    const isSeededV3 = Storage.get('stock_ingredients_seeded_v3');
     
-    if (!savedStocks || !Array.isArray(savedStocks) || savedStocks.length === 0) {
+    // Automatically seed/upgrade stock if empty or if previous session contained legacy/menu-mirror stock
+    if (!savedStocks || !Array.isArray(savedStocks) || savedStocks.length === 0 || !isSeededV3) {
         const baseId = Date.now();
         savedStocks = DEFAULT_CAFE_STOCK_ITEMS.map((item, index) => ({
             id: 'stock_' + (baseId + index),
@@ -7406,10 +7398,34 @@ function syncAndGetStockItems() {
             updatedAt: new Date().toISOString()
         }));
         Storage.set('stocks', savedStocks);
+        Storage.set('stock_ingredients_seeded_v3', true);
     }
 
     return savedStocks;
 }
+
+// Reset/reseed stock items to standard restaurant ingredients without touching menu items
+window.resetStockToDefaultIngredients = function resetStockToDefaultIngredients(showPrompt = true) {
+    if (showPrompt) {
+        const confirmed = confirm('Are you sure you want to reset the stock inventory to standard raw ingredients (Potatoes, Chicken, Eggs, Milk, Buns, Spices, Sauces, etc.)?\n\nNote: Your menu items will remain completely untouched and safe.');
+        if (!confirmed) return;
+    }
+    const baseId = Date.now();
+    const freshStocks = DEFAULT_CAFE_STOCK_ITEMS.map((item, index) => ({
+        id: 'stock_' + (baseId + index),
+        itemName: item.itemName,
+        quantity: item.quantity,
+        unit: item.unit,
+        unitPrice: item.unitPrice,
+        minLevel: item.minLevel,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    }));
+    Storage.set('stocks', freshStocks);
+    Storage.set('stock_ingredients_seeded_v3', true);
+    loadStock();
+    alert('Stock inventory successfully updated to standard restaurant raw ingredients!');
+};
 
 window.loadStock = function loadStock() {
     const stocks = syncAndGetStockItems();
