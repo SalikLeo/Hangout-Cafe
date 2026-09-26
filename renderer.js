@@ -7333,25 +7333,40 @@ function syncAndGetStockItems() {
 
 // Reset/reseed stock items to standard restaurant ingredients without touching menu items
 window.resetStockToDefaultIngredients = function resetStockToDefaultIngredients(showPrompt = true) {
+    const doReset = () => {
+        const baseId = Date.now();
+        const freshStocks = DEFAULT_CAFE_STOCK_ITEMS.map((item, index) => ({
+            id: 'stock_' + (baseId + index),
+            itemName: item.itemName,
+            quantity: item.quantity,
+            unit: item.unit,
+            unitPrice: item.unitPrice,
+            minLevel: item.minLevel,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        }));
+        Storage.set('stocks', freshStocks);
+        Storage.set('stock_ingredients_seeded_v3', true);
+        loadStock();
+        if (typeof showCustomAlert === 'function') {
+            showCustomAlert('Stock inventory successfully updated to standard restaurant raw ingredients!', 'Stock Reset');
+        }
+    };
+
     if (showPrompt) {
-        const confirmed = confirm('Are you sure you want to reset the stock inventory to standard raw ingredients (Potatoes, Chicken, Eggs, Milk, Buns, Spices, Sauces, etc.)?\n\nNote: Your menu items will remain completely untouched and safe.');
-        if (!confirmed) return;
+        if (typeof showCustomConfirm === 'function') {
+            showCustomConfirm('Are you sure you want to reset the stock inventory to standard raw ingredients (Potatoes, Chicken, Eggs, Milk, Buns, Spices, Sauces, etc.)?\n\nNote: Your menu items will remain completely untouched and safe.', doReset, null, {
+                title: 'Reset Stock Inventory',
+                confirmText: 'Reset Inventory',
+                type: 'warning',
+                icon: '📦'
+            });
+        } else {
+            doReset();
+        }
+    } else {
+        doReset();
     }
-    const baseId = Date.now();
-    const freshStocks = DEFAULT_CAFE_STOCK_ITEMS.map((item, index) => ({
-        id: 'stock_' + (baseId + index),
-        itemName: item.itemName,
-        quantity: item.quantity,
-        unit: item.unit,
-        unitPrice: item.unitPrice,
-        minLevel: item.minLevel,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-    }));
-    Storage.set('stocks', freshStocks);
-    Storage.set('stock_ingredients_seeded_v3', true);
-    loadStock();
-    alert('Stock inventory successfully updated to standard restaurant raw ingredients!');
 };
 
 window.loadStock = function loadStock() {
@@ -9131,7 +9146,7 @@ window.deleteConsumptionRecord = function deleteConsumptionRecord(logId, itemInd
             ? `Do you want to revert the deduction of ${targetItem.itemName} (${formatQuantity(targetItem.finalDeductQty || targetItem.enteredQty || targetItem.deductedQty)} ${targetItem.enteredUnit || targetItem.unit || ''}) and restore it to stock?`
             : 'Do you want to revert this consumption log and restore the deducted quantities back to inventory?';
 
-        if (confirm(confirmMsg)) {
+        const doRevert = () => {
             const stocks = syncAndGetStockItems();
             const itemsToRevert = targetItem ? [targetItem] : (log.items || []);
 
@@ -9177,6 +9192,18 @@ window.deleteConsumptionRecord = function deleteConsumptionRecord(logId, itemInd
             if (typeof showCustomAlert === 'function') {
                 showCustomAlert('Consumption record reverted and stock quantity restored.', 'Restored');
             }
+        };
+
+        if (typeof showCustomConfirm === 'function') {
+            showCustomConfirm(confirmMsg, doRevert, null, {
+                title: 'Revert Stock Deduction',
+                confirmText: 'Revert',
+                cancelText: 'Cancel',
+                type: 'warning',
+                icon: '↩️'
+            });
+        } else {
+            doRevert();
         }
     });
 };
