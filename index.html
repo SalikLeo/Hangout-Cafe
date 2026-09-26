@@ -404,11 +404,11 @@
                             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                             <h3
                                 style="margin: 0; font-size: 14px; color: #666; font-weight: 600; text-transform: uppercase;">
-                                Today's Taxes</h3>
-                            <span style="font-size: 24px;">💰</span>
+                                Today's Orders</h3>
+                            <span style="font-size: 24px;">🧾</span>
                         </div>
-                        <p id="dashboardTodayTaxes"
-                            style="margin: 0; font-size: 32px; font-weight: 700; color: #1e3a5f;">Rs. 0</p>
+                        <p id="dashboardTodayOrdersCount"
+                            style="margin: 0; font-size: 32px; font-weight: 700; color: #1e3a5f;">0</p>
                     </div>
 
                     <div
@@ -417,11 +417,11 @@
                             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                             <h3
                                 style="margin: 0; font-size: 14px; color: #666; font-weight: 600; text-transform: uppercase;">
-                                Weekly Taxes</h3>
-                            <span style="font-size: 24px;">💰</span>
+                                Weekly Orders</h3>
+                            <span style="font-size: 24px;">📊</span>
                         </div>
-                        <p id="dashboardWeeklyTaxes"
-                            style="margin: 0; font-size: 32px; font-weight: 700; color: #1e3a5f;">Rs. 0</p>
+                        <p id="dashboardWeeklyOrdersCount"
+                            style="margin: 0; font-size: 32px; font-weight: 700; color: #1e3a5f;">0</p>
                     </div>
                 </div>
 
@@ -822,9 +822,6 @@
                             <button id="itemsSalesBtn" onclick="switchSalesView('items')"
                                 style="background: transparent; border: 1px solid transparent; color: #666; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 16px; margin: 0; display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">Items
                                 Sales</button>
-                            <button id="taxHistoryBtn" onclick="switchSalesView('tax')"
-                                style="background: transparent; border: 1px solid transparent; color: #666; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 16px; margin: 0; display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">Tax
-                                History</button>
                         </div>
                     </div>
                     <div id="salesHistorySection">
@@ -951,68 +948,6 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Tax History Section -->
-                    <div id="taxHistorySection" style="display: none;">
-                        <div class="summary-section">
-                            <div class="summary-card">
-                                <h4>Tax Today</h4>
-                                <p id="taxTodayHistory">Rs 0</p>
-                            </div>
-                            <div class="summary-card">
-                                <h4>Monthly Tax</h4>
-                                <p id="monthlyTaxHistory">Rs 0</p>
-                            </div>
-                            <div class="summary-card">
-                                <h4>Annual Tax</h4>
-                                <p id="annualTaxHistory">Rs 0</p>
-                            </div>
-                        </div>
-                        <div class="filter-section"
-                            style="margin-bottom: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 15px; background: #f8f9fa; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                <label style="font-weight: 600; color: #495057; font-size: 14px;">View:</label>
-                                <select id="taxHistoryFilter"
-                                    onchange="handleTaxHistoryFilterChange()"
-                                    style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; cursor: pointer; min-width: 140px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); outline: none;"
-                                    onfocus="this.style.borderColor='#4a90e2'; this.style.boxShadow='0 0 0 3px rgba(74,144,226,0.1)'"
-                                    onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)'">
-                                    <option value="today" selected>Daily</option>
-                                    <option value="month">Monthly</option>
-                                    <option value="year">Annual</option>
-                                    <option value="all">All Time</option>
-                                </select>
-                                <div id="taxHistoryTimeValueContainer"
-                                    style="display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                                </div>
-                                <button id="taxHistoryResetFilterBtn" class="btn-reset-filter" title="Reset to today"
-                                    onclick="resetTaxHistoryFilter()" style="display: none;">✕</button>
-                            </div>
-                            <button onclick="printTaxHistory()"
-                                style="background: rgba(74, 144, 226, 0.1); border: 1px solid rgba(74, 144, 226, 0.2); color: #4a90e2; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 15px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px; gap: 8px; white-space: nowrap;">
-                                <span>🖨️</span> Save Report
-                            </button>
-                        </div>
-                        <div id="taxHistoryCount"
-                            style="font-size: 13px; color: #666; margin-bottom: 5px; font-weight: 600; text-align: left; margin-left: 2px;">
-                            Count: 0</div>
-                        <table id="taxHistoryTable">
-                            <thead>
-                                <tr>
-                                    <th>Order ID</th>
-                                    <th>Date</th>
-                                    <th>Location</th>
-                                    <th>Subtotal</th>
-                                    <th>Discount</th>
-                                    <th>GST (5%)</th>
-                                    <th>Total</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="taxHistoryTableBody">
-                            </tbody>
-                        </table>
                     </div>
 
                     <!-- Items Sales Section -->

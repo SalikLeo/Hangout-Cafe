@@ -1593,6 +1593,100 @@ input[type="text"].pos-search-input::placeholder {
     background: #1e293b !important;
 }
 
+.category-dropdown-container {
+    position: relative;
+    display: inline-flex;
+}
+
+.category-btn .cat-arrow {
+    font-size: 11px;
+    opacity: 0.7;
+    margin-left: -2px;
+    transition: transform 0.2s ease;
+}
+
+.category-dropdown-container.open .category-btn .cat-arrow {
+    transform: rotate(180deg);
+}
+
+.category-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    min-width: 230px;
+    max-width: 320px;
+    max-height: 280px;
+    overflow-y: auto;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.18), 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1.5px solid #cbd5e1;
+    z-index: 1050;
+    padding: 6px;
+    scrollbar-width: thin;
+}
+
+.category-dropdown-container.open .category-dropdown-menu {
+    display: block;
+    animation: catDropdownSlideDown 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes catDropdownSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.category-dropdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 2px;
+}
+
+.category-dropdown-item:hover {
+    background: #eff6ff;
+    color: #2563eb;
+    transform: translateX(2px);
+}
+
+.category-dropdown-item:active {
+    background: #dbeafe;
+    transform: scale(0.98);
+}
+
+.category-dropdown-item .cd-item-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 10px;
+}
+
+.category-dropdown-item .cd-item-price {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #059669;
+    background: #ecfdf5;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #d1fae5;
+    white-space: nowrap;
+}
+
 .menu-items-container {
     flex: 1;
     overflow-y: auto !important;

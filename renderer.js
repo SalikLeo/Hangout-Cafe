@@ -915,8 +915,8 @@ function switchToTab(tab) {
 
 // Global variables
 let currentDiscount = { type: null, value: 0 }; // Track current discount
-const SALES_TAX_RATE = 0.05; // 5% sales tax
-const SERVICE_CHARGE_RATE = 0.10; // 10% service charge
+const SALES_TAX_RATE = 0; // Tax removed
+const SERVICE_CHARGE_RATE = 0; // Service charges removed
 
 // Image cache for optimized display images
 const imageDisplayCache = new Map();
@@ -4019,15 +4019,13 @@ window.loadItemsSales = function loadItemsSales() {
 window.switchSalesView = (view) => {
     const salesHistorySection = document.getElementById('salesHistorySection');
     const itemsSalesSection = document.getElementById('itemsSalesSection');
-    const taxHistorySection = document.getElementById('taxHistorySection');
     const salesHistoryBtn = document.getElementById('salesHistoryBtn');
     const itemsSalesBtn = document.getElementById('itemsSalesBtn');
-    const taxHistoryBtn = document.getElementById('taxHistoryBtn');
 
-    if (!salesHistorySection || !itemsSalesSection || !taxHistorySection || !salesHistoryBtn || !itemsSalesBtn || !taxHistoryBtn) return;
+    if (!salesHistorySection || !itemsSalesSection || !salesHistoryBtn || !itemsSalesBtn) return;
 
     // Reset all buttons
-    [salesHistoryBtn, itemsSalesBtn, taxHistoryBtn].forEach(btn => {
+    [salesHistoryBtn, itemsSalesBtn].forEach(btn => {
         btn.style.background = 'transparent';
         btn.style.color = '#666';
         btn.style.border = '1px solid transparent';
@@ -4040,7 +4038,6 @@ window.switchSalesView = (view) => {
     // Hide all sections
     salesHistorySection.style.display = 'none';
     itemsSalesSection.style.display = 'none';
-    taxHistorySection.style.display = 'none';
 
     if (view === 'history') {
         salesHistorySection.style.display = 'block';
@@ -4057,14 +4054,6 @@ window.switchSalesView = (view) => {
         itemsSalesBtn.style.fontWeight = '600';
         itemsSalesBtn.style.boxShadow = '0 2px 4px rgba(74, 144, 226, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
         loadItemsSales(); // Load data when switching to items view
-    } else if (view === 'tax') {
-        taxHistorySection.style.display = 'block';
-        taxHistoryBtn.style.background = '#4a90e2';
-        taxHistoryBtn.style.color = '#ffffff';
-        taxHistoryBtn.style.border = '1px solid rgba(255, 255, 255, 0.2)';
-        taxHistoryBtn.style.fontWeight = '600';
-        taxHistoryBtn.style.boxShadow = '0 2px 4px rgba(74, 144, 226, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
-        loadTaxHistory(); // Load data when switching to tax view
     }
 };
 
@@ -10297,69 +10286,20 @@ function loadDashboard() {
         return sum + getDiscountAmountFromOrder(sale, subtotalFallback);
     }, 0);
 
-    // Calculate Today's Tax
-    const todayTax = sales.filter(sale => {
+    // Calculate Today's and Weekly Order Counts
+    const todayOrdersCount = sales.filter(sale => {
         if (!sale.date) return false;
         const saleDate = new Date(sale.date);
         saleDate.setHours(0, 0, 0, 0);
         return saleDate.getTime() === today.getTime();
-    }).reduce((sum, sale) => {
-        // Exclude tax for Parcel/Delivery orders
-        const paymentMethod = sale.paymentMethod || 'cash';
-        if (paymentMethod === 'delivery' || paymentMethod === 'parcel') {
-            return sum; // No tax for parcel orders
-        }
-        // Use sale.tax if available
-        if (sale.tax) {
-            return sum + sale.tax;
-        } else if (sale.subtotal) {
-            // Calculate tax from subtotal (5% of subtotal after discount)
-            const discountAmount = sale.discount && sale.discount.amount ? sale.discount.amount : 0;
-            const discountedSubtotal = Math.max(0, sale.subtotal - discountAmount);
-            return sum + (discountedSubtotal * SALES_TAX_RATE);
-        } else if (sale.items && Array.isArray(sale.items)) {
-            // Calculate from items
-            const subtotal = sale.items.reduce((s, item) => s + (item.price * item.quantity), 0);
-            const discountAmount = sale.discount && sale.discount.amount ? sale.discount.amount : 0;
-            const discountedSubtotal = Math.max(0, subtotal - discountAmount);
-            return sum + (discountedSubtotal * SALES_TAX_RATE);
-        } else {
-            // Fallback: estimate tax from total (assuming total includes tax)
-            return sum + (sale.total || 0) * (SALES_TAX_RATE / (1 + SALES_TAX_RATE));
-        }
-    }, 0);
+    }).length;
 
-    // Calculate Weekly Tax
-    const weeklyTax = sales.filter(sale => {
+    const weeklyOrdersCount = sales.filter(sale => {
         if (!sale.date) return false;
         const saleDate = new Date(sale.date);
         saleDate.setHours(0, 0, 0, 0);
         return saleDate >= weekAgo && saleDate <= todayEnd;
-    }).reduce((sum, sale) => {
-        // Exclude tax for Parcel/Delivery orders
-        const paymentMethod = sale.paymentMethod || 'cash';
-        if (paymentMethod === 'delivery' || paymentMethod === 'parcel') {
-            return sum; // No tax for parcel orders
-        }
-        // Use sale.tax if available
-        if (sale.tax) {
-            return sum + sale.tax;
-        } else if (sale.subtotal) {
-            // Calculate tax from subtotal (5% of subtotal after discount)
-            const discountAmount = sale.discount && sale.discount.amount ? sale.discount.amount : 0;
-            const discountedSubtotal = Math.max(0, sale.subtotal - discountAmount);
-            return sum + (discountedSubtotal * SALES_TAX_RATE);
-        } else if (sale.items && Array.isArray(sale.items)) {
-            // Calculate from items
-            const subtotal = sale.items.reduce((s, item) => s + (item.price * item.quantity), 0);
-            const discountAmount = sale.discount && sale.discount.amount ? sale.discount.amount : 0;
-            const discountedSubtotal = Math.max(0, subtotal - discountAmount);
-            return sum + (discountedSubtotal * SALES_TAX_RATE);
-        } else {
-            // Fallback: estimate tax from total (assuming total includes tax)
-            return sum + (sale.total || 0) * (SALES_TAX_RATE / (1 + SALES_TAX_RATE));
-        }
-    }, 0);
+    }).length;
 
     // Update Dashboard Elements
     const todaySalesEl = document.getElementById('dashboardTodaySales');
@@ -10368,8 +10308,8 @@ function loadDashboard() {
     const holdOrdersEl = document.getElementById('dashboardHoldOrders');
     const todayDiscountsEl = document.getElementById('dashboardTodayDiscounts');
     const weeklyDiscountsEl = document.getElementById('dashboardWeeklyDiscounts');
-    const todayTaxesEl = document.getElementById('dashboardTodayTaxes');
-    const weeklyTaxesEl = document.getElementById('dashboardWeeklyTaxes');
+    const todayOrdersCountEl = document.getElementById('dashboardTodayOrdersCount');
+    const weeklyOrdersCountEl = document.getElementById('dashboardWeeklyOrdersCount');
     const weekSalesEl = document.getElementById('dashboardWeekSales');
     const weekExpensesEl = document.getElementById('dashboardWeekExpenses');
     const monthSalesEl = document.getElementById('dashboardMonthSales');
@@ -10467,8 +10407,8 @@ function loadDashboard() {
     if (holdOrdersEl) holdOrdersEl.textContent = formatNumber(holdOrders.length);
     if (todayDiscountsEl) todayDiscountsEl.textContent = `Rs. ${formatNumber(todayDiscounts)}`;
     if (weeklyDiscountsEl) weeklyDiscountsEl.textContent = `Rs. ${formatNumber(weeklyDiscounts)}`;
-    if (todayTaxesEl) todayTaxesEl.textContent = `Rs. ${formatNumber(todayTax)}`;
-    if (weeklyTaxesEl) weeklyTaxesEl.textContent = `Rs. ${formatNumber(weeklyTax)}`;
+    if (todayOrdersCountEl) todayOrdersCountEl.textContent = formatNumber(todayOrdersCount);
+    if (weeklyOrdersCountEl) weeklyOrdersCountEl.textContent = formatNumber(weeklyOrdersCount);
     if (weekSalesEl) weekSalesEl.textContent = `Rs. ${formatNumber(weekSales)}`;
     if (weekExpensesEl) weekExpensesEl.textContent = `Rs. ${formatNumber(weekExpenses)}`;
     if (monthSalesEl) monthSalesEl.textContent = `Rs. ${formatNumber(monthSales)}`;
@@ -11883,50 +11823,81 @@ function loadCategories() {
     const menuItems = Storage.get('menuItems') || [];
     categoryButtons.innerHTML = '';
 
-    // 1. "All Items" Chip
-    const allBtn = document.createElement('button');
-    const isAllActive = selectedCategory === 'all';
-    allBtn.className = `category-btn ${isAllActive ? 'active' : ''}`;
-    allBtn.onclick = () => selectCategory('all');
-    allBtn.innerHTML = `
-        <span class="cat-name">All Items</span>
-        <span class="cat-badge">${menuItems.length}</span>
-    `;
-    categoryButtons.appendChild(allBtn);
-
-    // 2. "Favourites" Chip
-    const favoritesCount = favorites.length;
-    const favoritesBtn = document.createElement('button');
-    const isFavoritesActive = selectedCategory === 'favorites';
-    favoritesBtn.className = `category-btn ${isFavoritesActive ? 'active' : ''}`;
-    favoritesBtn.onclick = () => selectCategory('favorites');
-    favoritesBtn.innerHTML = `
-        <span class="cat-name">Favourites</span>
-        <span class="cat-badge">${favoritesCount}</span>
-    `;
-    categoryButtons.appendChild(favoritesBtn);
-
-    // 3. Category Chips
-    menuCategories.forEach((cat) => {
-        const count = menuItems.filter(item => {
-            const itemCategoryId = typeof item.categoryId === 'number' ? item.categoryId : parseInt(item.categoryId);
-            const catId = typeof cat.id === 'number' ? cat.id : parseInt(cat.id);
-            return itemCategoryId === catId;
-        }).length;
-
-        const catId = typeof cat.id === 'number' ? cat.id : parseInt(cat.id);
-        const isActive = typeof selectedCategory === 'number'
-            ? selectedCategory === catId
-            : selectedCategory === 'all' || selectedCategory === 'favorites' ? false : parseInt(selectedCategory) === catId;
+    // Helper to create category dropdown
+    const createCategoryDropdown = (title, count, isActive, categoryKey, items) => {
+        const container = document.createElement('div');
+        container.className = 'category-dropdown-container';
 
         const btn = document.createElement('button');
         btn.className = `category-btn ${isActive ? 'active' : ''}`;
-        btn.onclick = () => selectCategory(catId);
         btn.innerHTML = `
-            <span class="cat-name">${escapeHtml(cat.name || 'Category')}</span>
+            <span class="cat-name">${escapeHtml(title)}</span>
             <span class="cat-badge">${count}</span>
+            <span class="cat-arrow">▼</span>
         `;
-        categoryButtons.appendChild(btn);
+
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            const isOpen = container.classList.contains('open');
+            // Close any other open category dropdowns
+            document.querySelectorAll('.category-dropdown-container.open').forEach(c => {
+                if (c !== container) c.classList.remove('open');
+            });
+            container.classList.toggle('open', !isOpen);
+            selectCategory(categoryKey);
+        };
+
+        const menu = document.createElement('div');
+        menu.className = 'category-dropdown-menu';
+
+        if (items && items.length > 0) {
+            items.forEach(item => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'category-dropdown-item';
+                itemEl.innerHTML = `
+                    <span class="cd-item-name" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span>
+                    <span class="cd-item-price">Rs.${formatNumber(item.price)}</span>
+                `;
+                itemEl.onclick = (e) => {
+                    e.stopPropagation();
+                    addToCart(item);
+                    container.classList.remove('open');
+                };
+                menu.appendChild(itemEl);
+            });
+        } else {
+            const emptyEl = document.createElement('div');
+            emptyEl.style.cssText = 'padding: 10px; color: #94a3b8; text-align: center; font-size: 12px; font-weight: 500;';
+            emptyEl.textContent = 'No items';
+            menu.appendChild(emptyEl);
+        }
+
+        container.appendChild(btn);
+        container.appendChild(menu);
+        return container;
+    };
+
+    // 1. "All Items"
+    const isAllActive = selectedCategory === 'all';
+    categoryButtons.appendChild(createCategoryDropdown('All Items', menuItems.length, isAllActive, 'all', menuItems));
+
+    // 2. "Favourites"
+    const favItems = menuItems.filter(item => favorites.includes(item.id));
+    const isFavoritesActive = selectedCategory === 'favorites';
+    categoryButtons.appendChild(createCategoryDropdown('Favourites', favItems.length, isFavoritesActive, 'favorites', favItems));
+
+    // 3. Categories
+    menuCategories.forEach((cat) => {
+        const catId = typeof cat.id === 'number' ? cat.id : parseInt(cat.id);
+        const catItems = menuItems.filter(item => {
+            const itemCategoryId = typeof item.categoryId === 'number' ? item.categoryId : parseInt(item.categoryId);
+            return itemCategoryId === catId;
+        });
+        const isActive = typeof selectedCategory === 'number'
+            ? selectedCategory === catId
+            : (selectedCategory === 'all' || selectedCategory === 'favorites' ? false : parseInt(selectedCategory) === catId);
+
+        categoryButtons.appendChild(createCategoryDropdown(cat.name || 'Category', catItems.length, isActive, catId, catItems));
     });
 }
 
@@ -12559,10 +12530,6 @@ function updateCart() {
                     <span>Subtotal</span>
                     <span>Rs.0</span>
                 </div>
-                <div class="summary-item tax-row" style="display: flex; justify-content: space-between; font-size: 13px;">
-                    <span>GST (5%): Rs.0</span>
-                    <span>Serv. Charges (10%): Rs.0</span>
-                </div>
                 <div class="summary-item total-row">
                     <span>Total</span>
                     <span id="cartTotal">Rs.0</span>
@@ -12651,22 +12618,13 @@ function updateCart() {
                 </div>`;
         }
 
-        // Calculate GST (5%) and service charges (10% of subtotal after discount)
-        // Exclude for Parcel/Delivery orders
-        const discountedSubtotal = Math.max(0, subtotal - discountAmount);
-        const salesTax = (selectedPaymentMethod === 'delivery' || selectedPaymentMethod === 'parcel') ? 0 : (discountedSubtotal * SALES_TAX_RATE);
-        const serviceCharges = (selectedPaymentMethod === 'delivery' || selectedPaymentMethod === 'parcel') ? 0 : (discountedSubtotal * SERVICE_CHARGE_RATE);
-        const grandTotal = discountedSubtotal + salesTax + serviceCharges;
+        const grandTotal = Math.max(0, subtotal - discountAmount);
 
         orderSummary.innerHTML = `
             ${discountHtml}
             <div class="summary-item subtotal-row">
                 <span>Subtotal</span>
                 <span>Rs.${formatNumber(subtotal)}</span>
-            </div>
-            <div class="summary-item tax-row" style="display: flex; justify-content: space-between; font-size: 13px;">
-                <span>GST (5%): Rs.${formatNumber(salesTax)}</span>
-                <span>Serv. Charges (10%): Rs.${formatNumber(serviceCharges)}</span>
             </div>
             <div class="summary-item total-row">
                 <span>Total</span>
@@ -12682,10 +12640,7 @@ function updateCart() {
             });
         }
     } else if (cartTotal) {
-        const discountedSubtotal = Math.max(0, subtotal - discountAmount);
-        const salesTax = (selectedPaymentMethod === 'delivery' || selectedPaymentMethod === 'parcel') ? 0 : (discountedSubtotal * SALES_TAX_RATE);
-        const serviceCharges = (selectedPaymentMethod === 'delivery' || selectedPaymentMethod === 'parcel') ? 0 : (discountedSubtotal * SERVICE_CHARGE_RATE);
-        const grandTotal = discountedSubtotal + salesTax + serviceCharges;
+        const grandTotal = Math.max(0, subtotal - discountAmount);
         cartTotal.textContent = `Rs.${formatNumber(grandTotal)}`;
     }
 }
@@ -15606,6 +15561,9 @@ onDOMReady(() => {
                 tableDropdownContent.style.display = 'none';
             }
         }
+        if (!e.target.closest('.category-dropdown-container')) {
+            document.querySelectorAll('.category-dropdown-container.open').forEach(c => c.classList.remove('open'));
+        }
     });
 
     // Update order date
@@ -16255,10 +16213,10 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
                         <td style="border-right: 1px solid #000;">Gross Sales (Cash)</td>
                         <td class="text-right bold">Rs. ${formatNumber(cash)}</td>
                     </tr>
-                    <tr>
+                    ${serviceCharges > 0 ? `<tr>
                         <td style="border-right: 1px solid #000;">Taxes & Service</td>
                         <td class="text-right bold">Rs. ${formatNumber(serviceCharges)}</td>
-                    </tr>
+                    </tr>` : ''}
                     <tr>
                         <td style="border-right: 1px solid #000;">Discount</td>
                         <td class="text-right bold">Rs. ${formatNumber(discount)}</td>
