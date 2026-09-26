@@ -19,8 +19,8 @@ function createWindow() {
   });
 
   mainWindow.maximize();
-
   mainWindow.loadFile('index.html');
+  mainWindow.focus();
 
   // Open DevTools in development
   if (process.argv.includes('--dev')) {
@@ -86,17 +86,31 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(createWindow);
+// Single-instance lock to ensure new launches bring existing window to front
+const gotTheLock = app.requestSingleInstanceLock();
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
 
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
-});
+  app.whenReady().then(createWindow);
+
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+      app.quit();
+    }
+  });
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  });
+}
 
