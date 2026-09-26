@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7b241c"/>
+      <stop offset="100%" stop-color="#4a154b"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  
+  <!-- Background Card -->
+  <rect width="240" height="240" rx="28" fill="url(#bgGrad)"/>
+  
+  <!-- Decorative Background Circles -->
+  <circle cx="210" cy="30" r="60" fill="#ffffff" opacity="0.08"/>
+  <circle cx="20" cy="220" r="50" fill="#000000" opacity="0.08"/>
+  
+  <!-- Center Visual Icon / Illustration -->
+  <g filter="url(#shadow)" transform="translate(120, 100)">
+    
+            <!-- Top Bun -->
+            <path d="M-42,-14 C-42,-40 42,-40 42,-14 Z" fill="#e67e22"/>
+            <circle cx="-12" cy="-28" r="1.5" fill="#fcf3cf"/>
+            <circle cx="14" cy="-26" r="1.5" fill="#fcf3cf"/>
+            <!-- Beef Patty 1 -->
+            <rect x="-42" y="-12" width="84" height="8" rx="4" fill="#641e16"/>
+            <!-- Melted Cheese -->
+            <path d="M-40,-5 L40,-5 L28,4 L-28,4 Z" fill="#f4d03f"/>
+            <!-- Beef Patty 2 -->
+            <rect x="-42" y="2" width="84" height="8" rx="4" fill="#641e16"/>
+            <!-- Pickles & Onions -->
+            <circle cx="-16" cy="12" r="4" fill="#27ae60"/>
+            <circle cx="16" cy="12" r="4" fill="#27ae60"/>
+            <!-- Bottom Bun -->
+            <path d="M-40,14 C-40,26 40,26 40,14 Z" fill="#e67e22"/>
+        
+  </g>
+  
+  <!-- Bottom Plate / Pill Header -->
+  <g transform="translate(120, 195)">
+    <rect x="-95" y="-18" width="190" height="34" rx="17" fill="rgba(0,0,0,0.35)" backdrop-filter="blur(4px)"/>
+    <text x="0" y="4" font-family="'Segoe UI', Roboto, 'Helvetica Neue', sans-serif" font-size="13" font-weight="700" fill="#f9e79f" text-anchor="middle" letter-spacing="0.3">Double Beef Smash Burger</text>
+  </g>
+</svg>

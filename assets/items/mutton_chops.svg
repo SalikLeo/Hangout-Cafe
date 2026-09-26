@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4a235a"/>
+      <stop offset="100%" stop-color="#1b2631"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  
+  <!-- Background Card -->
+  <rect width="240" height="240" rx="28" fill="url(#bgGrad)"/>
+  
+  <!-- Decorative Background Circles -->
+  <circle cx="210" cy="30" r="60" fill="#ffffff" opacity="0.08"/>
+  <circle cx="20" cy="220" r="50" fill="#000000" opacity="0.08"/>
+  
+  <!-- Center Visual Icon / Illustration -->
+  <g filter="url(#shadow)" transform="translate(120, 100)">
+    
+            <!-- Meat cutlet 1 -->
+            <path d="M-30,-20 C-10,-35 15,-25 10,0 C5,15 -15,10 -30,-20 Z" fill="#641e16"/>
+            <!-- Rib Bone -->
+            <path d="M0,-8 L35,18" stroke="#fdfefe" stroke-width="6" stroke-linecap="round"/>
+            <!-- Meat cutlet 2 -->
+            <path d="M-10,0 C10,-15 35,-5 30,20 C25,35 5,30 -10,0 Z" fill="#78281f"/>
+            <path d="M20,12 L50,38" stroke="#fdfefe" stroke-width="6" stroke-linecap="round"/>
+            <!-- Grill lines -->
+            <line x1="-20" y1="-15" x2="-10" y2="-5" stroke="#17202a" stroke-width="3.5" stroke-linecap="round"/>
+            <line x1="-5" y1="5" x2="5" y2="15" stroke="#17202a" stroke-width="3.5" stroke-linecap="round"/>
+        
+  </g>
+  
+  <!-- Bottom Plate / Pill Header -->
+  <g transform="translate(120, 195)">
+    <rect x="-95" y="-18" width="190" height="34" rx="17" fill="rgba(0,0,0,0.35)" backdrop-filter="blur(4px)"/>
+    <text x="0" y="4" font-family="'Segoe UI', Roboto, 'Helvetica Neue', sans-serif" font-size="13" font-weight="700" fill="#f5b041" text-anchor="middle" letter-spacing="0.3">Mutton Chops BBQ</text>
+  </g>
+</svg>

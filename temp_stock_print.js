@@ -47,7 +47,7 @@ window.printStockReport = () => {
         </head>
         <body>
             <div class="header">
-                <h1>Khyber Charsi Tikka Karahi & Restaurant</h1>
+                <h1>Hangout Lounge & Co.</h1>
                 <p>Stock Report</p>
                 <p>${dateStr} ${timeStr}</p>
             </div>

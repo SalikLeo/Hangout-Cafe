@@ -1,11 +1,17 @@
-// Authentication check
-if (sessionStorage.getItem('authenticated') !== 'true') {
-    window.location.href = 'login.html';
-}
-
-// Clear unlocked tabs on every page load/refresh
-// This ensures staff password is required again after any refresh
-sessionStorage.removeItem('unlockedTabs');
+// Modern Tailwind-style SVG Icons
+const ICONS = {
+    view: `<svg class="action-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`,
+    edit: `<svg class="action-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`,
+    check: `<svg class="action-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
+    print: `<svg class="action-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>`,
+    delete: `<svg class="action-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`,
+    cross: `<svg class="action-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`,
+    star: `<svg class="action-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`,
+    starFilled: `<svg class="action-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`,
+    payout: `<svg class="action-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg>`,
+    list: `<svg class="action-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><line x1="9" y1="12" x2="15" y2="12"></line><line x1="9" y1="16" x2="13" y2="16"></line></svg>`,
+    clock: `<svg class="action-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`
+};
 
 // Data Storage using localStorage (must be defined before password functions)
 const Storage = {
@@ -52,8 +58,29 @@ function getAdminPassword() {
     return Storage.get('adminPassword') ?? '';
 }
 
+// Authentication check: Only redirect to login if login password is set and user is not authenticated
+const currentLoginPasswordOnLoad = getLoginPassword();
+if (currentLoginPasswordOnLoad !== '' && sessionStorage.getItem('authenticated') !== 'true') {
+    window.location.replace('login.html');
+} else {
+    sessionStorage.setItem('authenticated', 'true');
+}
+
+// Clear unlocked tabs on every page load/refresh
+// This ensures staff password is required again after any refresh
+sessionStorage.removeItem('unlockedTabs');
+
+// Helper to ensure callback runs whether DOM is still loading or already ready
+function onDOMReady(fn) {
+    if (document.readyState !== 'loading') {
+        fn();
+    } else {
+        document.addEventListener('DOMContentLoaded', fn);
+    }
+}
+
 // Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+onDOMReady(() => {
     // Populate Year Dropdown
     const yearSelect = document.getElementById('reportAnnualYear');
     if (yearSelect) {
@@ -82,6 +109,166 @@ let pendingUnbookAction = null;
 let pendingUnbookCard = null;
 let unbookConfirmationContainer = null;
 
+// ==========================================
+// CUSTOM APP MESSAGE BOX & CONFIRM MODALS
+// ==========================================
+window.showCustomAlert = function(msg, title = 'Hangout Lounge & Co.', callback = null) {
+    const modal = document.getElementById('customMessageBoxModal');
+    const titleEl = document.getElementById('customMsgBoxTitle');
+    const msgEl = document.getElementById('customMsgBoxMessage');
+    const actionsEl = document.getElementById('customMsgBoxActions');
+    const iconContainer = document.getElementById('customMsgBoxIconContainer');
+    const iconEl = document.getElementById('customMsgBoxIcon');
+
+    if (!modal || !msgEl || !actionsEl) {
+        if (typeof callback === 'function') callback();
+        return;
+    }
+
+    let messageText = String(msg || '');
+    if (typeof t === 'function') messageText = t(messageText);
+
+    if (titleEl) titleEl.textContent = title;
+    msgEl.textContent = messageText;
+
+    // Detect type for icon & style
+    let type = 'info';
+    let icon = 'ℹ️';
+    if (/error|fail|cannot|invalid|wrong|not found|exceed|warning|⚠️|caution/i.test(messageText)) {
+        type = 'danger';
+        icon = '⚠️';
+    } else if (/success|completed|saved|cleared|reset/i.test(messageText)) {
+        type = 'success';
+        icon = '✅';
+    } else if (/please|select|enter/i.test(messageText)) {
+        type = 'warning';
+        icon = '🔔';
+    }
+
+    if (iconContainer) {
+        iconContainer.className = 'custom-msgbox-icon type-' + type;
+    }
+    if (iconEl) {
+        iconEl.textContent = icon;
+    }
+
+    actionsEl.innerHTML = `
+        <button type="button" id="customMsgBoxOkBtn" class="custom-msgbox-btn custom-msgbox-btn-primary">OK</button>
+    `;
+
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => {
+        modal.classList.add('show');
+        const okBtn = document.getElementById('customMsgBoxOkBtn');
+        if (okBtn) okBtn.focus();
+    });
+
+    const keyHandler = (e) => {
+        if (e.key === 'Enter' || e.key === 'Escape') {
+            e.preventDefault();
+            closeHandler();
+        }
+    };
+
+    const closeHandler = () => {
+        document.removeEventListener('keydown', keyHandler);
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.style.display = 'none';
+            if (typeof callback === 'function') callback();
+        }, 160);
+    };
+
+    document.addEventListener('keydown', keyHandler);
+    const okBtn = document.getElementById('customMsgBoxOkBtn');
+    if (okBtn) {
+        okBtn.onclick = closeHandler;
+    }
+};
+
+window.showCustomConfirm = function(msg, onConfirm, onCancel = null, options = {}) {
+    const modal = document.getElementById('customMessageBoxModal');
+    const titleEl = document.getElementById('customMsgBoxTitle');
+    const msgEl = document.getElementById('customMsgBoxMessage');
+    const actionsEl = document.getElementById('customMsgBoxActions');
+    const iconContainer = document.getElementById('customMsgBoxIconContainer');
+    const iconEl = document.getElementById('customMsgBoxIcon');
+
+    if (!modal || !msgEl || !actionsEl) {
+        if (typeof onConfirm === 'function') onConfirm();
+        return;
+    }
+
+    let messageText = String(msg || '');
+    if (typeof t === 'function') messageText = t(messageText);
+
+    const title = options.title || 'Confirmation';
+    const confirmText = options.confirmText || 'Confirm';
+    const cancelText = options.cancelText || 'Cancel';
+    const type = options.type || (confirmText.toLowerCase().includes('delete') || confirmText.toLowerCase().includes('clear') || confirmText.toLowerCase().includes('reset') ? 'danger' : 'warning');
+    const icon = options.icon || (type === 'danger' ? '🗑️' : '❓');
+
+    if (titleEl) titleEl.textContent = title;
+    msgEl.textContent = messageText;
+
+    if (iconContainer) {
+        iconContainer.className = 'custom-msgbox-icon type-' + type;
+    }
+    if (iconEl) {
+        iconEl.textContent = icon;
+    }
+
+    const confirmBtnClass = type === 'danger' ? 'custom-msgbox-btn-danger' : 'custom-msgbox-btn-primary';
+
+    actionsEl.innerHTML = `
+        <button type="button" id="customMsgBoxCancelBtn" class="custom-msgbox-btn custom-msgbox-btn-cancel">${cancelText}</button>
+        <button type="button" id="customMsgBoxConfirmBtn" class="custom-msgbox-btn ${confirmBtnClass}">${confirmText}</button>
+    `;
+
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => {
+        modal.classList.add('show');
+        const confirmBtn = document.getElementById('customMsgBoxConfirmBtn');
+        if (confirmBtn) confirmBtn.focus();
+    });
+
+    const finish = (isConfirmed) => {
+        document.removeEventListener('keydown', keyHandler);
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.style.display = 'none';
+            if (isConfirmed && typeof onConfirm === 'function') {
+                onConfirm();
+            } else if (!isConfirmed && typeof onCancel === 'function') {
+                onCancel();
+            }
+        }, 160);
+    };
+
+    const keyHandler = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            finish(true);
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            finish(false);
+        }
+    };
+
+    document.addEventListener('keydown', keyHandler);
+
+    const cancelBtn = document.getElementById('customMsgBoxCancelBtn');
+    const confirmBtn = document.getElementById('customMsgBoxConfirmBtn');
+
+    if (cancelBtn) cancelBtn.onclick = () => finish(false);
+    if (confirmBtn) confirmBtn.onclick = () => finish(true);
+};
+
+// Global alert override
+window.alert = function(msg) {
+    showCustomAlert(msg);
+};
+
 // Generic delete confirmation with tick/cross buttons
 window.showDeleteConfirmation = (buttonElement, deleteFunction, ...args) => {
     // Cancel any existing pending delete
@@ -98,8 +285,8 @@ window.showDeleteConfirmation = (buttonElement, deleteFunction, ...args) => {
     const container = document.createElement('span');
     container.style.cssText = 'display: inline-flex; gap: 4px; align-items: center; vertical-align: middle;';
     container.innerHTML = `
-        <button type="button" onclick="confirmDelete()" style="background: #4caf50; color: white; border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 12px; min-width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;" title="Confirm">✓</button>
-        <button type="button" onclick="cancelDeleteConfirmation()" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 12px; min-width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;" title="Cancel">✕</button>
+        <button type="button" onclick="confirmDelete()" class="btn-action btn-action-save" style="width: 28px; height: 28px; min-width: 28px;" title="Confirm Delete">${ICONS.check}</button>
+        <button type="button" onclick="cancelDeleteConfirmation()" class="btn-action btn-action-delete" style="width: 28px; height: 28px; min-width: 28px;" title="Cancel">${ICONS.cross}</button>
     `;
 
     buttonElement.replaceWith(container);
@@ -148,13 +335,6 @@ window.openStaffPasswordModal = (tab) => {
         setTimeout(() => {
             document.getElementById('staffPasswordInput').focus();
         }, 100);
-
-        // Close modal when clicking outside
-        modal.onclick = (e) => {
-            if (e.target === modal) {
-                closeStaffPasswordModal();
-            }
-        };
     }
 };
 
@@ -242,13 +422,6 @@ window.openActionPasswordModal = (callback, passwordType = 'admin') => {
         if (errorMessage) {
             errorMessage.style.display = 'none';
         }
-
-        // Close modal when clicking outside
-        modal.onclick = (e) => {
-            if (e.target === modal) {
-                closeActionPasswordModal();
-            }
-        };
     }
 };
 
@@ -304,6 +477,202 @@ window.handleActionPassword = (event) => {
     }
 };
 
+// ==========================================
+// SUPERADMIN & APP EXPIRY LOCK TIMER
+// ==========================================
+const SUPERADMIN_PASSWORDS = ['Salikleo.1212', 'salikleo.1212', 'Salik@786', 'salik786', 'Salik@SuperAdmin786', 'admin@salik786'];
+let isSuperadminTimerUnlocked = false;
+
+// Initialize or update default 7-day timer if not already set or updated
+(function initDefault7DayTimer() {
+    try {
+        const existing = Storage.get('appExpiryConfig');
+        if (!existing || !existing.expiresAt) {
+            const duration = 7;
+            const unit = 'days';
+            const expiresAt = Date.now() + (7 * 24 * 60 * 60 * 1000);
+            Storage.set('appExpiryConfig', {
+                enabled: true,
+                expiresAt: expiresAt,
+                duration: duration,
+                unit: unit,
+                setAt: Date.now()
+            });
+        }
+    } catch(e) {}
+})();
+
+function verifySuperadminPassword(entered) {
+    if (!entered) return false;
+    return SUPERADMIN_PASSWORDS.includes(entered.trim());
+}
+
+window.unlockTimerSettings = () => {
+    const input = document.getElementById('superadminAuthInput');
+    const err = document.getElementById('superadminAuthError');
+    const entered = input ? input.value.trim() : '';
+
+    if (verifySuperadminPassword(entered)) {
+        isSuperadminTimerUnlocked = true;
+        if (err) err.style.display = 'none';
+        if (input) input.value = '';
+        renderTimerControls();
+    } else {
+        if (err) {
+            err.textContent = 'Incorrect Superadmin Password.';
+            err.style.display = 'block';
+        }
+    }
+};
+
+window.saveExpiryTimer = () => {
+    const durationInput = document.getElementById('expiryDurationInput');
+    const unitSelect = document.getElementById('expiryUnitSelect');
+    const duration = parseFloat(durationInput?.value) || 0;
+    const unit = unitSelect?.value || 'days';
+
+    if (duration <= 0) {
+        showCustomAlert('Please enter a valid duration greater than 0.');
+        return;
+    }
+
+    let ms = 0;
+    if (unit === 'minutes') ms = duration * 60 * 1000;
+    else if (unit === 'hours') ms = duration * 60 * 60 * 1000;
+    else if (unit === 'days') ms = duration * 24 * 60 * 60 * 1000;
+
+    const expiresAt = Date.now() + ms;
+    const config = {
+        enabled: true,
+        expiresAt: expiresAt,
+        duration: duration,
+        unit: unit,
+        setAt: Date.now()
+    };
+
+    Storage.set('appExpiryConfig', config);
+    showCustomAlert(`App lock timer set for ${duration} ${unit}. The application will automatically lock on ${new Date(expiresAt).toLocaleString()}.`);
+    renderTimerControls();
+    checkAppExpiry();
+};
+
+window.disableExpiryTimer = () => {
+    Storage.set('appExpiryConfig', { enabled: false });
+    showCustomAlert('App lock timer has been disabled.');
+    renderTimerControls();
+};
+
+function renderTimerControls() {
+    const config = Storage.get('appExpiryConfig');
+    const badge = document.getElementById('expiryTimerStatusBadge');
+    const promptDiv = document.getElementById('superadminAuthPrompt');
+    const controlsDiv = document.getElementById('superadminTimerControls');
+    const detailsDiv = document.getElementById('expiryTimerDetails');
+    const durationInput = document.getElementById('expiryDurationInput');
+    const unitSelect = document.getElementById('expiryUnitSelect');
+
+    if (!config || !config.enabled || !config.expiresAt) {
+        if (badge) {
+            badge.textContent = 'Disabled';
+            badge.style.background = '#e2e8f0';
+            badge.style.color = '#64748b';
+        }
+        if (detailsDiv) detailsDiv.innerHTML = 'Timer is currently inactive. The application will not automatically lock.';
+    } else {
+        const remainingMs = config.expiresAt - Date.now();
+        const expiryDateStr = new Date(config.expiresAt).toLocaleString();
+
+        if (remainingMs <= 0) {
+            if (badge) {
+                badge.textContent = 'EXPIRED';
+                badge.style.background = '#fee2e2';
+                badge.style.color = '#dc2626';
+            }
+            if (detailsDiv) detailsDiv.innerHTML = `⚠️ <b style="color: #dc2626;">App is currently EXPIRED</b> since ${expiryDateStr}.`;
+        } else {
+            const remHours = Math.floor(remainingMs / (1000 * 60 * 60));
+            const remMins = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+            const remDays = Math.floor(remHours / 24);
+            let timeStr = '';
+            if (remDays > 0) timeStr = `${remDays}d ${remHours % 24}h remaining`;
+            else if (remHours > 0) timeStr = `${remHours}h ${remMins}m remaining`;
+            else timeStr = `${remMins}m remaining`;
+
+            if (badge) {
+                badge.textContent = `Active (${timeStr})`;
+                badge.style.background = '#dcfce7';
+                badge.style.color = '#15803d';
+            }
+            if (detailsDiv) detailsDiv.innerHTML = `⏱️ <b>Expires on:</b> ${expiryDateStr} (${timeStr}).`;
+        }
+
+        if (durationInput && config.duration) durationInput.value = config.duration;
+        if (unitSelect && config.unit) unitSelect.value = config.unit;
+    }
+
+    if (isSuperadminTimerUnlocked) {
+        if (promptDiv) promptDiv.style.display = 'none';
+        if (controlsDiv) controlsDiv.style.display = 'flex';
+    } else {
+        if (promptDiv) promptDiv.style.display = 'flex';
+        if (controlsDiv) controlsDiv.style.display = 'none';
+    }
+}
+
+function checkAppExpiry() {
+    const config = Storage.get('appExpiryConfig');
+    const overlay = document.getElementById('appLockOverlay');
+    if (!overlay) return;
+
+    if (config && config.enabled && config.expiresAt) {
+        if (Date.now() >= config.expiresAt) {
+            overlay.style.display = 'flex';
+        } else {
+            overlay.style.display = 'none';
+        }
+    } else {
+        overlay.style.display = 'none';
+    }
+}
+
+window.unlockAppFromOverlay = () => {
+    const input = document.getElementById('lockSuperadminPassword');
+    const err = document.getElementById('lockErrorMsg');
+    const entered = input ? input.value.trim() : '';
+
+    if (verifySuperadminPassword(entered)) {
+        if (err) err.style.display = 'none';
+        if (input) input.value = '';
+
+        // Disable expired timer so developer can work freely
+        Storage.set('appExpiryConfig', { enabled: false });
+        const overlay = document.getElementById('appLockOverlay');
+        if (overlay) overlay.style.display = 'none';
+        showCustomAlert('Application successfully unlocked! The timer has been reset/disabled.', 'Hangout Lounge & Co.');
+        renderTimerControls();
+    } else {
+        if (err) {
+            err.textContent = 'Incorrect Superadmin Password. Access Denied.';
+            err.style.display = 'block';
+        }
+    }
+};
+
+window.closeAppFromOverlay = () => {
+    try {
+        window.__allowClose = true;
+        window.close();
+    } catch (e) {
+        window.close();
+    }
+};
+
+// Start periodic expiry checking
+setInterval(checkAppExpiry, 10000);
+onDOMReady(() => {
+    checkAppExpiry();
+});
+
 // Advanced Settings Modal Functions
 window.openAdvancedSettingsModal = () => {
     const modal = document.getElementById('advancedSettingsModal');
@@ -313,13 +682,7 @@ window.openAdvancedSettingsModal = () => {
         document.getElementById('advancedSettingsForm').reset();
         document.getElementById('advancedSettingsError').style.display = 'none';
         document.getElementById('advancedSettingsSuccess').style.display = 'none';
-
-        // Close modal when clicking outside
-        modal.onclick = (e) => {
-            if (e.target === modal) {
-                closeAdvancedSettingsModal();
-            }
-        };
+        renderTimerControls();
     }
 };
 
@@ -531,12 +894,27 @@ function switchToTab(tab) {
             loadExpenses();
         }
         else if (tab === 'stock') loadStock();
+        else if (tab === 'profit') {
+            if (typeof loadItemProfitSection === 'function') {
+                loadItemProfitSection();
+            }
+        }
         else if (tab === 'tables') loadTables();
         else if (tab === 'reports') {
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalISODate();
+            const thisMonth = getLocalISOMonth();
             const dateInput = document.getElementById('reportDailyDate');
             if (dateInput && !dateInput.value) dateInput.value = today;
+            const monthInput = document.getElementById('reportMonthlyMonth');
+            if (monthInput && !monthInput.value) monthInput.value = thisMonth;
+            const yearSelect = document.getElementById('reportAnnualYear');
+            if (yearSelect && yearSelect.options.length === 0) {
+                yearSelect.innerHTML = getFilterYearOptions(new Date().getFullYear());
+            }
         }
+    }
+    if (window.setupSearchClearButtons) {
+        window.setupSearchClearButtons();
     }
 }
 
@@ -795,29 +1173,33 @@ function formatDate(date) {
 function formatReceiptItems(items) {
     if (!items || items.length === 0) return '';
 
-    // Return HTML table format with left-aligned columns
-    let result = '<table style="width: 100%; border-collapse: collapse; margin: 5px 0; font-size: 10px; font-family: Arial, sans-serif;">';
-    result += '<thead>';
-    result += '<tr style="border-bottom: 1px dashed #000;">';
-    result += '<th style="text-align: left; padding: 4px 8px; font-weight: 700;">Item</th>';
-    result += '<th style="text-align: right; padding: 4px 8px; font-weight: 700;">Qty</th>';
-    result += '<th style="text-align: left; padding: 4px 8px; font-weight: 700;">Price</th>';
-    result += '<th style="text-align: left; padding: 4px 8px; font-weight: 700;">Total</th>';
+    let result = '<table class="receipt-items-table" style="width: 100%; border-collapse: collapse; margin: 5px 0; font-family: \'Poppins\', sans-serif !important; border: 1.5px solid #000; background: #fff;">';
+    result += '<thead style="background: #fff !important; color: #000 !important; font-family: \'Poppins\', sans-serif !important;">';
+    result += '<tr style="border-bottom: 1.5px solid #000; background: #fff !important; font-family: \'Poppins\', sans-serif !important;">';
+    result += '<th style="text-align: center; padding: 4px 2px; font-size: 10.5px; font-weight: 600; border-right: 1px solid #000; width: 7%; color: #000 !important; background: #fff !important; font-family: \'Poppins\', sans-serif !important;">#</th>';
+    result += '<th style="text-align: left; padding: 4px 5px; font-size: 10.5px; font-weight: 600; border-right: 1px solid #000; width: 48%; color: #000 !important; background: #fff !important; font-family: \'Poppins\', sans-serif !important;">ITEM</th>';
+    result += '<th style="text-align: center; padding: 4px 2px; font-size: 10.5px; font-weight: 600; border-right: 1px solid #000; width: 10%; color: #000 !important; background: #fff !important; font-family: \'Poppins\', sans-serif !important;">QTY</th>';
+    result += '<th style="text-align: right; padding: 4px 4px; font-size: 10.5px; font-weight: 600; border-right: 1px solid #000; width: 17%; color: #000 !important; background: #fff !important; font-family: \'Poppins\', sans-serif !important;">RATE</th>';
+    result += '<th style="text-align: right; padding: 4px 5px; font-size: 10.5px; font-weight: 600; width: 18%; color: #000 !important; background: #fff !important; font-family: \'Poppins\', sans-serif !important;">AMOUNT</th>';
     result += '</tr>';
     result += '</thead>';
-    result += '<tbody>';
+    result += '<tbody style="background: #fff !important; font-family: \'Poppins\', sans-serif !important;">';
 
-    items.forEach(item => {
-        const name = item.name || 'Unknown';
+    items.forEach((item, index) => {
+        const num = index + 1;
+        const name = escapeHtml(item.name || item.itemName || item.dishName || 'Unknown');
         const quantity = formatQuantity(item.quantity || 0);
         const unitPrice = item.price || 0;
         const totalPrice = unitPrice * (item.quantity || 0);
+        const isLast = index === items.length - 1;
+        const bottomBorder = isLast ? '' : 'border-bottom: 1px solid #000;';
 
-        result += '<tr>';
-        result += `<td style="text-align: left; padding: 3px 8px; font-weight: 700;">${name}</td>`;
-        result += `<td style="text-align: right; padding: 3px 8px; font-weight: 700;">${quantity}</td>`;
-        result += `<td style="text-align: left; padding: 3px 8px; font-weight: 700;">${formatNumber(unitPrice)}</td>`;
-        result += `<td style="text-align: left; padding: 3px 8px; font-weight: 700;">${formatNumber(totalPrice)}</td>`;
+        result += `<tr style="${bottomBorder} font-family: 'Poppins', sans-serif !important;">`;
+        result += `<td style="text-align: center; padding: 4px 2px; font-size: 10px; font-weight: 400; color: #666; border-right: 1px solid #000; font-family: 'Poppins', sans-serif !important;">${num}</td>`;
+        result += `<td style="text-align: left; padding: 4px 5px; font-size: 10.5px; font-weight: 500; color: #000; border-right: 1px solid #000; line-height: 1.25; font-family: 'Poppins', sans-serif !important;">${name}</td>`;
+        result += `<td style="text-align: center; padding: 4px 2px; font-size: 11px; font-weight: 600; color: #000; border-right: 1px solid #000; font-family: 'Poppins', sans-serif !important;">${quantity}</td>`;
+        result += `<td style="text-align: right; padding: 4px 4px; font-size: 10.5px; font-weight: 500; color: #000; border-right: 1px solid #000; font-family: 'Poppins', sans-serif !important;">${formatNumber(unitPrice)}</td>`;
+        result += `<td style="text-align: right; padding: 4px 5px; font-size: 11px; font-weight: 600; color: #000; font-family: 'Poppins', sans-serif !important;">${formatNumber(totalPrice)}</td>`;
         result += '</tr>';
     });
 
@@ -827,74 +1209,309 @@ function formatReceiptItems(items) {
     return result;
 }
 
-// Helper function to format receipt summary as HTML table
+// Helper function to format receipt summary as clean key-value rows
 function formatReceiptSummary(subtotal, discountAmount, tax, serviceCharges, total) {
-    let result = '<table style="width: 100%; border-collapse: collapse; margin: 3px 0; font-size: 11px; font-family: Arial, sans-serif; font-weight: bold;">';
-    result += '<thead>';
-    result += '<tr style="border-bottom: 2px solid #000;">';
-    result += '<th style="text-align: left; padding: 2px 4px;">Description</th>';
-    result += '<th style="text-align: right; padding: 2px 4px;">Amount</th>';
-    result += '</tr>';
-    result += '</thead>';
-    result += '<tbody>';
-
-    result += '<tr>';
-    result += `<td style="text-align: left; padding: 2px 4px;">${t('Subtotal')}</td>`;
-    result += `<td style="text-align: right; padding: 2px 4px;">Rs.${formatNumber(subtotal)}</td>`;
-    result += '</tr>';
+    let result = '<div class="receipt-summary" style="margin-top: 6px; font-size: 12px; line-height: 1.6; color: #000; font-family: \'Poppins\', sans-serif !important;">';
+    result += `<div style="display: flex; justify-content: space-between; font-family: 'Poppins', sans-serif !important;"><span style="font-weight: 400; color: #444; font-family: 'Poppins', sans-serif !important;">${t('Subtotal')}</span><span style="font-weight: 500; color: #111; font-family: 'Poppins', sans-serif !important;">Rs. ${formatNumber(subtotal)}</span></div>`;
 
     if (discountAmount > 0) {
-        result += '<tr>';
-        result += `<td style="text-align: left; padding: 2px 4px;">${t('Discount')}</td>`;
-        result += `<td style="text-align: right; padding: 2px 4px;">-Rs.${formatNumber(discountAmount)}</td>`;
-        result += '</tr>';
+        result += `<div style="display: flex; justify-content: space-between;"><span style="font-weight: 400; color: #444;">${t('Discount')}</span><span style="font-weight: 500; color: #111;">-Rs. ${formatNumber(discountAmount)}</span></div>`;
     }
 
     if (tax > 0) {
-        result += '<tr>';
-        result += `<td style="text-align: left; padding: 2px 4px;">GST (5%)</td>`;
-        result += `<td style="text-align: right; padding: 2px 4px;">Rs.${formatNumber(tax)}</td>`;
-        result += '</tr>';
+        result += `<div style="display: flex; justify-content: space-between;"><span style="font-weight: 400; color: #444;">GST (5%)</span><span style="font-weight: 500; color: #111;">Rs. ${formatNumber(tax)}</span></div>`;
     }
 
     if (serviceCharges > 0) {
-        result += '<tr>';
-        result += `<td style="text-align: left; padding: 2px 4px;">Service Charges (10%)</td>`;
-        result += `<td style="text-align: right; padding: 2px 4px;">Rs.${formatNumber(serviceCharges)}</td>`;
-        result += '</tr>';
+        result += `<div style="display: flex; justify-content: space-between;"><span style="font-weight: 400; color: #444;">Service Charges (10%)</span><span style="font-weight: 500; color: #111;">Rs. ${formatNumber(serviceCharges)}</span></div>`;
     }
 
-    result += '<tr style="border-top: 1px dashed #000; font-size: 13px;">';
-    result += `<td style="text-align: left; padding: 3px 4px; font-weight: 900;">Grand Total</td>`;
-    result += `<td style="text-align: right; padding: 3px 4px; font-weight: 900;">Rs.${formatNumber(total)}</td>`;
-    result += '</tr>';
-
-    result += '</tbody>';
-    result += '</table>\n';
+    result += '<div style="border-top: 1.5px solid #000; margin: 5px 0 4px 0;"></div>';
+    result += `<div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 13.5px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; color: #000;">${t('TOTAL PAYABLE') || 'TOTAL PAYABLE'}</span><span style="font-size: 14.5px; font-weight: 700; color: #000;">Rs. ${formatNumber(total)}</span></div>`;
+    result += '</div>\n';
 
     return result;
+}
+
+// Master helper function to generate the complete modern receipt HTML
+function generateFullReceiptHTML(order) {
+    if (!order) return '';
+
+    const displayOrderNumber = (order.orderNumber || extractOrderNumber(order.orderId || order.id) || '').toString().padStart(7, '0');
+
+    // Extract items list
+    const itemsList = (order.items && Array.isArray(order.items) && order.items.length > 0)
+        ? order.items
+        : ((order.itemName || order.dishName)
+            ? [{ name: order.itemName || order.dishName || 'Unknown', quantity: order.quantity || 0, price: order.price || 0 }]
+            : []);
+
+    // Calculate subtotal, discount, tax, service charges, total
+    const subtotal = order.subtotal !== undefined
+        ? order.subtotal
+        : itemsList.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
+
+    const discountAmount = getDiscountAmountFromOrder(order, subtotal);
+    const paymentMethod = order.paymentMethod || 'cash';
+    const isParcel = (paymentMethod === 'delivery' || paymentMethod === 'parcel');
+    const tax = isParcel ? 0 : (order.tax !== undefined ? order.tax : 0);
+    const serviceCharges = isParcel ? 0 : (order.serviceCharges !== undefined ? order.serviceCharges : 0);
+    const total = order.total !== undefined ? order.total : (subtotal - discountAmount + tax + serviceCharges);
+
+    // Date & Time formatting
+    let dateStr = '';
+    let timeStr = '';
+    let orderDateObj = new Date();
+
+    if (order.date) {
+        if (typeof order.date === 'string' && order.time) {
+            dateStr = order.date;
+            timeStr = order.time;
+        } else {
+            orderDateObj = new Date(order.date);
+            dateStr = formatDate(orderDateObj);
+            timeStr = order.time || formatTime(orderDateObj);
+        }
+    } else if (order.createdAt) {
+        orderDateObj = new Date(order.createdAt);
+        dateStr = formatDate(orderDateObj);
+        timeStr = formatTime(orderDateObj);
+    } else {
+        dateStr = formatDate(orderDateObj);
+        timeStr = formatTime(orderDateObj);
+    }
+
+    const receiveTime = calculateReceiveTime(timeStr, orderDateObj);
+    const badgeText = formatLocation(paymentMethod);
+
+    const itemsHtml = formatReceiptItems(itemsList);
+    const summaryHtml = formatReceiptSummary(subtotal, discountAmount, tax, serviceCharges, total);
+
+    return `
+        <div class="receipt-container" style="font-family: 'Poppins', sans-serif !important; width: 100%; max-width: 320px; margin: 0 auto; color: #000; box-sizing: border-box; text-align: left; background: #fff; line-height: 1.4;">
+            <!-- Header -->
+            <div style="text-align: center; margin-bottom: 6px; font-family: 'Poppins', sans-serif !important;">
+                <div style="font-size: 17px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; color: #000; margin-bottom: 2px; font-family: 'Poppins', sans-serif !important;">Hangout Lounge & Co.</div>
+                <div style="font-size: 11px; font-weight: 500; color: #333; line-height: 1.35; font-family: 'Poppins', sans-serif !important;">Wah Cantt</div>
+                <div style="font-size: 11px; font-weight: 500; color: #333; line-height: 1.35; font-family: 'Poppins', sans-serif !important;">Phone: 0300-9509536</div>
+                <div style="margin: 6px 0 2px 0;">
+                    <span style="display: inline-block; border: 1.5px solid #000; padding: 2px 14px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.2; font-family: 'Poppins', sans-serif !important;">${badgeText}</span>
+                </div>
+            </div>
+
+            <!-- Dashed Divider -->
+            <div style="border-top: 1px dashed #999; margin: 7px 0;"></div>
+
+            <!-- Order Metadata -->
+            <div style="font-size: 11.5px; line-height: 1.55; color: #000; font-family: 'Poppins', sans-serif !important;">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; font-family: 'Poppins', sans-serif !important;">
+                    <span style="font-weight: 600; font-family: 'Poppins', sans-serif !important;">Order ID:</span>
+                    <span style="font-weight: 600; font-size: 13px; font-family: 'Poppins', sans-serif !important;">#${displayOrderNumber}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: baseline; font-family: 'Poppins', sans-serif !important;">
+                    <span style="font-weight: 600; font-family: 'Poppins', sans-serif !important;">Date & Time:</span>
+                    <span style="font-weight: 400; color: #333; font-family: 'Poppins', sans-serif !important;">${dateStr}, ${timeStr}</span>
+                </div>
+                ${receiveTime ? `
+                <div style="display: flex; justify-content: space-between; align-items: baseline; font-family: 'Poppins', sans-serif !important;">
+                    <span style="font-weight: 600; font-family: 'Poppins', sans-serif !important;">Order Receive Time:</span>
+                    <span style="font-weight: 400; color: #333; font-family: 'Poppins', sans-serif !important;">${receiveTime}</span>
+                </div>` : ''}
+                ${order.customerName && order.customerName !== '-' ? `
+                <div style="display: flex; justify-content: space-between; align-items: baseline; font-family: 'Poppins', sans-serif !important;">
+                    <span style="font-weight: 600; font-family: 'Poppins', sans-serif !important;">Customer:</span>
+                    <span style="font-weight: 400; color: #333; font-family: 'Poppins', sans-serif !important;">${escapeHtml(order.customerName)}</span>
+                </div>` : ''}
+                ${order.customerPhone ? `
+                <div style="display: flex; justify-content: space-between; align-items: baseline; font-family: 'Poppins', sans-serif !important;">
+                    <span style="font-weight: 600; font-family: 'Poppins', sans-serif !important;">Phone:</span>
+                    <span style="font-weight: 400; color: #333; font-family: 'Poppins', sans-serif !important;">${escapeHtml(order.customerPhone)}</span>
+                </div>` : ''}
+                ${order.tableNo ? `
+                <div style="display: flex; justify-content: space-between; align-items: baseline; font-family: 'Poppins', sans-serif !important;">
+                    <span style="font-weight: 600; font-family: 'Poppins', sans-serif !important;">Table No:</span>
+                    <span style="font-weight: 400; color: #333; font-family: 'Poppins', sans-serif !important;">${escapeHtml(order.tableNo)}</span>
+                </div>` : ''}
+                ${order.waiter ? `
+                <div style="display: flex; justify-content: space-between; align-items: baseline; font-family: 'Poppins', sans-serif !important;">
+                    <span style="font-weight: 600; font-family: 'Poppins', sans-serif !important;">Waiter:</span>
+                    <span style="font-weight: 400; color: #333; font-family: 'Poppins', sans-serif !important;">${escapeHtml(order.waiter)}</span>
+                </div>` : ''}
+                ${order.deliveryAddress ? `
+                <div style="display: flex; justify-content: space-between; align-items: baseline; font-family: 'Poppins', sans-serif !important;">
+                    <span style="font-weight: 600; font-family: 'Poppins', sans-serif !important;">Delivery Address:</span>
+                    <span style="font-weight: 400; color: #333; font-family: 'Poppins', sans-serif !important;">${escapeHtml(order.deliveryAddress)}</span>
+                </div>` : ''}
+            </div>
+
+            <!-- Dashed Divider -->
+            <div style="border-top: 1px dashed #999; margin: 6px 0 7px 0;"></div>
+
+            <!-- Items Table -->
+            ${itemsHtml}
+
+            <!-- Summary -->
+            ${summaryHtml}
+
+            <!-- Dashed Divider -->
+            <div style="border-top: 1px dashed #999; margin: 7px 0 6px 0;"></div>
+
+            <!-- Thank You -->
+            <div style="text-align: center; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #000; font-family: 'Poppins', sans-serif !important;">THANK YOU FOR ORDERING!</div>
+
+            <!-- Tear Cut Line -->
+            <div style="text-align: center; font-size: 10px; color: #777; margin-top: 6px; letter-spacing: 2px; font-family: 'Poppins', sans-serif !important;">✂ - - - - - - - - - - - - - - - - - - -</div>
+        </div>
+    `;
+}
+
+// Master helper function to open and print receipt window
+function openReceiptPrintWindow(receiptHTML, title) {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.open();
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>${title || 'Receipt'}</title>
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+                <style>
+                    *, *::before, *::after {
+                        box-sizing: border-box;
+                        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+                    }
+                    body, div, span, p, h1, h2, h3, h4, table, th, td, tr, b, strong {
+                        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+                    }
+                    body {
+                        padding: 8px;
+                        font-size: 12px;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: flex-start;
+                        align-items: center;
+                        min-height: auto;
+                        margin: 0 auto;
+                        max-width: 80mm;
+                        background: #fff;
+                        color: #000;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                    @media print {
+                        * {
+                            margin: 0;
+                            padding: 0;
+                            box-sizing: border-box;
+                        }
+                        body {
+                            padding: 3mm 0;
+                            margin: 0;
+                            min-height: auto;
+                            display: block;
+                            height: auto;
+                            max-width: 100%;
+                            width: 100%;
+                            background: #fff;
+                            color: #000;
+                            -webkit-print-color-adjust: exact;
+                            print-color-adjust: exact;
+                        }
+                        @page {
+                            size: 80mm auto;
+                            margin: 3mm;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                <div id="receiptContent" style="width: 100%;">
+                    ${receiptHTML}
+                </div>
+                <script>
+                    var hasPrinted = false;
+                    function triggerPrint() {
+                        if (hasPrinted) return;
+                        hasPrinted = true;
+                        try {
+                            window.focus();
+                            window.print();
+                        } catch(e) {
+                            console.error(e);
+                        }
+                    }
+                    window.addEventListener('afterprint', function() {
+                        setTimeout(function() {
+                            try { window.close(); } catch(e) {}
+                        }, 150);
+                    });
+                    function schedulePrint() {
+                        if (document.fonts && document.fonts.ready) {
+                            document.fonts.ready.then(function() {
+                                if (window.requestAnimationFrame) {
+                                    window.requestAnimationFrame(function() {
+                                        window.requestAnimationFrame(function() {
+                                            setTimeout(triggerPrint, 250);
+                                        });
+                                    });
+                                } else {
+                                    setTimeout(triggerPrint, 250);
+                                }
+                            }).catch(function() {
+                                setTimeout(triggerPrint, 250);
+                            });
+                        } else {
+                            if (window.requestAnimationFrame) {
+                                window.requestAnimationFrame(function() {
+                                    window.requestAnimationFrame(function() {
+                                        setTimeout(triggerPrint, 250);
+                                    });
+                                });
+                            } else {
+                                setTimeout(triggerPrint, 250);
+                            }
+                        }
+                    }
+                    if (document.readyState === 'complete') {
+                        schedulePrint();
+                    } else {
+                        window.addEventListener('load', schedulePrint, { once: true });
+                        setTimeout(schedulePrint, 500);
+                    }
+                </script>
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
 }
 
 function formatKOTItems(items) {
     if (!items || items.length === 0) return '';
 
-    // Return HTML table format with 2 columns (Item, Qty) for KOT
-    let result = '<table style="width: 100%; border-collapse: collapse; margin: 2px 0; font-size: 12px; font-family: Arial, sans-serif; display: table;">';
-    result += '<thead>';
-    result += '<tr style="border-bottom: 1px dashed #000;">';
-    result += '<th style="text-align: left; padding: 2px 8px; font-weight: 700; font-size: 12px; width: 70%;">Item</th>';
-    result += '<th style="text-align: right; padding: 2px 8px; font-weight: 700; font-size: 12px; width: 30%;">Qty</th>';
+    // Return HTML table format with 2 columns (Item, Qty) for KOT with bordered table (clean white background)
+    let result = '<table class="kot-items-table" style="width: 100%; border-collapse: collapse; margin: 4px 0; font-size: 12px; font-family: \'Poppins\', sans-serif !important; border: 1.5px solid #000; background: #fff;">';
+    result += '<thead style="background: #fff !important; color: #000 !important; font-family: \'Poppins\', sans-serif !important;">';
+    result += '<tr style="border-bottom: 1.5px solid #000; background: #fff !important;">';
+    result += '<th style="text-align: left; padding: 4px 8px; font-weight: 600; font-size: 11px; width: 70%; border-right: 1px solid #000; color: #000 !important; text-transform: uppercase;">ITEM</th>';
+    result += '<th style="text-align: center; padding: 4px 8px; font-weight: 600; font-size: 11px; width: 30%; color: #000 !important; text-transform: uppercase;">QTY</th>';
     result += '</tr>';
     result += '</thead>';
-    result += '<tbody>';
+    result += '<tbody style="background: #fff !important; font-family: \'Poppins\', sans-serif !important;">';
 
-    items.forEach(item => {
+    items.forEach((item, index) => {
         const name = escapeHtml(item.name || 'Unknown');
         const quantity = formatQuantity(item.quantity || 0);
+        const isLast = index === items.length - 1;
+        const bottomBorder = isLast ? '' : 'border-bottom: 1px solid #000;';
 
-        result += '<tr>';
-        result += `<td style="text-align: left; padding: 2px 8px; font-weight: 700; font-size: 11px;">${name}</td>`;
-        result += `<td style="text-align: right; padding: 2px 8px; font-weight: 700; font-size: 11px;">${quantity}</td>`;
+        result += `<tr style="${bottomBorder} font-family: 'Poppins', sans-serif !important;">`;
+        result += `<td style="text-align: left; padding: 4px 8px; font-weight: 500; font-size: 10.5px; border-right: 1px solid #000; color: #000; line-height: 1.25;">${name}</td>`;
+        result += `<td style="text-align: center; padding: 4px 8px; font-weight: 600; font-size: 11.5px; color: #000;">${quantity}</td>`;
         result += '</tr>';
     });
 
@@ -1000,242 +1617,32 @@ function calculateReceiveTime(orderTime, orderDate) {
     return fallbackTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 }
 
-// -------------------------
-// i18n (English / Urdu)
-// -------------------------
-let currentLanguage = localStorage.getItem('appLanguage') || 'en';
-
-const I18N_UR = {
-    // Common
-    'Restaurant Management System': 'ریسٹورنٹ مینجمنٹ سسٹم',
-    'Restaurant': 'ریسٹورنٹ',
-    'New Order': 'نیا آرڈر',
-    'Hold Orders': 'ہولڈ آرڈرز',
-    'Sales': 'سیلز',
-    'Menu': 'مینو',
-    'Employees': 'ملازمین',
-    'Expenses': 'اخراجات',
-    'Tables': 'ٹیبلز',
-    'Dashboard': 'ڈیش بورڈ',
-    'Search items...': 'اشیاء تلاش کریں...',
-    'Favourites': 'پسندیدہ',
-    'All': 'سب',
-    'Gents': 'جینٹس',
-    'Family': 'فیملی',
-    // Backward compatibility (in case any old UI text still says Cash/Online)
-    'Cash': 'جینٹس',
-    'Online': 'فیملی',
-    'Parcel': 'پارسل',
-    'Delivery': 'پارسل',
-
-    // Sales / Orders
-    'ORDER ID': 'آرڈر نمبر',
-    'Order ID': 'آرڈر نمبر',
-    'Order ID:': 'آرڈر نمبر:',
-    'ORDER NO': 'آرڈر نمبر',
-    'Order No': 'آرڈر نمبر',
-    'Order No.': 'آرڈر نمبر',
-    'Order No.:': 'آرڈر نمبر:',
-    'DATE': 'تاریخ',
-    'Date': 'تاریخ',
-    'Date:': 'تاریخ:',
-    'Payment': 'ادائیگی',
-    'PAYMENT METHOD': 'ادائیگی کا طریقہ',
-    'Payment Method': 'ادائیگی کا طریقہ',
-    'Payment Method:': 'ادائیگی کا طریقہ:',
-    'Location': 'لوکیشن',
-    'Location:': 'لوکیشن:',
-    'Gents Hall': 'جینٹس ہال',
-    'Family Hall': 'فیملی ہال',
-    'TOTAL': 'کل',
-    'Total': 'کل',
-    'Items:': 'اشیاء:',
-    'Items': 'اشیاء',
-    'Subtotal': 'ذیلی کل',
-    'Discount': 'رعایت',
-    'Attendance': 'حاضری',
-    'Time In': 'حاضری',
-    'Time Out': 'چھٹی',
-    'No attendance found': 'کوئی حاضری موجود نہیں',
-    'Apply': 'لگائیں',
-    'Remove': 'ہٹائیں',
-    'Print': 'پرنٹ',
-    'Delete': 'حذف',
-    'Edit': 'ترمیم',
-    'Complete': 'مکمل',
-    'View Sale': 'سیل دیکھیں',
-
-    // Hold orders/table text
-    'Pending Orders': 'زیرِ التواء آرڈرز',
-    'No pending orders': 'کوئی زیرِ التواء آرڈر نہیں',
-    'No booking': 'کوئی بکنگ نہیں',
-    'Book Table': 'ٹیبل بک کریں',
-    'Customer Name *': 'گاہک کا نام *',
-    'Contact *': 'رابطہ *',
-    'Cancel': 'منسوخ',
-    'Save': 'محفوظ کریں',
-
-    // Receipts
-    'Khyber Charsi Tikka Karahi & Restaurant': 'خیبر چرسی تکہ کڑاہی اینڈ ریسٹورنٹ',
-    'Order ID: ': 'آرڈر نمبر: ',
-    'Order No.: ': 'آرڈر نمبر: ',
-    'Date: ': 'تاریخ: ',
-    'Payment: ': 'ادائیگی: ',
-    'ITEMS:': 'اشیاء:',
-    'TOTAL: ': 'کل: ',
-    'Thank You!': 'شکریہ!',
-    'Software Developed by Salik': 'سافٹ ویئر تیار کردہ: سلیک',
-    'Contact: 0309-5369472': 'رابطہ: 0309-5369472',
-
-    // Common dialogs (best-effort)
-    'Order not found!': 'آرڈر نہیں ملا!',
-    'No items in cart': 'کارٹ میں کوئی آئٹم نہیں',
+// Alert override to use custom modal
+window.alert = (msg) => {
+    if (typeof showCustomAlert === 'function') {
+        showCustomAlert(msg);
+    }
 };
 
-const __i18nTextNodeOriginal = new WeakMap();
-let __i18nTranslateScheduled = false;
-
 function t(text) {
-    if (currentLanguage !== 'ur') return text;
-    return I18N_UR[text] || text;
-}
-
-function translateTextNode(node) {
-    // Skip translation for explicitly marked sections
-    if (node.parentElement && node.parentElement.closest && node.parentElement.closest('[data-no-i18n="true"]')) {
-        return;
-    }
-
-    const original = __i18nTextNodeOriginal.get(node) ?? node.nodeValue;
-    if (!__i18nTextNodeOriginal.has(node)) __i18nTextNodeOriginal.set(node, original);
-
-    if (currentLanguage === 'en') {
-        node.nodeValue = original;
-        return;
-    }
-
-    const trimmed = original.trim();
-    if (!trimmed) return;
-    const translated = I18N_UR[trimmed];
-    node.nodeValue = translated ? original.replace(trimmed, translated) : original;
-}
-
-function translatePlaceholders() {
-    document.querySelectorAll('[placeholder]').forEach(el => {
-        if (!el.dataset.i18nPlaceholderEn) {
-            el.dataset.i18nPlaceholderEn = el.getAttribute('placeholder') || '';
-        }
-        const en = el.dataset.i18nPlaceholderEn;
-        if (!en) return;
-        el.setAttribute('placeholder', currentLanguage === 'ur' ? (I18N_UR[en] || en) : en);
-    });
-}
-
-function translateDocument() {
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
-    let node;
-    while ((node = walker.nextNode())) {
-        translateTextNode(node);
-    }
-    translatePlaceholders();
-}
-
-function scheduleTranslateDocument() {
-    if (__i18nTranslateScheduled) return;
-    __i18nTranslateScheduled = true;
-    queueMicrotask(() => {
-        __i18nTranslateScheduled = false;
-        translateDocument();
-    });
-}
-
-function updateLanguageButtons() {
-    document.querySelectorAll('.lang-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.lang === currentLanguage);
-    });
-}
-
-function setLanguage(lang) {
-    currentLanguage = (lang === 'ur') ? 'ur' : 'en';
-    localStorage.setItem('appLanguage', currentLanguage);
-    document.documentElement.lang = currentLanguage;
-    document.documentElement.dir = currentLanguage === 'ur' ? 'rtl' : 'ltr';
-    updateLanguageButtons();
-    translateDocument();
-}
-
-function initI18n() {
-    // Translate system dialogs (best-effort based on exact matches in I18N_UR)
-    const __alert = window.alert.bind(window);
-    const __confirm = window.confirm.bind(window);
-
-    // Keep track of last focused element so we can restore focus after native dialogs
-    let __lastFocusedEl = document.activeElement;
-    document.addEventListener('focusin', (e) => {
-        __lastFocusedEl = e.target;
-    }, true);
-
-    const __restoreFocusSoon = () => {
-        setTimeout(() => {
-            try { window.focus(); } catch (_) { }
-            const el = __lastFocusedEl;
-            if (el && typeof el.focus === 'function' && document.contains(el)) {
-                try { el.focus({ preventScroll: true }); } catch (_) {
-                    try { el.focus(); } catch (_) { }
-                }
-            }
-        }, 0);
-    };
-
-    window.alert = (msg) => {
-        try { window.__inNativeDialog = true; } catch (_) { }
-        __alert(t(String(msg)));
-        try { window.__inNativeDialog = false; } catch (_) { }
-        __restoreFocusSoon();
-    };
-
-    window.confirm = (msg) => {
-        try { window.__inNativeDialog = true; } catch (_) { }
-        const res = __confirm(t(String(msg)));
-        try { window.__inNativeDialog = false; } catch (_) { }
-        __restoreFocusSoon();
-        return res;
-    };
-
-    // Wire toggle buttons
-    const switchEl = document.getElementById('langSwitch');
-    if (switchEl) {
-        switchEl.addEventListener('click', (e) => {
-            const btn = e.target && e.target.closest ? e.target.closest('.lang-btn') : null;
-            if (!btn) return;
-            setLanguage(btn.dataset.lang);
-        });
-    }
-
-    // Observe DOM changes so dynamically-rendered content also translates
-    const observer = new MutationObserver(() => scheduleTranslateDocument());
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    setLanguage(currentLanguage);
+    return text;
 }
 
 function formatPaymentMethod(method) {
     const m = (method || 'cash').toString().toLowerCase();
-    if (m === 'delivery') return currentLanguage === 'ur' ? 'پارسل' : 'Parcel';
-    if (m === 'parcel') return currentLanguage === 'ur' ? 'پارسل' : 'Parcel';
-    if (m === 'cash') return currentLanguage === 'ur' ? I18N_UR['Gents'] : 'Gents';
-    if (m === 'online') return currentLanguage === 'ur' ? I18N_UR['Family'] : 'Family';
-    return currentLanguage === 'ur' ? (I18N_UR[m] || m) : (m.charAt(0).toUpperCase() + m.slice(1));
+    if (m === 'delivery' || m === 'parcel') return 'Parcel';
+    if (m === 'cash') return 'Gents';
+    if (m === 'online') return 'Family';
+    return m.charAt(0).toUpperCase() + m.slice(1);
 }
 
 // Location label for Sales/Prints
 function formatLocation(method) {
     const m = (method || 'cash').toString().toLowerCase();
-    if (m === 'delivery') return currentLanguage === 'ur' ? 'پارسل' : 'Parcel';
-    if (m === 'parcel') return currentLanguage === 'ur' ? 'پارسل' : 'Parcel';
-    if (m === 'cash') return currentLanguage === 'ur' ? I18N_UR['Gents Hall'] : 'Gents Hall';
-    if (m === 'online') return currentLanguage === 'ur' ? I18N_UR['Family Hall'] : 'Family Hall';
-    return currentLanguage === 'ur' ? (I18N_UR[m] || m) : (m.charAt(0).toUpperCase() + m.slice(1));
+    if (m === 'delivery' || m === 'parcel') return 'Parcel';
+    if (m === 'cash') return 'Gents Hall';
+    if (m === 'online') return 'Family Hall';
+    return m.charAt(0).toUpperCase() + m.slice(1);
 }
 
 // Format time like "2:34 PM" (used for payouts, etc.)
@@ -1354,11 +1761,20 @@ document.querySelectorAll('.nav-item').forEach(btn => {
 
         // If editing an order and switching away from POS, cancel edit
         if (editingHoldOrderId && tab !== 'pos') {
-            if (confirm('You are editing an order. Cancel editing and switch tab?')) {
+            showCustomConfirm('You are editing an order. Cancel editing and switch tab?', () => {
                 cancelEditHoldOrder();
-            } else {
-                return; // Don't switch tabs
-            }
+                if (!ALLOWED_TABS_WITHOUT_STAFF_PASSWORD.includes(tab)) {
+                    const unlockedTabs = JSON.parse(sessionStorage.getItem('unlockedTabs') || '[]');
+                    if (!unlockedTabs.includes(tab)) {
+                        openStaffPasswordModal(tab);
+                        return;
+                    }
+                }
+                switchToTab(tab);
+                document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+            return;
         }
 
         // Check if tab requires staff password (all tabs except pos and holdOrders)
@@ -1377,11 +1793,14 @@ document.querySelectorAll('.nav-item').forEach(btn => {
     });
 });
 
-// Initialize language after the DOM is ready (renderer.js is loaded at end of body)
-initI18n();
+try {
+    localStorage.removeItem('appLanguage');
+    document.documentElement.lang = 'en';
+    document.documentElement.dir = 'ltr';
+} catch (_) {}
 
 // Check on page load if current tab requires staff password
-document.addEventListener('DOMContentLoaded', () => {
+onDOMReady(() => {
     // Small delay to ensure DOM is fully ready
     setTimeout(() => {
         const activeTab = document.querySelector('.tab-content.active');
@@ -1392,12 +1811,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!unlockedTabs.includes(tabId)) {
                     // Switch to POS tab if not authenticated
                     switchToTab('pos');
-                    // Update nav button
-                    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-                    const posNav = document.querySelector('.nav-item[data-tab="pos"]');
-                    if (posNav) posNav.classList.add('active');
                 }
+            } else if (tabId === 'pos') {
+                switchToTab('pos');
             }
+        } else {
+            switchToTab('pos');
         }
     }, 50);
 });
@@ -1448,7 +1867,11 @@ if (addCategoryForm) {
         }
 
         Storage.set('menuCategories', categories);
-        closeAddCategoryModal();
+        document.getElementById('addCategoryName').value = '';
+        const submitBtn = document.getElementById('addCategorySubmitBtn');
+        if (submitBtn) submitBtn.textContent = 'Add Category';
+        editingCategoryId = null;
+
         loadMenuCategories();
         loadMenuItemsList();
         updateCategoryDropdowns();
@@ -1460,55 +1883,67 @@ if (addCategoryForm) {
 }
 
 function loadMenuCategories() {
-    const categories = Storage.get('menuCategories');
+    const categories = Storage.get('menuCategories') || [];
     const container = document.getElementById('categoryTableBody');
     if (!container) return;
 
     container.innerHTML = '';
 
-    // Color palette with unique colors for categories
-    const colorPalette = [
-        '#34495e',  // Dark blue-grey
-        '#3498db',  // Blue
-        '#27ae60',  // Green
-        '#8e44ad',  // Purple
-        '#e67e22',   // Orange
-        '#16a085',  // Teal
-        '#e74c3c',   // Red
-        '#f39c12',  // Yellow-orange
-        '#1abc9c', // Turquoise
-        '#9b59b6',  // Violet
-        '#34495e',  // Dark slate
-        '#2ecc71',  // Emerald
-        '#e91e63',   // Pink
-        '#00bcd4',  // Cyan
-        '#ff9800',  // Deep orange
-        '#795548'   // Brown
-    ];
+    if (categories.length === 0) {
+        container.innerHTML = `
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 30px; color: #94a3b8; font-size: 14px; font-family: 'Poppins', 'Inter', sans-serif;">
+                    No categories found. Add a category above.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    const menuItems = Storage.get('menuItems') || [];
 
     categories.forEach((category, index) => {
-        const menuItems = Storage.get('menuItems');
+        const catId = typeof category.id === 'number' ? category.id : parseInt(category.id);
         const itemCount = menuItems.filter(item => {
-            // Ensure both are numbers for comparison
             const itemCategoryId = typeof item.categoryId === 'number' ? item.categoryId : parseInt(item.categoryId);
-            const catId = typeof category.id === 'number' ? category.id : parseInt(category.id);
             return itemCategoryId === catId;
         }).length;
 
-        const categoryBtn = document.createElement('div');
-        categoryBtn.className = 'category-item-btn';
-        // Assign unique color based on index, cycling through palette if needed
-        const colorIndex = index % colorPalette.length;
-        categoryBtn.style.background = colorPalette[colorIndex];
-        categoryBtn.innerHTML = `
-            <span class="category-item-name">${category.name}</span>
-            <span class="category-item-count">(${itemCount})</span>
-            <div class="category-item-actions">
-                <button class="btn-edit-small" onclick="editCategory(${category.id})" title="Edit">✏️</button>
-                <button class="btn-delete-small" onclick="deleteCategory(${category.id}, this)" title="Delete">🗑️</button>
-            </div>
+        const tr = document.createElement('tr');
+        tr.style.cssText = 'border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;';
+        tr.onmouseover = () => { tr.style.background = '#f8fafc'; };
+        tr.onmouseout = () => { tr.style.background = 'transparent'; };
+
+        tr.innerHTML = `
+            <td style="text-align: center; font-weight: 700; font-size: 15px; color: #64748b; padding: 13px 8px; border-right: 1px solid #f1f5f9; font-family: 'Poppins', 'Inter', sans-serif;">
+                ${index + 1}
+            </td>
+            <td style="font-weight: 700; font-size: 14.5px; color: #1e293b; padding: 13px 16px; border-right: 1px solid #f1f5f9; font-family: 'Poppins', 'Inter', sans-serif;">
+                ${escapeHtml(category.name || 'Unnamed')}
+            </td>
+            <td style="text-align: center; font-weight: 800; font-size: 16px; color: #0f172a; padding: 13px 14px; border-right: 1px solid #f1f5f9; font-family: 'Poppins', 'Inter', sans-serif;">
+                ${itemCount}
+            </td>
+            <td style="text-align: center; padding: 13px 14px;">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 14px;">
+                    <button type="button" class="category-table-action-btn delete-btn" onclick="deleteCategory(${category.id}, this)" title="${itemCount > 0 ? `Cannot delete: contains ${itemCount} item(s)` : 'Delete'}" style="background: none; border: none; cursor: pointer; padding: 4px; display: inline-flex; align-items: center; justify-content: center; color: #ef4444; transition: transform 0.15s, color 0.15s;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
+                    </button>
+                    <button type="button" class="category-table-action-btn edit-btn" onclick="editCategory(${category.id})" title="Edit" style="background: none; border: none; cursor: pointer; padding: 4px; display: inline-flex; align-items: center; justify-content: center; color: #f59e0b; transition: transform 0.15s, color 0.15s;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </td>
         `;
-        container.appendChild(categoryBtn);
+        container.appendChild(tr);
     });
 }
 
@@ -1520,16 +1955,30 @@ window.editCategory = (id) => {
         const modal = document.getElementById('addCategoryModal');
         const modalTitle = document.getElementById('categoryModalTitle');
         const submitBtn = document.getElementById('addCategorySubmitBtn');
-        if (modal && modalTitle && submitBtn) {
+        const nameInput = document.getElementById('addCategoryName');
+        if (modal && modalTitle && submitBtn && nameInput) {
             modalTitle.textContent = 'Categories';
             submitBtn.textContent = 'Update Category';
-            document.getElementById('addCategoryName').value = category.name;
+            nameInput.value = category.name;
+            nameInput.focus();
             modal.style.display = 'flex';
         }
     }
 };
 
 window.deleteCategory = (id, buttonElement) => {
+    const menuItems = Storage.get('menuItems') || [];
+    const itemsCount = menuItems.filter(item => {
+        const itemCatId = typeof item.categoryId === 'number' ? item.categoryId : parseInt(item.categoryId);
+        const targetId = typeof id === 'number' ? id : parseInt(id);
+        return itemCatId === targetId;
+    }).length;
+
+    if (itemsCount > 0) {
+        alert(`Cannot delete this category because it contains ${itemsCount} item(s). Please remove or reassign all items first.`);
+        return;
+    }
+
     if (buttonElement) {
         showDeleteConfirmation(buttonElement, deleteCategoryConfirmed, id);
         return;
@@ -1538,18 +1987,29 @@ window.deleteCategory = (id, buttonElement) => {
 };
 
 function deleteCategoryConfirmed(id) {
-    const categories = Storage.get('menuCategories');
+    const menuItems = Storage.get('menuItems') || [];
+    const itemsCount = menuItems.filter(item => {
+        const itemCatId = typeof item.categoryId === 'number' ? item.categoryId : parseInt(item.categoryId);
+        const targetId = typeof id === 'number' ? id : parseInt(id);
+        return itemCatId === targetId;
+    }).length;
+
+    if (itemsCount > 0) {
+        alert(`Cannot delete this category because it contains ${itemsCount} item(s). Please remove or reassign all items first.`);
+        return;
+    }
+
+    const categories = Storage.get('menuCategories') || [];
     const filtered = categories.filter(c => c.id !== id);
     Storage.set('menuCategories', filtered);
-
-    // Also delete all items in this category
-    const menuItems = Storage.get('menuItems');
-    const filteredItems = menuItems.filter(item => item.categoryId !== id);
-    Storage.set('menuItems', filteredItems);
 
     loadMenuCategories();
     loadMenuItemsList();
     updateCategoryDropdowns();
+    if (document.getElementById('pos')?.classList.contains('active')) {
+        loadCategories();
+        loadMenuItems();
+    }
 }
 
 // Menu Item Management
@@ -1793,7 +2253,9 @@ window.closeAddCategoryModal = () => {
     const modal = document.getElementById('addCategoryModal');
     if (modal) {
         modal.style.display = 'none';
-        document.getElementById('addCategoryForm').reset();
+        document.getElementById('addCategoryForm')?.reset();
+        const submitBtn = document.getElementById('addCategorySubmitBtn');
+        if (submitBtn) submitBtn.textContent = 'Add Category';
     }
 };
 
@@ -1958,12 +2420,13 @@ window.loadMenuItemsList = function loadMenuItemsList() {
                 ${item.image ? `<img src="${item.image}" alt="${item.name}" style="max-width: 60px; max-height: 60px; border-radius: 4px; border: 1px solid #e0e0e0; object-fit: cover;">` : '<span style="color: #999; font-size: 12px;">No image</span>'}
             </td>
             <td class="actions-cell">
-                <button class="btn-edit" onclick="editMenuItemInline(${item.id})">Edit</button>
-                <button class="btn-delete" onclick="deleteMenuItem(${item.id}, this)">Delete</button>
-                ${isFavorite ?
-                `<button class="btn-favorite btn-favorite-remove" onclick="removeFromFavorites(${item.id})" style="background: #757575; margin-left: 5px; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: 0.1px;">Remove from Favourites</button>` :
-                `<button class="btn-favorite btn-favorite-add" onclick="addToFavorites(${item.id})" style="background: #4caf50; margin-left: 5px; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: 0.1px;">Move to Favourites</button>`
-            }
+                <div class="table-actions-cell">
+                    <button class="btn-action btn-action-edit" onclick="editMenuItemInline(${item.id})" title="Edit Item">${ICONS.edit}</button>
+                    <button class="btn-action btn-action-delete" onclick="deleteMenuItem(${item.id}, this)" title="Delete Item">${ICONS.delete}</button>
+                    <button class="btn-action btn-action-favorite ${isFavorite ? 'active' : ''}" onclick="${isFavorite ? `removeFromFavorites(${item.id})` : `addToFavorites(${item.id})`}" title="${isFavorite ? 'Remove from Favourites' : 'Add to Favourites'}">
+                        ${isFavorite ? ICONS.starFilled : ICONS.star}
+                    </button>
+                </div>
             </td>
         `;
         tbody.appendChild(tr);
@@ -2026,8 +2489,10 @@ function editMenuItemInlineInternal(id, item, categories, tr) {
             </div>
         </td>
         <td class="actions-cell">
-            <button class="btn-save" onclick="saveMenuItemInline(${id})" style="background: #4caf50; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; margin-right: 5px; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: 0.1px;">Save</button>
-            <button class="btn-cancel" onclick="cancelMenuItemInline(${id})" style="background: #9e9e9e; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: 0.1px;">Cancel</button>
+            <div class="table-actions-cell">
+                <button class="btn-action btn-action-save" onclick="saveMenuItemInline(${id})" title="Save">${ICONS.check}</button>
+                <button class="btn-action btn-action-cancel" onclick="cancelMenuItemInline(${id})" title="Cancel">${ICONS.cross}</button>
+            </div>
         </td>
     `;
 
@@ -2443,6 +2908,214 @@ window.searchMenuItems = () => {
 
 // Sales Management - Form removed, only displaying sales history
 
+// ==========================================
+// TIME FILTER GLOBAL HELPERS & HANDLERS
+// ==========================================
+function getLocalISODate(dateObj = new Date()) {
+    const d = new Date(dateObj);
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+}
+
+function getLocalISOMonth(dateObj = new Date()) {
+    return getLocalISODate(dateObj).substring(0, 7);
+}
+
+function getFilterYearOptions(selectedYear) {
+    const currentYear = new Date().getFullYear();
+    const target = Number(selectedYear) || currentYear;
+    let options = '';
+    const maxYear = Math.max(currentYear + 2, target);
+    const minYear = Math.min(2020, target);
+    for (let y = maxYear; y >= minYear; y--) {
+        options += `<option value="${y}" ${y === target ? 'selected' : ''}>${y}</option>`;
+    }
+    return options;
+}
+
+// Sales History Filter Handlers
+window.handleSalesDateFilterChange = function() {
+    const filterSelect = document.getElementById('salesDateFilter');
+    const container = document.getElementById('salesTimeValueContainer');
+    if (!filterSelect || !container) return;
+
+    const filter = filterSelect.value;
+    const todayStr = getLocalISODate();
+    const monthStr = getLocalISOMonth();
+    const currentYear = new Date().getFullYear();
+
+    if (filter === 'today') {
+        container.innerHTML = `<input type="date" id="salesDateInput" value="${todayStr}" onchange="loadSales(); updateSalesResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif;">`;
+    } else if (filter === 'month') {
+        container.innerHTML = `<input type="month" id="salesMonthInput" value="${monthStr}" onchange="loadSales(); updateSalesResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif;">`;
+    } else if (filter === 'year') {
+        container.innerHTML = `<select id="salesYearInput" onchange="loadSales(); updateSalesResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif; cursor: pointer;">${getFilterYearOptions(currentYear)}</select>`;
+    } else {
+        container.innerHTML = '';
+    }
+
+    updateSalesResetBtn();
+    loadSales();
+};
+
+window.updateSalesResetBtn = function() {
+    const filterSelect = document.getElementById('salesDateFilter');
+    const resetBtn = document.getElementById('salesResetFilterBtn');
+    if (!filterSelect || !resetBtn) return;
+
+    const filter = filterSelect.value;
+    const dateInput = document.getElementById('salesDateInput');
+    const todayStr = getLocalISODate();
+
+    let isDefault = (filter === 'today' && (!dateInput || dateInput.value === todayStr));
+    resetBtn.style.display = isDefault ? 'none' : 'inline-flex';
+};
+
+window.resetSalesFilter = function() {
+    const filterSelect = document.getElementById('salesDateFilter');
+    if (filterSelect) {
+        filterSelect.value = 'today';
+        handleSalesDateFilterChange();
+    }
+};
+
+// Tax History Filter Handlers
+window.handleTaxHistoryFilterChange = function() {
+    const filterSelect = document.getElementById('taxHistoryFilter');
+    const container = document.getElementById('taxHistoryTimeValueContainer');
+    if (!filterSelect || !container) return;
+
+    const filter = filterSelect.value;
+    const todayStr = getLocalISODate();
+    const monthStr = getLocalISOMonth();
+    const currentYear = new Date().getFullYear();
+
+    if (filter === 'today') {
+        container.innerHTML = `<input type="date" id="taxHistoryDateInput" value="${todayStr}" onchange="loadTaxHistory(); updateTaxHistoryResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif;">`;
+    } else if (filter === 'month') {
+        container.innerHTML = `<input type="month" id="taxHistoryMonthInput" value="${monthStr}" onchange="loadTaxHistory(); updateTaxHistoryResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif;">`;
+    } else if (filter === 'year') {
+        container.innerHTML = `<select id="taxHistoryYearInput" onchange="loadTaxHistory(); updateTaxHistoryResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif; cursor: pointer;">${getFilterYearOptions(currentYear)}</select>`;
+    } else {
+        container.innerHTML = '';
+    }
+
+    updateTaxHistoryResetBtn();
+    loadTaxHistory();
+};
+
+window.updateTaxHistoryResetBtn = function() {
+    const filterSelect = document.getElementById('taxHistoryFilter');
+    const resetBtn = document.getElementById('taxHistoryResetFilterBtn');
+    if (!filterSelect || !resetBtn) return;
+
+    const filter = filterSelect.value;
+    const dateInput = document.getElementById('taxHistoryDateInput');
+    const todayStr = getLocalISODate();
+
+    let isDefault = (filter === 'today' && (!dateInput || dateInput.value === todayStr));
+    resetBtn.style.display = isDefault ? 'none' : 'inline-flex';
+};
+
+window.resetTaxHistoryFilter = function() {
+    const filterSelect = document.getElementById('taxHistoryFilter');
+    if (filterSelect) {
+        filterSelect.value = 'today';
+        handleTaxHistoryFilterChange();
+    }
+};
+
+// Items Sales Filter Handlers
+window.handleItemsSalesDateFilterChange = function() {
+    const filterSelect = document.getElementById('itemsSalesDateFilter');
+    const container = document.getElementById('itemsSalesTimeValueContainer');
+    if (!filterSelect || !container) return;
+
+    const filter = filterSelect.value;
+    const todayStr = getLocalISODate();
+    const monthStr = getLocalISOMonth();
+    const currentYear = new Date().getFullYear();
+
+    if (filter === 'today') {
+        container.innerHTML = `<input type="date" id="itemsSalesDateInput" value="${todayStr}" onchange="loadItemsSales(); updateItemsSalesResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif;">`;
+    } else if (filter === 'month') {
+        container.innerHTML = `<input type="month" id="itemsSalesMonthInput" value="${monthStr}" onchange="loadItemsSales(); updateItemsSalesResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif;">`;
+    } else if (filter === 'year') {
+        container.innerHTML = `<select id="itemsSalesYearInput" onchange="loadItemsSales(); updateItemsSalesResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif; cursor: pointer;">${getFilterYearOptions(currentYear)}</select>`;
+    } else {
+        container.innerHTML = '';
+    }
+
+    updateItemsSalesResetBtn();
+    loadItemsSales();
+};
+
+window.updateItemsSalesResetBtn = function() {
+    const filterSelect = document.getElementById('itemsSalesDateFilter');
+    const resetBtn = document.getElementById('itemsSalesResetFilterBtn');
+    if (!filterSelect || !resetBtn) return;
+
+    const filter = filterSelect.value;
+    const dateInput = document.getElementById('itemsSalesDateInput');
+    const todayStr = getLocalISODate();
+
+    let isDefault = (filter === 'today' && (!dateInput || dateInput.value === todayStr));
+    resetBtn.style.display = isDefault ? 'none' : 'inline-flex';
+};
+
+window.resetItemsSalesFilter = function() {
+    const filterSelect = document.getElementById('itemsSalesDateFilter');
+    if (filterSelect) {
+        filterSelect.value = 'today';
+        handleItemsSalesDateFilterChange();
+    }
+};
+
+// Expense Filter Handlers
+window.handleExpenseDateFilterChange = function() {
+    const filterSelect = document.getElementById('expenseDateFilter');
+    const container = document.getElementById('expenseTimeValueContainer');
+    if (!filterSelect || !container) return;
+
+    const filter = filterSelect.value;
+    const todayStr = getLocalISODate();
+    const monthStr = getLocalISOMonth();
+    const currentYear = new Date().getFullYear();
+
+    if (filter === 'today') {
+        container.innerHTML = `<input type="date" id="expenseDateInput" value="${todayStr}" onchange="loadExpenses(); updateExpenseResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif;">`;
+    } else if (filter === 'month') {
+        container.innerHTML = `<input type="month" id="expenseMonthInput" value="${monthStr}" onchange="loadExpenses(); updateExpenseResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif;">`;
+    } else if (filter === 'year') {
+        container.innerHTML = `<select id="expenseYearInput" onchange="loadExpenses(); updateExpenseResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif; cursor: pointer;">${getFilterYearOptions(currentYear)}</select>`;
+    } else {
+        container.innerHTML = '';
+    }
+
+    updateExpenseResetBtn();
+    loadExpenses();
+};
+
+window.updateExpenseResetBtn = function() {
+    const filterSelect = document.getElementById('expenseDateFilter');
+    const resetBtn = document.getElementById('expenseResetFilterBtn');
+    if (!filterSelect || !resetBtn) return;
+
+    const filter = filterSelect.value;
+    const dateInput = document.getElementById('expenseDateInput');
+    const todayStr = getLocalISODate();
+
+    let isDefault = (filter === 'today' && (!dateInput || dateInput.value === todayStr));
+    resetBtn.style.display = isDefault ? 'none' : 'inline-flex';
+};
+
+window.resetExpenseFilter = function() {
+    const filterSelect = document.getElementById('expenseDateFilter');
+    if (filterSelect) {
+        filterSelect.value = 'today';
+        handleExpenseDateFilterChange();
+    }
+};
+
 window.loadSales = function loadSales() {
     const sales = Storage.get('sales') || [];
     const tbody = document.getElementById('salesTableBody');
@@ -2529,60 +3202,25 @@ window.loadSales = function loadSales() {
     let orders = Object.values(orderMap);
 
     // Apply date filter
+    const selectedDate = document.getElementById('salesDateInput')?.value || getLocalISODate();
+    const selectedMonth = document.getElementById('salesMonthInput')?.value || getLocalISOMonth();
+    const selectedYear = document.getElementById('salesYearInput')?.value || String(new Date().getFullYear());
+
     if (dateFilter !== 'all') {
         orders = orders.filter(order => {
             if (!order.date) return false;
             const orderDate = new Date(order.date);
-            let matchesDate = false;
+            if (isNaN(orderDate.getTime())) return false;
+            const isoDate = getLocalISODate(orderDate);
 
-            if (dateFilter === 'custom') {
-                const startDate = document.getElementById('salesStartDate')?.value;
-                const endDate = document.getElementById('salesEndDate')?.value;
-
-                if (startDate || endDate) {
-                    matchesDate = true;
-                    if (startDate) {
-                        const start = new Date(startDate);
-                        start.setHours(0, 0, 0, 0);
-                        if (orderDate < start) matchesDate = false;
-                    }
-                    if (endDate) {
-                        const end = new Date(endDate);
-                        end.setHours(23, 59, 59, 999);
-                        if (orderDate > end) matchesDate = false;
-                    }
-                } else {
-                    matchesDate = false;
-                }
-            } else {
-                const now = new Date();
-                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                today.setHours(0, 0, 0, 0);
-                const todayEnd = new Date(today);
-                todayEnd.setHours(23, 59, 59, 999);
-
-                if (dateFilter === 'today') {
-                    matchesDate = orderDate >= today && orderDate <= todayEnd;
-                } else if (dateFilter === 'week') {
-                    const weekAgo = new Date(today);
-                    weekAgo.setDate(weekAgo.getDate() - 7);
-                    matchesDate = orderDate >= weekAgo && orderDate <= todayEnd;
-                } else if (dateFilter === 'month') {
-                    const monthAgo = new Date(today);
-                    monthAgo.setMonth(monthAgo.getMonth() - 1);
-                    matchesDate = orderDate >= monthAgo && orderDate <= todayEnd;
-                } else if (dateFilter === 'specific-month') {
-                    const selectedMonth = document.getElementById('salesMonthFilter')?.value;
-                    if (selectedMonth) {
-                        const [year, month] = selectedMonth.split('-').map(Number);
-                        matchesDate = orderDate.getFullYear() === year && (orderDate.getMonth() + 1) === month;
-                    } else {
-                        matchesDate = true;
-                    }
-                }
+            if (dateFilter === 'today') {
+                return isoDate === selectedDate;
+            } else if (dateFilter === 'month') {
+                return isoDate.substring(0, 7) === selectedMonth;
+            } else if (dateFilter === 'year') {
+                return String(orderDate.getFullYear()) === String(selectedYear);
             }
-
-            return matchesDate;
+            return true;
         });
     }
 
@@ -2636,9 +3274,11 @@ window.loadSales = function loadSales() {
             <td>${waiterName}</td>
             <td>Rs.${formatNumber(order.total || 0)}</td>
             <td>
-                <button class="btn-view" onclick="viewSale('${orderIdentifier}')" style="background: #4a90e2; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; margin-right: 5px; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: 0.1px;">View Sale</button>
-                <button class="btn-view" onclick="printReceiptForSale('${orderIdentifier}')" style="background: #4caf50; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; margin-right: 5px; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: 0.1px;">Print</button>
-                <button class="btn-delete" onclick="deleteSale('${orderIdentifier}', this)" style="font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: 0.1px;">Delete</button>
+                <div class="table-actions-cell">
+                    <button class="btn-action btn-action-view" onclick="viewSale('${orderIdentifier}')" title="View Sale Details">${ICONS.view}</button>
+                    <button class="btn-action btn-action-print" onclick="printReceiptForSale('${orderIdentifier}')" title="Print Receipt">${ICONS.print}</button>
+                    <button class="btn-action btn-action-delete" onclick="deleteSale('${orderIdentifier}', this)" title="Delete Sale">${ICONS.delete}</button>
+                </div>
             </td>
         `;
         tbody.appendChild(tr);
@@ -2683,17 +3323,24 @@ window.loadSales = function loadSales() {
         })
         .reduce((sum, o) => sum + (o.total || 0), 0);
 
-    // Calculate this month's sales
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    monthStart.setHours(0, 0, 0, 0);
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    monthEnd.setHours(23, 59, 59, 999);
+    // Calculate overall stats from all orders in store
+    const allStoredOrders = Object.values(orderMap);
+    const thisYearNum = now.getFullYear();
+    const thisMonthIso = getLocalISOMonth(now);
 
-    const monthSales = orders
+    const yearSales = allStoredOrders
         .filter(o => {
             if (!o.date) return false;
             const orderDate = new Date(o.date);
-            return orderDate >= monthStart && orderDate <= monthEnd;
+            return !isNaN(orderDate.getTime()) && orderDate.getFullYear() === thisYearNum;
+        })
+        .reduce((sum, o) => sum + (o.total || 0), 0);
+
+    const monthSales = allStoredOrders
+        .filter(o => {
+            if (!o.date) return false;
+            const orderDate = new Date(o.date);
+            return !isNaN(orderDate.getTime()) && getLocalISODate(orderDate).substring(0, 7) === thisMonthIso;
         })
         .reduce((sum, o) => sum + (o.total || 0), 0);
 
@@ -2817,32 +3464,28 @@ window.loadSales = function loadSales() {
 
     const totalOrdersEl = document.getElementById('totalOrders');
     const todaySalesEl = document.getElementById('todaySales');
-    const weekSalesEl = document.getElementById('weekSales');
+    const yearSalesEl = document.getElementById('yearSales');
     const monthSalesEl = document.getElementById('monthSales');
     const averageOrderPriceEl = document.getElementById('averageOrderPrice');
     const taxTodayEl = document.getElementById('taxToday');
-    const weeklyTaxEl = document.getElementById('weeklyTax');
     const monthlyTaxEl = document.getElementById('monthlyTax');
     const annualTaxEl = document.getElementById('annualTax');
 
     if (totalOrdersEl) totalOrdersEl.textContent = formatNumber(totalOrders);
     if (todaySalesEl) todaySalesEl.textContent = `Rs.${formatNumber(totalSales)}`;
-    if (weekSalesEl) weekSalesEl.textContent = `Rs.${formatNumber(weekSales)}`;
+    if (yearSalesEl) yearSalesEl.textContent = `Rs.${formatNumber(yearSales)}`;
     if (monthSalesEl) monthSalesEl.textContent = `Rs.${formatNumber(monthSales)}`;
     if (averageOrderPriceEl) averageOrderPriceEl.textContent = `Rs.${formatNumber(averageOrderPrice)}`;
     if (taxTodayEl) taxTodayEl.textContent = `Rs.${formatNumber(todayTax)}`;
-    if (weeklyTaxEl) weeklyTaxEl.textContent = `Rs.${formatNumber(weeklyTax)}`;
     if (monthlyTaxEl) monthlyTaxEl.textContent = `Rs.${formatNumber(monthlyTax)}`;
     if (annualTaxEl) annualTaxEl.textContent = `Rs.${formatNumber(annualTax)}`;
 
     // Also update Tax History tab cards
     const taxTodayHistoryEl = document.getElementById('taxTodayHistory');
-    const weeklyTaxHistoryEl = document.getElementById('weeklyTaxHistory');
     const monthlyTaxHistoryEl = document.getElementById('monthlyTaxHistory');
     const annualTaxHistoryEl = document.getElementById('annualTaxHistory');
 
     if (taxTodayHistoryEl) taxTodayHistoryEl.textContent = `Rs.${formatNumber(todayTax)}`;
-    if (weeklyTaxHistoryEl) weeklyTaxHistoryEl.textContent = `Rs.${formatNumber(weeklyTax)}`;
     if (monthlyTaxHistoryEl) monthlyTaxHistoryEl.textContent = `Rs.${formatNumber(monthlyTax)}`;
     if (annualTaxHistoryEl) annualTaxHistoryEl.textContent = `Rs.${formatNumber(annualTax)}`;
 }
@@ -2860,62 +3503,26 @@ window.loadTaxHistory = function loadTaxHistory() {
     let filteredSales = [...sales];
     const now = new Date();
 
-    if (filter === 'today') {
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        today.setHours(0, 0, 0, 0);
-        const todayEnd = new Date(today);
-        todayEnd.setHours(23, 59, 59, 999);
+    const selectedDate = document.getElementById('taxHistoryDateInput')?.value || getLocalISODate();
+    const selectedMonth = document.getElementById('taxHistoryMonthInput')?.value || getLocalISOMonth();
+    const selectedYear = document.getElementById('taxHistoryYearInput')?.value || String(new Date().getFullYear());
+
+    if (filter !== 'all') {
         filteredSales = sales.filter(sale => {
             if (!sale.date) return false;
             const saleDate = new Date(sale.date);
-            return saleDate >= today && saleDate <= todayEnd;
+            if (isNaN(saleDate.getTime())) return false;
+            const isoDate = getLocalISODate(saleDate);
+
+            if (filter === 'today') {
+                return isoDate === selectedDate;
+            } else if (filter === 'month') {
+                return isoDate.substring(0, 7) === selectedMonth;
+            } else if (filter === 'year') {
+                return String(saleDate.getFullYear()) === String(selectedYear);
+            }
+            return true;
         });
-    } else if (filter === 'week') {
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        today.setHours(0, 0, 0, 0);
-        const currentDay = now.getDay();
-        const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1;
-        const weekStart = new Date(today);
-        weekStart.setDate(today.getDate() - daysFromMonday);
-        weekStart.setHours(0, 0, 0, 0);
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 6);
-        weekEnd.setHours(23, 59, 59, 999);
-        filteredSales = sales.filter(sale => {
-            if (!sale.date) return false;
-            const saleDate = new Date(sale.date);
-            return saleDate >= weekStart && saleDate <= weekEnd;
-        });
-    } else if (filter === 'month') {
-        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        monthStart.setHours(0, 0, 0, 0);
-        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        monthEnd.setHours(23, 59, 59, 999);
-        filteredSales = sales.filter(sale => {
-            if (!sale.date) return false;
-            const saleDate = new Date(sale.date);
-            return saleDate >= monthStart && saleDate <= monthEnd;
-        });
-    } else if (filter === 'year') {
-        const yearStart = new Date(now.getFullYear(), 0, 1);
-        yearStart.setHours(0, 0, 0, 0);
-        const yearEnd = new Date(now.getFullYear(), 11, 31);
-        yearEnd.setHours(23, 59, 59, 999);
-        filteredSales = sales.filter(sale => {
-            if (!sale.date) return false;
-            const saleDate = new Date(sale.date);
-            return saleDate >= yearStart && saleDate <= yearEnd;
-        });
-    } else if (filter === 'specific-month') {
-        const selectedMonth = document.getElementById('taxHistoryMonthFilter')?.value;
-        if (selectedMonth) {
-            const [year, month] = selectedMonth.split('-').map(Number);
-            filteredSales = sales.filter(sale => {
-                if (!sale.date) return false;
-                const saleDate = new Date(sale.date);
-                return saleDate.getFullYear() === year && (saleDate.getMonth() + 1) === month;
-            });
-        }
     }
     // If filter === 'all', use all sales (filteredSales already contains all sales)
 
@@ -2970,7 +3577,9 @@ window.loadTaxHistory = function loadTaxHistory() {
             <td>Rs.${formatNumber(taxAmount)}</td>
             <td>Rs.${formatNumber(total)}</td>
             <td>
-                <button class="btn-view" onclick="printReceiptForSale('${sale.orderId || sale.id}')" style="background: #4caf50; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; margin-right: 5px; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: 0.1px;">Print</button>
+                <div class="table-actions-cell">
+                    <button class="btn-action btn-action-print" onclick="printReceiptForSale('${sale.orderId || sale.id}')" title="Print Receipt">${ICONS.print}</button>
+                </div>
             </td>
         `;
         tbody.appendChild(tr);
@@ -3137,9 +3746,16 @@ window.printTaxHistory = () => {
         <html>
             <head>
                 <title>Tax History Report</title>
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
                 <style>
+                    *, *::before, *::after {
+                        box-sizing: border-box;
+                        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+                    }
                     body {
-                        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
                         padding: 10px;
                         font-size: 11px;
                         display: flex;
@@ -3263,9 +3879,9 @@ window.printTaxHistory = () => {
             <body>
 
                 <div class="header-section">
-                    <div class="restaurant-name">Khyber Charsi Tikka Karahi & Restaurant</div>
-                    <div class="report-info">Contact: 0319-9922922</div>
-                    <div class="report-info">Main Bazar, Nathia Gali</div>
+                    <div class="restaurant-name">Hangout Lounge & Co.</div>
+                    <div class="report-info">Contact: 0300-9509536</div>
+                    <div class="report-info">Wah Cantt</div>
                     <div class="separator"></div>
                     <div class="report-title">TAX HISTORY REPORT</div>
                     <div class="separator"></div>
@@ -3323,62 +3939,26 @@ window.loadItemsSales = function loadItemsSales() {
     let filteredSales = [...sales];
     const now = new Date();
 
-    if (dateFilter === 'today') {
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        today.setHours(0, 0, 0, 0);
-        const todayEnd = new Date(today);
-        todayEnd.setHours(23, 59, 59, 999);
+    const selectedDate = document.getElementById('itemsSalesDateInput')?.value || getLocalISODate();
+    const selectedMonth = document.getElementById('itemsSalesMonthInput')?.value || getLocalISOMonth();
+    const selectedYear = document.getElementById('itemsSalesYearInput')?.value || String(new Date().getFullYear());
+
+    if (dateFilter !== 'all') {
         filteredSales = sales.filter(sale => {
             if (!sale.date) return false;
             const saleDate = new Date(sale.date);
-            return saleDate >= today && saleDate <= todayEnd;
+            if (isNaN(saleDate.getTime())) return false;
+            const isoDate = getLocalISODate(saleDate);
+
+            if (dateFilter === 'today') {
+                return isoDate === selectedDate;
+            } else if (dateFilter === 'month') {
+                return isoDate.substring(0, 7) === selectedMonth;
+            } else if (dateFilter === 'year') {
+                return String(saleDate.getFullYear()) === String(selectedYear);
+            }
+            return true;
         });
-    } else if (dateFilter === 'week') {
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        today.setHours(0, 0, 0, 0);
-        const currentDay = now.getDay();
-        const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1;
-        const weekStart = new Date(today);
-        weekStart.setDate(today.getDate() - daysFromMonday);
-        weekStart.setHours(0, 0, 0, 0);
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 6);
-        weekEnd.setHours(23, 59, 59, 999);
-        filteredSales = sales.filter(sale => {
-            if (!sale.date) return false;
-            const saleDate = new Date(sale.date);
-            return saleDate >= weekStart && saleDate <= weekEnd;
-        });
-    } else if (dateFilter === 'month') {
-        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        monthStart.setHours(0, 0, 0, 0);
-        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        monthEnd.setHours(23, 59, 59, 999);
-        filteredSales = sales.filter(sale => {
-            if (!sale.date) return false;
-            const saleDate = new Date(sale.date);
-            return saleDate >= monthStart && saleDate <= monthEnd;
-        });
-    } else if (dateFilter === 'year') {
-        const yearStart = new Date(now.getFullYear(), 0, 1);
-        yearStart.setHours(0, 0, 0, 0);
-        const yearEnd = new Date(now.getFullYear(), 11, 31);
-        yearEnd.setHours(23, 59, 59, 999);
-        filteredSales = sales.filter(sale => {
-            if (!sale.date) return false;
-            const saleDate = new Date(sale.date);
-            return saleDate >= yearStart && saleDate <= yearEnd;
-        });
-    } else if (dateFilter === 'specific-month') {
-        const selectedMonth = document.getElementById('itemsSalesMonthFilter')?.value;
-        if (selectedMonth) {
-            const [year, month] = selectedMonth.split('-').map(Number);
-            filteredSales = sales.filter(sale => {
-                if (!sale.date) return false;
-                const saleDate = new Date(sale.date);
-                return saleDate.getFullYear() === year && (saleDate.getMonth() + 1) === month;
-            });
-        }
     }
     // If dateFilter === 'all', use all sales (filteredSales already contains all sales)
 
@@ -3576,16 +4156,15 @@ function deleteSaleConfirmed(orderId) {
 }
 
 window.clearAllSales = () => {
-    if (confirm('Are you sure you want to clear ALL sales? This action cannot be undone!')) {
+    showCustomConfirm('Are you sure you want to clear ALL sales? This action cannot be undone!', () => {
         Storage.set('sales', []);
         loadSales();
-        // Refresh items sales if that view is currently active
         const itemsSalesSection = document.getElementById('itemsSalesSection');
         if (itemsSalesSection && itemsSalesSection.style.display !== 'none') {
             loadItemsSales();
         }
-        alert('All sales have been cleared.');
-    }
+        showCustomAlert('All sales have been cleared.');
+    }, null, { title: 'Clear All Sales', confirmText: 'Clear All', type: 'danger' });
 };
 
 window.viewSale = (orderId) => {
@@ -3593,7 +4172,7 @@ window.viewSale = (orderId) => {
     const order = sales.find(s => s.orderId === orderId || s.id === orderId);
 
     if (!order) {
-        alert('Order not found!');
+        showCustomAlert('Order not found!');
         return;
     }
 
@@ -3605,73 +4184,29 @@ window.viewSale = (orderId) => {
     const orderDate = new Date(order.date);
     const dateStr = formatDate(orderDate);
     const timeStr = formatTime(orderDate);
+    const receiveTime = calculateReceiveTime(timeStr, orderDate);
     const displayOrderNumber = (order.orderNumber || extractOrderNumber(order.orderId || order.id) || '').toString().padStart(7, '0');
-
-    let itemsHtml = '';
-    if (order.items && Array.isArray(order.items)) {
-        itemsHtml = order.items.map(item => `
-            <div style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #e0e0e0;">
-                <div>
-                    <strong>${item.name}</strong><br>
-                    <span style="color: #666; font-size: 14px;">Qty: ${item.quantity} × Rs.${formatNumber(item.price)}</span>
-                </div>
-                <div style="font-weight: 600; color: #2c3e50;">Rs.${formatNumber(item.total)}</div>
-            </div>
-        `).join('');
-    } else {
-        // Legacy format - single item
-        itemsHtml = `
-            <div style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #e0e0e0;">
-                <div>
-                    <strong>${order.itemName || order.dishName || 'Unknown'}</strong><br>
-                    <span style="color: #666; font-size: 14px;">Qty: ${order.quantity} × Rs.${formatNumber(order.price)}</span>
-                </div>
-                <div style="font-weight: 600; color: #2c3e50;">Rs.${formatNumber(order.total)}</div>
-            </div>
-        `;
-    }
-
-    const subtotalForDisplay = (typeof order.subtotal === 'number') ? order.subtotal : (order.total || 0);
-    const discountAmount = getDiscountAmountFromOrder(order, subtotalForDisplay);
-    const discountedSubtotal = Math.max(0, subtotalForDisplay - discountAmount);
-    const paymentMethod = order.paymentMethod || 'cash';
-    // Exclude tax for Parcel/Delivery orders
-    const taxAmount = (paymentMethod === 'delivery' || paymentMethod === 'parcel') ? 0 : (order.tax !== undefined ? order.tax : (discountedSubtotal * SALES_TAX_RATE));
-    const serviceChargesAmount = (paymentMethod === 'delivery' || paymentMethod === 'parcel') ? 0 : (order.serviceCharges !== undefined ? order.serviceCharges : (discountedSubtotal * SERVICE_CHARGE_RATE));
-    const isParcelOrder = (paymentMethod === 'delivery' || paymentMethod === 'parcel');
+    const receiptHTML = generateFullReceiptHTML(order);
 
     modalBody.innerHTML = `
-        <div style="margin-bottom: 20px;">
-            <p><strong>Order No.:</strong> #${displayOrderNumber}</p>
-            <p><strong>Date:</strong> ${dateStr} ${timeStr}</p>
-            <p><strong>${t('Location')}:</strong> ${formatLocation(order.paymentMethod)}</p>
-            <p><strong>Customer:</strong> ${order.customerName ? escapeHtml(order.customerName) : '-'}</p>
-        </div>
-        <div style="border-top: 2px solid #e0e0e0; padding-top: 15px;">
-            <h4 style="margin-bottom: 10px;">Items:</h4>
-            ${itemsHtml}
-        </div>
-        <div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #e0e0e0;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span>Subtotal:</span>
-                <span>Rs.${formatNumber(subtotalForDisplay)}</span>
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 0 10px 0;">
+            <!-- Thermal Receipt Preview Card -->
+            <div style="background: #ffffff; width: 100%; max-width: 350px; padding: 20px 18px; border: 1.5px solid #d1d5db; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.07); color: #000;">
+                ${receiptHTML}
             </div>
-            ${discountAmount > 0 ? `
-            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span>Discount:</span>
-                <span style="color: #e74c3c;">-Rs.${formatNumber(discountAmount)}</span>
-            </div>` : ''}
-            ${!isParcelOrder && (taxAmount > 0 || serviceChargesAmount > 0) ? `
-            <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px;">
-                <span>GST (5%): Rs.${formatNumber(taxAmount)}</span>
-                <span>Serv. Charges (10%): Rs.${formatNumber(serviceChargesAmount)}</span>
-            </div>` : ''}
-            <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 700; color: #2c3e50; margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0e0e0;">
-                <span>Total:</span>
-                <span>Rs.${formatNumber(order.total)}</span>
+
+            <!-- Receipt Actions -->
+            <div style="display: flex; gap: 12px; margin-top: 18px; width: 100%; max-width: 350px; justify-content: center;">
+                <button type="button" onclick="closeSaleModal()" style="flex: 1; padding: 10px 16px; border-radius: 10px; border: 1.5px solid #d1d5db; background: #f3f4f6; color: #374151; font-weight: 600; font-size: 14px; cursor: pointer; font-family: 'Poppins', sans-serif;">Close</button>
+                <button type="button" onclick="printReceiptForSale('${order.orderId || order.id}')" style="flex: 1; padding: 10px 16px; border-radius: 10px; border: none; background: #10b981; color: white; font-weight: 600; font-size: 14px; cursor: pointer; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); display: flex; align-items: center; justify-content: center; gap: 6px; font-family: 'Poppins', sans-serif;">
+                    <span>🖨️</span> Print
+                </button>
             </div>
         </div>
     `;
+
+    const headerTitle = modal.querySelector('.modal-header h3');
+    if (headerTitle) headerTitle.textContent = `Receipt Preview - #${displayOrderNumber}`;
 
     modal.style.display = 'flex';
 };
@@ -3688,220 +4223,13 @@ window.printReceiptForSale = (orderId) => {
     const order = sales.find(s => s.orderId === orderId || s.id === orderId);
 
     if (!order) {
-        alert('Order not found!');
+        showAppToast('Order not found!', 'error');
         return;
     }
 
     const displayOrderNumber = (order.orderNumber || extractOrderNumber(order.orderId || order.id) || '').toString().padStart(7, '0');
-
-    // Create receipt content
-    let receipt = `Khyber Charsi Tikka Karahi & Restaurant\n`;
-    receipt += `Contact: 0319-9922922\n`;
-    receipt += `Main Bazar, Nathia Gali\n`;
-    receipt += `======================\n`;
-    receipt += `${t('Order No.')} ${displayOrderNumber}\n`;
-    receipt += `Customer: ${order.customerName || '-'}\n`;
-    if (order.tableNo) {
-        receipt += `Table No: ${order.tableNo}\n`;
-    }
-    if (order.waiter) {
-        receipt += `Waiter: ${order.waiter}\n`;
-    }
-    receipt += `${t('Location')}: ${formatLocation(order.paymentMethod)}\n`;
-
-    // Format date and time
-    const orderDate = new Date(order.date);
-    const dateStr = formatDate(orderDate);
-    const timeStr = formatTime(orderDate);
-    receipt += `${t('Date')}: ${dateStr} ${timeStr}\n`;
-    const receiveTimeReceipt6 = calculateReceiveTime(timeStr, orderDate);
-    receipt += `Order Receive Time: ${receiveTimeReceipt6}\n`;
-    receipt += `--------------------------\n`;
-    receipt += `${t('ITEMS:')}\n`;
-
-    if (order.items && Array.isArray(order.items)) {
-        receipt += formatReceiptItems(order.items);
-    } else {
-        // Legacy format - single item
-        receipt += formatReceiptItems([{
-            name: order.itemName || order.dishName || 'Unknown',
-            quantity: order.quantity || 0,
-            price: order.price || 0
-        }]);
-    }
-
-    // Calculate subtotal from items
-    const subtotal = order.subtotal || (order.items && Array.isArray(order.items)
-        ? order.items.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0)
-        : (order.total || 0));
-
-    // Calculate discount amount
-    const discountAmount = getDiscountAmountFromOrder(order, subtotal);
-
-    receipt += formatReceiptSummary(subtotal, discountAmount, (order.tax || 0), (order.serviceCharges || 0), order.total);
-    receipt += `======================\n`;
-    receipt += `Bank Al Habib: Muhammad Ihsan\n`;
-    receipt += `04210981000927019\n`;
-    receipt += `======================\n`;
-    receipt += `Thank You!\n`;
-    receipt += `\n\n\n`;
-
-    // Escape receipt content for embedding in JavaScript string
-    const escapedReceipt = receipt
-        .replace(/\\/g, '\\\\')  // Escape backslashes first
-        .replace(/'/g, "\\'")    // Escape single quotes
-        .replace(/"/g, '\\"')    // Escape double quotes
-        .replace(/\n/g, '\\n')   // Escape newlines
-        .replace(/\r/g, '\\r')  // Escape carriage returns
-        .replace(/`/g, '\\`');   // Escape backticks
-
-    // Open print dialog
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-        <html>
-            <head>
-                <title>Receipt - ${displayOrderNumber}</title>
-                <style>
-                    body {
-                        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                        padding: 10px;
-                        font-size: 13px;
-                        display: flex;
-                        flex-direction: column;
-                        justify-content: flex-start;
-                        align-items: center;
-                        min-height: auto;
-                        margin: 0 auto;
-                        max-width: 80mm;
-                    }
-                    .receipt-logo {
-                        max-width: 120px;
-                        max-height: 120px;
-                        width: auto;
-                        height: auto;
-                        margin: 0 auto 10px auto;
-                        display: block;
-                        object-fit: contain;
-                    }
-                    pre {
-                        white-space: pre-wrap;
-                        word-wrap: break-word;
-                        text-align: center;
-                        margin: 0;
-                        padding: 0;
-                        font-weight: bold;
-                        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                    }
-                    .order-id-line {
-                        font-size: 16px;
-                        font-weight: 700;
-                    }
-                    .restaurant-heading {
-                        font-size: 20px;
-                        font-weight: 900;
-                    }
-                    .items-list {
-                        font-size: 9px;
-                        font-family: 'Courier New', monospace;
-                    }
-                        @media print {
-                        * {
-                            margin: 0;
-                            padding: 0;
-                        }
-                        body {
-                            padding: 5mm 0;
-                            margin: 0;
-                            min-height: auto;
-                            display: block;
-                            height: auto;
-                        }
-                        .receipt-logo {
-                            max-width: 100px;
-                            max-height: 100px;
-                            margin: 0 auto 0 auto;
-                        }
-                        #receiptContent {
-                            page-break-inside: avoid;
-                            break-inside: avoid;
-                            margin: 0;
-                            padding: 0;
-                            line-height: 1.2;
-                            font-size: 10px;
-                        }
-                        #receiptContent table {
-                            page-break-inside: avoid;
-                            break-inside: avoid;
-                        }
-                        .order-id-line {
-                            font-size: 16px !important;
-                            font-weight: 700 !important;
-                        }
-                        @page {
-                            size: 80mm auto;
-                            margin: 5mm;
-                        }
-                    }
-                </style>
-            </head>
-            <body>
-
-                <div id="receiptContent" style="text-align: center; white-space: pre-wrap; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-weight: bold; font-size: 13px;"></div>
-                <script>
-                    window.onload = function() {
-                        const receiptDiv = document.getElementById('receiptContent');
-                        const receiptContent = '${escapedReceipt}';
-                        if (receiptDiv) {
-                            // Convert receipt string to HTML, handling tables properly
-                            // Split by newlines but preserve HTML tables
-                            const lines = receiptContent.split('\\n');
-                            let processedLines = [];
-                            
-                            for (let i = 0; i < lines.length; i++) {
-                                const line = lines[i];
-                                
-                                // Check if this line contains HTML table tags
-                                if (line.includes('<table') || line.includes('</table>') || line.includes('<tr') || line.includes('<td') || line.includes('<th') || line.includes('</tr>') || line.includes('</td>') || line.includes('</th>') || line.includes('<thead') || line.includes('</thead>') || line.includes('<tbody') || line.includes('</tbody>')) {
-                                    // This is part of a table, add as-is
-                                    processedLines.push(line);
-                                } else {
-                                    // Regular text line
-                                    if (line.trim() === 'Khyber Charsi Tikka Karahi & Restaurant' || line.includes('Khyber Charsi Tikka Karahi & Restaurant')) {
-                                        processedLines.push('<span class="restaurant-heading">' + line + '</span>');
-                                    } else if (line.includes('Order No.:') || line.includes('Order No.') || line.includes('Order ID:') || line.includes('Order ID') || line.includes('Order:')) {
-                                        processedLines.push('<span class="order-id-line">' + line + '</span>');
-                                    } else {
-                                        processedLines.push(line);
-                                    }
-                                }
-                            }
-                            
-                            // Join lines, but don't add <br> between table lines
-                            let html = '';
-                            for (let i = 0; i < processedLines.length; i++) {
-                                const line = processedLines[i];
-                                const isTableLine = line.includes('<table') || line.includes('</table>') || line.includes('<tr') || line.includes('<td') || line.includes('<th') || line.includes('</tr>') || line.includes('</td>') || line.includes('</th>') || line.includes('<thead') || line.includes('</thead>') || line.includes('<tbody') || line.includes('</tbody>');
-                                
-                                if (isTableLine) {
-                                    html += line;
-                                } else {
-                                    html += line + (i < processedLines.length - 1 ? '<br>' : '');
-                                }
-                            }
-                            
-                            receiptDiv.innerHTML = html;
-                        }
-                        // Delay print to ensure preview renders first
-                        setTimeout(function() {
-                            window.print();
-                            window.close();
-                        }, 100);
-                    }
-                </script>
-            </body>
-        </html>
-    `);
-    printWindow.document.close();
+    const receiptHTML = generateFullReceiptHTML(order);
+    openReceiptPrintWindow(receiptHTML, `Receipt - #${displayOrderNumber}`);
 };
 
 // updateDishDropdown function removed - form no longer exists
@@ -3960,8 +4288,15 @@ window.loadEmployees = function loadEmployees() {
 
     // Get filter values
     const searchQuery = document.getElementById('employeeSearch')?.value.toLowerCase() || '';
-    const dateFilter = document.getElementById('employeeDateFilter')?.value || 'all';
-    const selectedMonth = document.getElementById('employeeMonthFilter')?.value;
+    let selectedMonth = document.getElementById('employeeMonthFilter')?.value;
+    const now = new Date();
+    const currentYearMonth = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+    if (!selectedMonth) {
+        selectedMonth = currentYearMonth;
+        const monthInput = document.getElementById('employeeMonthFilter');
+        if (monthInput) monthInput.value = currentYearMonth;
+    }
+    const [year, month] = selectedMonth.split('-').map(Number);
 
     // Migrate old employee data (convert numeric payouts to array)
     employees.forEach(emp => {
@@ -4000,14 +4335,11 @@ window.loadEmployees = function loadEmployees() {
         const matchesSearch = searchQuery === '' || emp.name.toLowerCase().includes(searchQuery);
 
         let matchesDate = true;
-        if (dateFilter === 'specific-month' && selectedMonth) {
-            const [year, month] = selectedMonth.split('-').map(Number);
-            if (emp.salaryDate) {
-                const sDate = new Date(emp.salaryDate);
-                matchesDate = sDate.getFullYear() === year && (sDate.getMonth() + 1) === month;
-            } else {
-                matchesDate = false;
-            }
+        if (emp.salaryDate) {
+            const sDate = new Date(emp.salaryDate);
+            const sYear = sDate.getFullYear();
+            const sMonth = sDate.getMonth() + 1;
+            matchesDate = (sYear < year) || (sYear === year && sMonth <= month);
         }
 
         return matchesSearch && matchesDate;
@@ -4021,13 +4353,10 @@ window.loadEmployees = function loadEmployees() {
     const totalSalary = filteredEmployees.reduce((sum, emp) => sum + (emp.salary || 0), 0);
     const totalPayouts = filteredEmployees.reduce((sum, emp) => {
         let payouts = Array.isArray(emp.payouts) ? emp.payouts : [];
-        if (dateFilter === 'specific-month' && selectedMonth) {
-            const [year, month] = selectedMonth.split('-').map(Number);
-            payouts = payouts.filter(p => {
-                const pDate = new Date(p.date || p.createdAt);
-                return pDate.getFullYear() === year && (pDate.getMonth() + 1) === month;
-            });
-        }
+        payouts = payouts.filter(p => {
+            const pDate = new Date(p.date || p.createdAt);
+            return pDate.getFullYear() === year && (pDate.getMonth() + 1) === month;
+        });
         return sum + payouts.reduce((pSum, p) => pSum + (p.amount || 0), 0);
     }, 0);
     const remainingSalary = totalSalary - totalPayouts;
@@ -4043,7 +4372,7 @@ window.loadEmployees = function loadEmployees() {
     if (totalPayoutsEl) totalPayoutsEl.textContent = `Rs. ${formatNumber(totalPayouts)}`;
     if (remainingSalaryEl) remainingSalaryEl.textContent = `Rs. ${formatNumber(remainingSalary)}`;
     if (employeeCountTitle) {
-        employeeCountTitle.textContent = dateFilter === 'specific-month' && selectedMonth ? `Employee Management (${selectedMonth})` : 'Employee Management';
+        employeeCountTitle.textContent = `Employee Management (${selectedMonth})`;
     }
 
     const countEl = document.getElementById('employeeCount');
@@ -4059,13 +4388,10 @@ window.loadEmployees = function loadEmployees() {
         let payouts = Array.isArray(employee.payouts) ? employee.payouts : [];
 
         // Apply same payout filtering for table display
-        if (dateFilter === 'specific-month' && selectedMonth) {
-            const [year, month] = selectedMonth.split('-').map(Number);
-            payouts = payouts.filter(p => {
-                const pDate = new Date(p.date || p.createdAt);
-                return pDate.getFullYear() === year && (pDate.getMonth() + 1) === month;
-            });
-        }
+        payouts = payouts.filter(p => {
+            const pDate = new Date(p.date || p.createdAt);
+            return pDate.getFullYear() === year && (pDate.getMonth() + 1) === month;
+        });
 
         const totalPayoutAmount = payouts.reduce((sum, p) => sum + (p.amount || 0), 0);
         const remaining = salary - totalPayoutAmount;
@@ -4083,32 +4409,12 @@ window.loadEmployees = function loadEmployees() {
             <td>${payoutsText}</td>
             <td style="font-weight: 700; color: #4caf50;">Rs. ${formatNumber(remaining)}</td>
             <td>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                    <button
-                        onclick="openPayoutsListModal(${employee.id})"
-                        id="payoutToggleBtn_${employee.id}"
-                        ${payouts.length === 0 ? 'disabled' : ''}
-                        style="
-                            background: #4a90e2;
-                            border: none;
-                            padding: 6px 10px;
-                            border-radius: 4px;
-                            cursor: ${payouts.length === 0 ? 'not-allowed' : 'pointer'};
-                            font-size: 14px;
-                            color: white;
-                            font-weight: 600;
-                            height: 32px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            opacity: ${payouts.length === 0 ? '0.65' : '1'};
-                        "
-                        title="View Payouts"
-                    >📋 Payouts (${payouts.length})</button>
-                    <button onclick="openAttendanceModal(${employee.id})" style="background: #673ab7; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 14px; color: white; font-weight: 600; height: 32px; display: flex; align-items: center; justify-content: center; gap: 6px;" title="Attendance"><span>🕒</span><span>Attendance</span></button>
-                    <button onclick="openAddPayoutModal(${employee.id})" style="background: #ffc107; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 16px; height: 32px; width: 32px; display: flex; align-items: center; justify-content: center;" title="Add Payout">💰</button>
-                    <button onclick="editEmployee(${employee.id})" style="background: #ffc107; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 16px; height: 32px; width: 32px; display: flex; align-items: center; justify-content: center;" title="Edit">✏️</button>
-                    <button onclick="deleteEmployee(${employee.id}, this)" style="background: #757575; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 16px; color: white; height: 32px; width: 32px; display: flex; align-items: center; justify-content: center;" title="Delete">🗑️</button>
+                <div class="table-actions-cell">
+                    <button class="btn-action btn-action-payouts-list" onclick="openPayoutsListModal(${employee.id})" id="payoutToggleBtn_${employee.id}" ${payouts.length === 0 ? 'disabled style="opacity: 0.45; cursor: not-allowed;"' : ''} title="View Payouts (${payouts.length})">${ICONS.list}</button>
+                    <button class="btn-action btn-action-attendance" onclick="openAttendanceModal(${employee.id})" title="Attendance">${ICONS.clock}</button>
+                    <button class="btn-action btn-action-payout" onclick="openAddPayoutModal(${employee.id})" title="Add Payout">${ICONS.payout}</button>
+                    <button class="btn-action btn-action-edit" onclick="editEmployee(${employee.id})" title="Edit Employee">${ICONS.edit}</button>
+                    <button class="btn-action btn-action-delete" onclick="deleteEmployee(${employee.id}, this)" title="Delete Employee">${ICONS.delete}</button>
                 </div>
             </td>
         `;
@@ -4279,8 +4585,10 @@ function renderPayoutsListModal(employeeId) {
                         <input id="payoutsEditNotes" type="text" value="${escapeHtml(notesValue)}" placeholder="Notes" style="width: 100%; padding: 6px 8px; border: 1px solid #d8d8d8; border-radius: 6px; font-size: 13px;" />
                     </td>
                     <td style="text-align:center; white-space: nowrap;">
-                        <button onclick="saveInlinePayoutEdit(${employee.id}, ${p.id})" style="background: #4caf50; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 14px; color: white;" title="Save">✔</button>
-                        <button onclick="cancelInlinePayoutEdit()" style="background: #9e9e9e; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 14px; color: white; margin-left: 6px;" title="Cancel">✖</button>
+                        <div class="table-actions-cell center">
+                            <button class="btn-action btn-action-save" onclick="saveInlinePayoutEdit(${employee.id}, ${p.id})" title="Save">${ICONS.check}</button>
+                            <button class="btn-action btn-action-cancel" onclick="cancelInlinePayoutEdit()" title="Cancel">${ICONS.cross}</button>
+                        </div>
                     </td>
                 </tr>
             `;
@@ -4293,8 +4601,10 @@ function renderPayoutsListModal(employeeId) {
                 <td style="text-align:right; font-weight: 800;">Rs. ${formatNumber(amount)}</td>
                 <td style="white-space: pre-wrap;">${notes ? escapeHtml(notes) : '<span style="color:#999;">—</span>'}</td>
                 <td style="text-align:center; white-space: nowrap;">
-                    <button onclick="startInlinePayoutEdit(${employee.id}, ${p.id})" style="background: #ffc107; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 14px;" title="Edit">✏️</button>
-                    <button onclick="deletePayout(${employee.id}, ${p.id}, this)" style="background: #757575; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 14px; color: white; margin-left: 6px;" title="Delete">🗑️</button>
+                    <div class="table-actions-cell center">
+                        <button class="btn-action btn-action-edit" onclick="startInlinePayoutEdit(${employee.id}, ${p.id})" title="Edit">${ICONS.edit}</button>
+                        <button class="btn-action btn-action-delete" onclick="deletePayout(${employee.id}, ${p.id}, this)" title="Delete">${ICONS.delete}</button>
+                    </div>
                 </td>
             </tr>
         `;
@@ -4414,27 +4724,33 @@ function renderAttendance(employeeId) {
     if (outBtn) outBtn.disabled = !(todayRec && todayRec.timeIn) || !!(todayRec && todayRec.timeOut);
 
     if (records.length === 0) {
-        listEl.innerHTML = `<div style="text-align:center; padding: 20px; color:#999;">${t('No attendance found')}</div>`;
+        listEl.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 24px; color:#999; font-weight: 600;">${t('No attendance found')}</td></tr>`;
         return;
     }
 
-    listEl.innerHTML = records.map(rec => {
+    listEl.innerHTML = records.map((rec, idx) => {
         const d = rec.date ? formatDate(new Date(rec.date + 'T00:00:00')) : '-';
         const ti = rec.timeIn || '-';
         const to = rec.timeOut || '-';
-        const statusColor = rec.timeIn && rec.timeOut ? '#4caf50' : (rec.timeIn ? '#ff9800' : '#9e9e9e');
-        const statusText = rec.timeIn && rec.timeOut ? 'Complete' : (rec.timeIn ? 'In' : '—');
+        const isComplete = !!(rec.timeIn && rec.timeOut);
+        const isIn = !!(rec.timeIn && !rec.timeOut);
+        const statusBg = isComplete ? '#e8f5e9' : (isIn ? '#fff3e0' : '#f5f5f5');
+        const statusColor = isComplete ? '#2e7d32' : (isIn ? '#e65100' : '#757575');
+        const statusBorder = isComplete ? '#c8e6c9' : (isIn ? '#ffe0b2' : '#e0e0e0');
+        const statusText = isComplete ? 'Complete' : (isIn ? 'In' : '—');
+        const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8f9fa';
+
         return `
-            <div style="background: #ffffff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; gap: 12px; align-items: center;">
-                <div>
-                    <div style="font-weight: 700; color:#333; margin-bottom: 4px;">${d}</div>
-                    <div style="color:#666; font-size: 13px; display: flex; gap: 14px; flex-wrap: wrap;">
-                        <span><strong>${t('Time In')}:</strong> ${ti}</span>
-                        <span><strong>${t('Time Out')}:</strong> ${to}</span>
-                    </div>
-                </div>
-                <span style="background: ${statusColor}; color:#fff; padding: 6px 10px; border-radius: 999px; font-weight: 700; font-size: 12px; white-space: nowrap;">${statusText}</span>
-            </div>
+            <tr style="background: ${rowBg}; border-bottom: 1px solid #eef0f3;">
+                <td style="padding: 12px 14px; font-weight: 600; color: #2c3e50; white-space: nowrap;">${d}</td>
+                <td style="padding: 12px 14px; color: #333; font-weight: 500; white-space: nowrap;">${ti}</td>
+                <td style="padding: 12px 14px; color: #333; font-weight: 500; white-space: nowrap;">${to}</td>
+                <td style="padding: 12px 14px; text-align: center; white-space: nowrap;">
+                    <span style="background: ${statusBg}; color: ${statusColor}; border: 1px solid ${statusBorder}; padding: 4px 12px; border-radius: 12px; font-weight: 700; font-size: 12px; display: inline-block;">
+                        ${statusText}
+                    </span>
+                </td>
+            </tr>
         `;
     }).join('');
 }
@@ -4586,6 +4902,8 @@ function deletePayoutConfirmed(employeeId, payoutId) {
     employee.payouts = payouts.filter(p => p.id !== payoutId);
     Storage.set('employees', employees);
     loadEmployees();
+    loadExpenses();
+    if (typeof loadDashboard === 'function') loadDashboard();
     if (currentPayoutsListEmployeeId && String(currentPayoutsListEmployeeId) === String(employeeId)) {
         renderPayoutsListModal(employeeId);
     }
@@ -4599,6 +4917,8 @@ window.resetEmployeePayouts = (employeeId) => {
     employee.payouts = [];
     Storage.set('employees', employees);
     loadEmployees();
+    loadExpenses();
+    if (typeof loadDashboard === 'function') loadDashboard();
     if (currentPayoutsListEmployeeId && String(currentPayoutsListEmployeeId) === String(employeeId)) {
         renderPayoutsListModal(employeeId);
     }
@@ -4710,6 +5030,8 @@ if (payoutForm) {
         employee.payouts = payouts;
         Storage.set('employees', employees);
         loadEmployees();
+        loadExpenses();
+        if (typeof loadDashboard === 'function') loadDashboard();
         closeAddPayoutModal();
         if (currentPayoutsListEmployeeId && String(currentPayoutsListEmployeeId) === String(currentPayoutEmployeeId)) {
             renderPayoutsListModal(currentPayoutEmployeeId);
@@ -4751,6 +5073,8 @@ function deleteEmployeeConfirmed(id) {
     const filtered = employees.filter(emp => emp.id !== id);
     Storage.set('employees', filtered);
     loadEmployees();
+    loadExpenses();
+    if (typeof loadDashboard === 'function') loadDashboard();
 }
 
 // Waiters Management
@@ -4799,9 +5123,11 @@ window.loadWaiters = function loadWaiters() {
         tr.innerHTML = `
             <td style="padding: 12px; font-weight: 600; color: #333;">${escapeHtml(waiter.name || 'N/A')}</td>
             <td style="padding: 12px; text-align: center; font-weight: 600; color: #4a90e2;">${orderCount}</td>
-            <td style="padding: 12px; text-align: center;">
-                <button onclick="editWaiter(${waiter.id})" style="background: #4a90e2; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; margin-right: 5px;">Edit</button>
-                <button onclick="deleteWaiter(${waiter.id}, this)" style="background: #f44336; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">Delete</button>
+            <td style="padding: 10px 12px; text-align: center;">
+                <div class="table-actions-cell center">
+                    <button class="btn-action btn-action-edit" onclick="editWaiter(${waiter.id})" title="Edit Waiter">${ICONS.edit}</button>
+                    <button class="btn-action btn-action-delete" onclick="deleteWaiter(${waiter.id}, this)" title="Delete Waiter">${ICONS.delete}</button>
+                </div>
             </td>
         `;
         tbody.appendChild(tr);
@@ -4809,7 +5135,7 @@ window.loadWaiters = function loadWaiters() {
 };
 
 // Handle waiter form submission
-document.addEventListener('DOMContentLoaded', () => {
+onDOMReady(() => {
     const waiterForm = document.getElementById('waiterForm');
     if (waiterForm) {
         waiterForm.addEventListener('submit', (e) => {
@@ -4914,12 +5240,12 @@ window.deleteWaiter = function deleteWaiter(id, buttonElement) {
                 return;
             }
 
-            if (confirm(`Are you sure you want to delete "${waiter.name}"?`)) {
+            showCustomConfirm(`Are you sure you want to delete "${waiter.name}"?`, () => {
                 const filtered = waiters.filter(w => w.id !== id);
                 Storage.set('waiters', filtered);
                 loadWaiters();
                 loadWaitersDropdown(); // Update POS dropdown
-            }
+            }, null, { title: 'Delete Waiter', confirmText: 'Delete', type: 'danger' });
         });
     } else {
         const waiters = Storage.get('waiters') || [];
@@ -5100,22 +5426,21 @@ window.printEmployees = () => {
 
     // Get filter values (same as loadEmployees)
     const searchQuery = document.getElementById('employeeSearch')?.value.toLowerCase() || '';
-    const dateFilter = document.getElementById('employeeDateFilter')?.value || 'all';
-    const selectedMonth = document.getElementById('employeeMonthFilter')?.value;
+    let selectedMonth = document.getElementById('employeeMonthFilter')?.value;
+    const currentYearMonth = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+    if (!selectedMonth) selectedMonth = currentYearMonth;
+    const [year, month] = selectedMonth.split('-').map(Number);
 
     // Apply filters to employees (same as loadEmployees)
     let filteredEmployees = employees.filter(emp => {
         const matchesSearch = searchQuery === '' || emp.name.toLowerCase().includes(searchQuery);
 
         let matchesDate = true;
-        if (dateFilter === 'specific-month' && selectedMonth) {
-            const [year, month] = selectedMonth.split('-').map(Number);
-            if (emp.salaryDate) {
-                const sDate = new Date(emp.salaryDate);
-                matchesDate = sDate.getFullYear() === year && (sDate.getMonth() + 1) === month;
-            } else {
-                matchesDate = false;
-            }
+        if (emp.salaryDate) {
+            const sDate = new Date(emp.salaryDate);
+            const sYear = sDate.getFullYear();
+            const sMonth = sDate.getMonth() + 1;
+            matchesDate = (sYear < year) || (sYear === year && sMonth <= month);
         }
 
         return matchesSearch && matchesDate;
@@ -5133,14 +5458,11 @@ window.printEmployees = () => {
             const salary = emp.salary || 0;
             let payouts = Array.isArray(emp.payouts) ? emp.payouts : [];
 
-            // Apply same payout filtering if specific month is selected
-            if (dateFilter === 'specific-month' && selectedMonth) {
-                const [year, month] = selectedMonth.split('-').map(Number);
-                payouts = payouts.filter(p => {
-                    const pDate = new Date(p.date || p.createdAt);
-                    return pDate.getFullYear() === year && (pDate.getMonth() + 1) === month;
-                });
-            }
+            // Apply same payout filtering for monthly view
+            payouts = payouts.filter(p => {
+                const pDate = new Date(p.date || p.createdAt);
+                return pDate.getFullYear() === year && (pDate.getMonth() + 1) === month;
+            });
 
             const totalPayoutAmount = payouts.reduce((sum, p) => sum + (p.amount || 0), 0);
             const remaining = salary - totalPayoutAmount;
@@ -5193,9 +5515,16 @@ window.printEmployees = () => {
         <html>
             <head>
                 <title>Employee Report</title>
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
                 <style>
+                    *, *::before, *::after {
+                        box-sizing: border-box;
+                        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+                    }
                     body {
-                        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
                         padding: 10px;
                         font-size: 11px;
                         display: flex;
@@ -5325,9 +5654,9 @@ window.printEmployees = () => {
             <body>
 
                 <div class="header-section">
-                    <div class="restaurant-name">Khyber Charsi Tikka Karahi & Restaurant</div>
-                    <div class="report-info">Contact: 0319-9922922</div>
-                    <div class="report-info">Main Bazar, Nathia Gali</div>
+                    <div class="restaurant-name">Hangout Lounge & Co.</div>
+                    <div class="report-info">Contact: 0300-9509536</div>
+                    <div class="report-info">Wah Cantt</div>
                     <div class="separator"></div>
                     <div class="separator"></div>
                     <div class="report-title">${reportLabel}</div>
@@ -5598,105 +5927,93 @@ window.printSales = () => {
     const currentDate = dateStr + ' ' + timeStr;
 
     printWindow.document.write(`
+        <!DOCTYPE html>
         <html>
             <head>
+                <meta charset="UTF-8">
                 <title>Sales Report</title>
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
                 <style>
+                    *, *::before, *::after {
+                        box-sizing: border-box;
+                        font-family: 'Poppins', sans-serif !important;
+                    }
                     body {
-                        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                        padding: 5px;
+                        font-family: 'Poppins', sans-serif !important;
+                        padding: 8px;
                         font-size: 12px;
                         display: flex;
                         flex-direction: column;
                         justify-content: flex-start;
                         align-items: center;
                         min-height: auto;
-                        margin: 0;
-                        max-width: 80mm;
                         margin: 0 auto;
+                        max-width: 80mm;
+                        background: #fff;
                         color: #000;
-                        font-weight: 500;
-                    }
-                    .receipt-logo {
-                        max-width: 100px;
-                        max-height: 100px;
-                        width: auto;
-                        height: auto;
-                        margin: 0 auto 8px auto;
-                        display: block;
-                        object-fit: contain;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
                     }
                     .header-section {
                         text-align: center;
-                        margin-bottom: 3px;
-                        font-weight: 600;
+                        margin-bottom: 6px;
                         width: 100%;
                     }
                     .restaurant-name {
-                        font-size: 16px;
+                        font-size: 18px;
                         font-weight: 800;
+                        letter-spacing: 0.3px;
+                        text-transform: uppercase;
                         margin-bottom: 2px;
+                        color: #000;
                     }
-                    .report-title {
-                        font-size: 14px;
+                    .report-title-badge {
+                        display: inline-block;
+                        border: 1.5px solid #000;
+                        padding: 2px 14px;
+                        font-size: 11px;
                         font-weight: 700;
-                        margin: 6px 0;
-                        text-decoration: underline;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                        margin: 4px 0 2px 0;
                     }
                     .report-info {
                         font-size: 11px;
-                        margin: 1px 0;
                         font-weight: 500;
+                        color: #333;
+                        line-height: 1.35;
                     }
                     .separator {
-                        border-top: 1px dashed #000;
-                        margin: 6px 0;
+                        border-top: 1px dashed #999;
+                        margin: 6px 0 7px 0;
                         width: 100%;
-                    }
-                    .report-content {
-                        width: 100%;
-                        margin: 5px 0;
-                    }
-                    .report-row {
-                        display: flex;
-                        justify-content: space-between;
-                        margin: 3px 0;
-                        font-size: 12px;
-                        font-weight: 500;
                     }
                     .section-title {
-                        font-size: 13px;
-                        font-weight: 700;
-                        margin: 8px 0 4px 0;
-                        text-align: left;
-                        width: 100%;
-                    }
-                    .order-type-table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-top: 3px;
-                        font-size: 11.5px;
-                    }
-                    .order-type-table th {
-                        text-align: left;
-                        border-bottom: 1px solid #000;
-                        padding-bottom: 1px;
-                        font-weight: 700;
                         font-size: 12px;
-                    }
-                    .order-type-table td {
-                        padding: 3px 0;
-                        font-weight: 500;
-                    }
-                    .order-type-table .text-right {
-                        text-align: right;
+                        font-weight: 700;
+                        margin: 6px 0 4px 0;
+                        text-align: left;
+                        width: 100%;
+                        text-transform: uppercase;
+                        letter-spacing: 0.3px;
                     }
                     @media print {
+                        * {
+                            margin: 0;
+                            padding: 0;
+                            box-sizing: border-box;
+                        }
                         body {
                             padding: 3mm 0;
                             margin: 0;
-                            max-width: 80mm;
-                            font-size: 12px;
+                            max-width: 100%;
+                            width: 100%;
+                            background: #fff;
+                            color: #000;
+                            -webkit-print-color-adjust: exact;
+                            print-color-adjust: exact;
                         }
                         @page {
                             size: 80mm auto;
@@ -5707,65 +6024,67 @@ window.printSales = () => {
             </head>
             <body>
                 <div class="header-section">
-                    <div class="restaurant-name">Khyber Charsi Tikka Karahi & Restaurant</div>
-                    <div class="report-info">Contact: 0319-9922922</div>
-                    <div class="report-info">Main Bazar, Nathia Gali</div>
+                    <div class="restaurant-name">Hangout Lounge & Co.</div>
+                    <div class="report-info">Wah Cantt</div>
+                    <div class="report-info">Phone: 0300-9509536</div>
+                    <div><span class="report-title-badge">SALES REPORT</span></div>
                     <div class="separator"></div>
-                    <div class="report-title">SALES REPORT</div>
-                    <div class="report-info">Date: ${currentDate}</div>
-                    <div class="report-info">Filter: ${dateFilterLabel} | ${locationFilterLabel}</div>
-                    <div class="separator"></div>
+                    <div style="font-size: 11.5px; text-align: left; line-height: 1.5; color: #000;">
+                        <div style="display: flex; justify-content: space-between;"><span style="font-weight: 600;">Date:</span> <span style="font-weight: 400; color: #333;">${currentDate}</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span style="font-weight: 600;">Filter:</span> <span style="font-weight: 400; color: #333;">${dateFilterLabel} | ${locationFilterLabel}</span></div>
+                    </div>
                 </div>
 
-                <div class="report-content">
-                    <div class="report-row"><span>Transactions:</span> <span>${totalOrders}</span></div>
-                    <div class="report-row"><span>Cash:</span> <span>Rs.${formatNumber(totalSubtotal)}</span></div>
-                    <div class="report-row"><span>Service Charges:</span> <span>Rs.${formatNumber(totalServiceCharges)}</span></div>
-                    <div class="report-row"><span>Discount:</span> <span>${totalDiscount > 0 ? 'Rs.' + formatNumber(totalDiscount) : '0'}</span></div>
-                    <div class="report-row"><span>Net Sale:</span> <span>Rs.${formatNumber(netSale)}</span></div>
-                    <div class="report-row"><span>Average Sale:</span> <span>Rs.${formatNumber(Math.round(avgSale))}</span></div>
-                    <div class="report-row"><span>Expenses:</span> <span>Rs.${formatNumber(totalExpenses)}</span></div>
-                    <div class="report-row" style="border-top: 1px solid #000; padding-top: 4px; margin-top: 4px;">
-                        <span>Cash In Hand:</span> <span>Rs.${formatNumber(cashInHand)}</span>
-                    </div>
+                <div class="separator"></div>
+
+                <div style="width: 100%; font-size: 11.5px; line-height: 1.6; color: #000;">
+                    <div style="display: flex; justify-content: space-between;"><span style="font-weight: 400; color: #444;">Transactions:</span> <span style="font-weight: 600; color: #111;">${totalOrders}</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span style="font-weight: 400; color: #444;">Cash:</span> <span style="font-weight: 500; color: #111;">Rs. ${formatNumber(totalSubtotal)}</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span style="font-weight: 400; color: #444;">Service Charges:</span> <span style="font-weight: 500; color: #111;">Rs. ${formatNumber(totalServiceCharges)}</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span style="font-weight: 400; color: #444;">Discount:</span> <span style="font-weight: 500; color: #111;">${totalDiscount > 0 ? 'Rs. ' + formatNumber(totalDiscount) : '0'}</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span style="font-weight: 600; color: #000;">Net Sale:</span> <span style="font-weight: 600; color: #000;">Rs. ${formatNumber(netSale)}</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span style="font-weight: 400; color: #444;">Average Sale:</span> <span style="font-weight: 500; color: #111;">Rs. ${formatNumber(Math.round(avgSale))}</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span style="font-weight: 400; color: #444;">Expenses:</span> <span style="font-weight: 500; color: #111;">Rs. ${formatNumber(totalExpenses)}</span></div>
+                    <div style="border-top: 1.5px solid #000; margin: 5px 0 4px 0;"></div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13.5px;"><span style="font-weight: 700; text-transform: uppercase;">Cash In Hand:</span> <span style="font-weight: 700;">Rs. ${formatNumber(cashInHand)}</span></div>
                 </div>
 
                 <div class="separator"></div>
                 <div class="section-title">Order Type Wise</div>
 
-                <table class="order-type-table">
+                <table style="width: 100%; border-collapse: collapse; margin: 4px 0 6px 0; border: 1.5px solid #000; background: #fff;">
                     <thead>
-                        <tr>
-                            <th style="width: 30%">Location</th>
-                            <th class="text-center" style="width: 20%">Bills</th>
-                            <th class="text-right" style="width: 30%">Total</th>
-                            <th class="text-right" style="width: 20%">Avg</th>
+                        <tr style="border-bottom: 1.5px solid #000;">
+                            <th style="text-align: left; padding: 4px 5px; font-size: 11px; font-weight: 600; border-right: 1px solid #000; width: 30%; color: #000;">Location</th>
+                            <th style="text-align: center; padding: 4px 3px; font-size: 11px; font-weight: 600; border-right: 1px solid #000; width: 20%; color: #000;">Bills</th>
+                            <th style="text-align: right; padding: 4px 5px; font-size: 11px; font-weight: 600; border-right: 1px solid #000; width: 28%; color: #000;">Total</th>
+                            <th style="text-align: right; padding: 4px 5px; font-size: 11px; font-weight: 600; width: 22%; color: #000;">Avg</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>Gents</td>
-                            <td class="text-center">${gents.count}</td>
-                            <td class="text-right">Rs.${formatNumber(gents.total)}</td>
-                            <td class="text-right">Rs.${formatNumber(Math.round(gents.avg))}</td>
+                        <tr style="border-bottom: 1px solid #000;">
+                            <td style="text-align: left; padding: 4px 5px; font-size: 11.5px; font-weight: 500; border-right: 1px solid #000; color: #000;">Gents</td>
+                            <td style="text-align: center; padding: 4px 3px; font-size: 12px; font-weight: 600; border-right: 1px solid #000; color: #000;">${gents.count}</td>
+                            <td style="text-align: right; padding: 4px 5px; font-size: 11.5px; font-weight: 500; border-right: 1px solid #000; color: #000;">Rs. ${formatNumber(gents.total)}</td>
+                            <td style="text-align: right; padding: 4px 5px; font-size: 11.5px; font-weight: 500; color: #000;">Rs. ${formatNumber(Math.round(gents.avg))}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #000;">
+                            <td style="text-align: left; padding: 4px 5px; font-size: 11.5px; font-weight: 500; border-right: 1px solid #000; color: #000;">Family</td>
+                            <td style="text-align: center; padding: 4px 3px; font-size: 12px; font-weight: 600; border-right: 1px solid #000; color: #000;">${family.count}</td>
+                            <td style="text-align: right; padding: 4px 5px; font-size: 11.5px; font-weight: 500; border-right: 1px solid #000; color: #000;">Rs. ${formatNumber(family.total)}</td>
+                            <td style="text-align: right; padding: 4px 5px; font-size: 11.5px; font-weight: 500; color: #000;">Rs. ${formatNumber(Math.round(family.avg))}</td>
                         </tr>
                         <tr>
-                            <td>Family</td>
-                            <td class="text-center">${family.count}</td>
-                            <td class="text-right">Rs.${formatNumber(family.total)}</td>
-                            <td class="text-right">Rs.${formatNumber(Math.round(family.avg))}</td>
-                        </tr>
-                        <tr>
-                            <td>Parcel</td>
-                            <td class="text-center">${parcel.count}</td>
-                            <td class="text-right">Rs.${formatNumber(parcel.total)}</td>
-                            <td class="text-right">Rs.${formatNumber(Math.round(parcel.avg))}</td>
+                            <td style="text-align: left; padding: 4px 5px; font-size: 11.5px; font-weight: 500; border-right: 1px solid #000; color: #000;">Parcel</td>
+                            <td style="text-align: center; padding: 4px 3px; font-size: 12px; font-weight: 600; border-right: 1px solid #000; color: #000;">${parcel.count}</td>
+                            <td style="text-align: right; padding: 4px 5px; font-size: 11.5px; font-weight: 500; border-right: 1px solid #000; color: #000;">Rs. ${formatNumber(parcel.total)}</td>
+                            <td style="text-align: right; padding: 4px 5px; font-size: 11.5px; font-weight: 500; color: #000;">Rs. ${formatNumber(Math.round(parcel.avg))}</td>
                         </tr>
                     </tbody>
                 </table>
 
                 <div class="separator"></div>
-                <div style="text-align: center; font-size: 10px; margin-top: 10px;">
+                <div style="text-align: center; font-size: 10.5px; font-weight: 500; color: #555; margin-top: 4px;">
                     Report Generated Successfully
                 </div>
 
@@ -5773,10 +6092,8 @@ window.printSales = () => {
                     window.onload = function() {
                         setTimeout(function() {
                             window.print();
-                        }, 100);
+                        }, 180);
                     };
-                    
-                    // Close window when print dialog is cancelled or completed
                     window.addEventListener('afterprint', function() {
                         window.close();
                     });
@@ -5957,16 +6274,18 @@ window.printItemsSales = () => {
     // Build table HTML for items
     let tableRows = '';
     if (items.length === 0) {
-        tableRows = '<tr><td colspan="4" style="text-align: center; padding: 10px;">No items sales data available</td></tr>';
+        tableRows = '<tr><td colspan="4" style="text-align: center; padding: 10px; font-size: 11.5px; font-weight: 500;">No items sales data available</td></tr>';
     } else {
-        items.forEach(item => {
+        items.forEach((item, index) => {
             const itemName = escapeHtml(item.name);
+            const isLast = index === items.length - 1;
+            const bottomBorder = isLast ? '' : 'border-bottom: 1px solid #000;';
             tableRows += `
-                <tr>
-                    <td style="text-align: left; padding: 1px 2px;">${itemName}</td>
-                    <td style="text-align: right; padding: 1px 2px;">${formatQuantity(item.totalQuantity)}</td>
-                    <td style="text-align: right; padding: 1px 2px;">Rs.${formatNumber(item.averagePrice)}</td>
-                    <td style="text-align: right; padding: 1px 2px;">Rs.${formatNumber(item.totalRevenue)}</td>
+                <tr style="${bottomBorder}">
+                    <td style="text-align: left; padding: 4px 6px; font-size: 11.5px; font-weight: 500; border-right: 1px solid #000; color: #000;">${itemName}</td>
+                    <td style="text-align: center; padding: 4px 4px; font-size: 12px; font-weight: 600; border-right: 1px solid #000; color: #000;">${formatQuantity(item.totalQuantity)}</td>
+                    <td style="text-align: right; padding: 4px 5px; font-size: 11.5px; font-weight: 500; border-right: 1px solid #000; color: #000;">Rs.${formatNumber(item.averagePrice)}</td>
+                    <td style="text-align: right; padding: 4px 6px; font-size: 12px; font-weight: 600; color: #000;">Rs.${formatNumber(item.totalRevenue)}</td>
                 </tr>
             `;
         });
@@ -5974,171 +6293,125 @@ window.printItemsSales = () => {
 
     // Build summary row
     const summaryRow = `
-        <tr style="border-top: 2px solid #000; font-weight: 700;">
-            <td style="text-align: left; padding: 2px 2px;">TOTAL</td>
-            <td style="text-align: right; padding: 2px 2px;">-</td>
-            <td style="text-align: right; padding: 2px 2px;">-</td>
-            <td style="text-align: right; padding: 2px 2px;">Rs.${formatNumber(totalRevenue)}</td>
+        <tr style="border-top: 1.5px solid #000; font-weight: 700;">
+            <td style="text-align: left; padding: 5px 6px; font-size: 12px; font-weight: 700; border-right: 1px solid #000; color: #000;">TOTAL</td>
+            <td style="text-align: center; padding: 5px 4px; font-size: 12px; font-weight: 700; border-right: 1px solid #000; color: #000;">-</td>
+            <td style="text-align: right; padding: 5px 5px; font-size: 12px; font-weight: 700; border-right: 1px solid #000; color: #000;">-</td>
+            <td style="text-align: right; padding: 5px 6px; font-size: 13px; font-weight: 700; color: #000;">Rs.${formatNumber(totalRevenue)}</td>
         </tr>
     `;
 
     // Open print dialog
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
+        <!DOCTYPE html>
         <html>
             <head>
+                <meta charset="UTF-8">
                 <title>Items Sales Report</title>
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
                 <style>
+                    *, *::before, *::after {
+                        box-sizing: border-box;
+                        font-family: 'Poppins', sans-serif !important;
+                    }
                     body {
-                        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                        padding: 10px;
-                        font-size: 11px;
+                        font-family: 'Poppins', sans-serif !important;
+                        padding: 8px;
+                        font-size: 12px;
                         display: flex;
                         flex-direction: column;
                         justify-content: flex-start;
                         align-items: center;
                         min-height: auto;
-                        margin: 0;
-                        max-width: 80mm;
                         margin: 0 auto;
-                    }
-                    .receipt-logo {
-                        max-width: 100px;
-                        max-height: 100px;
-                        width: auto;
-                        height: auto;
-                        margin: 0 auto 8px auto;
-                        display: block;
-                        object-fit: contain;
+                        max-width: 80mm;
+                        background: #fff;
+                        color: #000;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
                     }
                     .header-section {
                         text-align: center;
-                        margin-bottom: 10px;
-                        font-weight: bold;
+                        margin-bottom: 6px;
+                        width: 100%;
                     }
                     .restaurant-name {
-                        font-size: 16px;
-                        font-weight: 900;
-                        margin-bottom: 4px;
+                        font-size: 18px;
+                        font-weight: 800;
+                        letter-spacing: 0.3px;
+                        text-transform: uppercase;
+                        margin-bottom: 2px;
+                        color: #000;
                     }
-                    .report-title {
-                        font-size: 14px;
+                    .report-title-badge {
+                        display: inline-block;
+                        border: 1.5px solid #000;
+                        padding: 2px 14px;
+                        font-size: 11px;
                         font-weight: 700;
-                        margin: 8px 0;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                        margin: 4px 0 2px 0;
                     }
                     .report-info {
-                        font-size: 10px;
-                        margin: 4px 0;
+                        font-size: 11px;
+                        font-weight: 500;
+                        color: #333;
+                        line-height: 1.35;
                     }
                     .separator {
-                        border-top: 1px dashed #000;
-                        margin: 8px 0;
-                    }
-                    table {
+                        border-top: 1px dashed #999;
+                        margin: 6px 0 7px 0;
                         width: 100%;
-                        border-collapse: collapse;
-                        margin: 8px 0;
-                        font-size: 10px;
-                    }
-                    thead {
-                        border-bottom: 2px solid #000;
-                    }
-                    th {
-                        padding: 6px 2px;
-                        text-align: left;
-                        font-weight: 700;
-                        font-size: 10px;
-                    }
-                    th:nth-child(2),
-                    th:nth-child(3),
-                    th:nth-child(4) {
-                        text-align: right;
-                    }
-                    td {
-                        padding: 2px 2px;
-                        border-bottom: 1px dotted #ccc;
-                        font-size: 9px;
-                        font-weight: 600;
-                        line-height: 1.2;
-                    }
-                    td:nth-child(2),
-                    td:nth-child(3),
-                    td:nth-child(4) {
-                        text-align: right;
-                    }
-                    .summary-section {
-                        text-align: center;
-                        margin-top: 10px;
-                        font-size: 10px;
-                        font-weight: 600;
-                    }
-                    .header-section {
-                        font-weight: 600;
-                    }
-                    .report-info {
-                        font-weight: 600;
                     }
                     @media print {
                         * {
                             margin: 0;
                             padding: 0;
+                            box-sizing: border-box;
                         }
                         body {
-                            padding: 5mm 0;
+                            padding: 3mm 0;
                             margin: 0;
-                            min-height: auto;
-                            display: block;
-                            height: auto;
-                            max-width: 80mm;
-                        }
-                        .receipt-logo {
-                            max-width: 80px;
-                            max-height: 80px;
-                            margin: 0 auto 6px auto;
-                        }
-                        table {
-                            font-size: 9px;
-                            border-spacing: 0;
-                        }
-                        th, td {
-                            font-size: 9px;
-                            padding: 1px 1px;
-                            font-weight: 600 !important;
-                            line-height: 1.2 !important;
-                        }
-                        td {
-                            border-bottom: 1px dotted #999;
-                        }
-                        .header-section, .report-info, .summary-section {
-                            font-weight: 600 !important;
+                            max-width: 100%;
+                            width: 100%;
+                            background: #fff;
+                            color: #000;
+                            -webkit-print-color-adjust: exact;
+                            print-color-adjust: exact;
                         }
                         @page {
                             size: 80mm auto;
-                            margin: 5mm;
+                            margin: 3mm;
                         }
                     }
                 </style>
             </head>
             <body>
-
                 <div class="header-section">
-                    <div class="restaurant-name">Khyber Charsi Tikka Karahi & Restaurant</div>
-                    <div class="report-info">Contact: 0319-9922922</div>
-                    <div class="report-info">Main Bazar, Nathia Gali</div>
+                    <div class="restaurant-name">Hangout Lounge & Co.</div>
+                    <div class="report-info">Wah Cantt</div>
+                    <div class="report-info">Phone: 0300-9509536</div>
+                    <div><span class="report-title-badge">ITEMS SALES REPORT</span></div>
                     <div class="separator"></div>
-                    <div class="report-title">ITEMS SALES REPORT</div>
-                    <div class="separator"></div>
-                    <div class="report-info">Date: ${currentDate}</div>
-                    <div class="report-info">Filter: ${filterLabel}</div>
-                    <div class="separator"></div>
+                    <div style="font-size: 11.5px; text-align: left; line-height: 1.5; color: #000;">
+                        <div style="display: flex; justify-content: space-between;"><span style="font-weight: 600;">Date:</span> <span style="font-weight: 400; color: #333;">${currentDate}</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span style="font-weight: 600;">Filter:</span> <span style="font-weight: 400; color: #333;">${filterLabel}</span></div>
+                    </div>
                 </div>
-                <table>
+
+                <div class="separator"></div>
+
+                <table style="width: 100%; border-collapse: collapse; margin: 4px 0 6px 0; border: 1.5px solid #000; background: #fff;">
                     <thead>
-                        <tr>
-                            <th>Item</th>
-                            <th>Qty</th>
-                            <th>Price</th>
-                            <th>Revenue</th>
+                        <tr style="border-bottom: 1.5px solid #000;">
+                            <th style="text-align: left; padding: 4px 6px; font-size: 11px; font-weight: 600; border-right: 1px solid #000; width: 44%; color: #000;">ITEM</th>
+                            <th style="text-align: center; padding: 4px 3px; font-size: 11px; font-weight: 600; border-right: 1px solid #000; width: 14%; color: #000;">QTY</th>
+                            <th style="text-align: right; padding: 4px 5px; font-size: 11px; font-weight: 600; border-right: 1px solid #000; width: 20%; color: #000;">PRICE</th>
+                            <th style="text-align: right; padding: 4px 6px; font-size: 11px; font-weight: 600; width: 22%; color: #000;">REVENUE</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -6146,18 +6419,21 @@ window.printItemsSales = () => {
                         ${summaryRow}
                     </tbody>
                 </table>
-                <div class="summary-section">
-                    <div class="separator"></div>
-                    <div style="font-weight: 700; margin: 4px 0;">Total Items: ${totalItems}</div>
-                    <div style="margin: 4px 0;">Thank You!</div>
-                    <div style="margin-top: 10px;"></div>
+
+                <div class="separator"></div>
+                <div style="width: 100%; font-size: 11.5px; line-height: 1.5; color: #000; text-align: center; margin-top: 4px;">
+                    <div style="font-weight: 600;">Total Items: ${totalItems}</div>
+                    <div style="font-size: 10.5px; color: #555; margin-top: 4px;">Report Generated Successfully</div>
                 </div>
                 <script>
                     window.onload = function() {
                         setTimeout(function() {
                             window.print();
-                        }, 100);
+                        }, 180);
                     };
+                    window.addEventListener('afterprint', function() {
+                        window.close();
+                    });
                 </script>
             </body>
         </html>
@@ -6166,7 +6442,7 @@ window.printItemsSales = () => {
 };
 
 window.printExpenses = () => {
-    const expenses = Storage.get('expenses') || [];
+    const expenses = getCombinedExpenses();
     const printWindow = window.open('', '_blank');
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-US', {
@@ -6293,23 +6569,24 @@ window.printExpenses = () => {
         categoryFilterLabel = categoryFilter.charAt(0).toUpperCase() + categoryFilter.slice(1);
     }
 
-    // Build expense table rows
     let expenseRows = '';
     if (filteredExpenses.length === 0) {
-        expenseRows = '<tr><td colspan="4" style="text-align: center; padding: 10px;">No expenses found</td></tr>';
+        expenseRows = '<tr><td colspan="4" style="text-align: center; padding: 10px; font-size: 11.5px; font-weight: 500;">No expenses found</td></tr>';
     } else {
-        filteredExpenses.forEach(exp => {
+        filteredExpenses.forEach((exp, index) => {
             const expenseDate = new Date(exp.date);
             const dateStr = formatDate(expenseDate);
             const title = escapeHtml(exp.title || 'N/A');
             const category = escapeHtml(exp.category || 'N/A');
+            const isLast = index === filteredExpenses.length - 1;
+            const bottomBorder = isLast ? '' : 'border-bottom: 1px solid #000;';
 
             expenseRows += `
-                <tr>
-                    <td style="text-align: left; padding: 1px 2px; font-size: 8px;">${dateStr}</td>
-                    <td style="text-align: left; padding: 1px 2px;">${title}</td>
-                    <td style="text-align: left; padding: 1px 2px; font-size: 8px;">${category}</td>
-                    <td style="text-align: right; padding: 1px 2px;">Rs.${formatNumber(exp.amount || 0)}</td>
+                <tr style="${bottomBorder}">
+                    <td style="text-align: left; padding: 4px 5px; font-size: 10.5px; font-weight: 500; border-right: 1px solid #000; color: #000;">${dateStr}</td>
+                    <td style="text-align: left; padding: 4px 6px; font-size: 11px; font-weight: 500; border-right: 1px solid #000; color: #000;">${title}</td>
+                    <td style="text-align: left; padding: 4px 5px; font-size: 10.5px; font-weight: 500; border-right: 1px solid #000; color: #000;">${category}</td>
+                    <td style="text-align: right; padding: 4px 6px; font-size: 11.5px; font-weight: 600; color: #000;">Rs.${formatNumber(exp.amount || 0)}</td>
                 </tr>
             `;
         });
@@ -6317,157 +6594,123 @@ window.printExpenses = () => {
 
     // Build summary row
     const summaryRow = `
-        <tr style="border-top: 2px solid #000; font-weight: 700;">
-            <td style="text-align: left; padding: 2px 2px;">TOTAL</td>
-            <td style="text-align: left; padding: 2px 2px;">${filteredExpenses.length} Expenses</td>
-            <td style="text-align: left; padding: 2px 2px;">-</td>
-            <td style="text-align: right; padding: 2px 2px;">Rs.${formatNumber(totalExpenses)}</td>
+        <tr style="border-top: 1.5px solid #000; font-weight: 700;">
+            <td style="text-align: left; padding: 5px 5px; font-size: 11.5px; font-weight: 700; border-right: 1px solid #000; color: #000;">TOTAL</td>
+            <td style="text-align: left; padding: 5px 6px; font-size: 11px; font-weight: 700; border-right: 1px solid #000; color: #000;">${filteredExpenses.length} Items</td>
+            <td style="text-align: left; padding: 5px 5px; font-size: 11px; font-weight: 700; border-right: 1px solid #000; color: #000;">-</td>
+            <td style="text-align: right; padding: 5px 6px; font-size: 12.5px; font-weight: 700; color: #000;">Rs.${formatNumber(totalExpenses)}</td>
         </tr>
     `;
 
     printWindow.document.write(`
+        <!DOCTYPE html>
         <html>
             <head>
+                <meta charset="UTF-8">
                 <title>Expenses Report</title>
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
                 <style>
+                    *, *::before, *::after {
+                        box-sizing: border-box;
+                        font-family: 'Poppins', sans-serif !important;
+                    }
                     body {
-                        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                        padding: 10px;
-                        font-size: 11px;
+                        font-family: 'Poppins', sans-serif !important;
+                        padding: 8px;
+                        font-size: 12px;
                         display: flex;
                         flex-direction: column;
                         justify-content: flex-start;
                         align-items: center;
                         min-height: auto;
-                        margin: 0;
-                        max-width: 80mm;
                         margin: 0 auto;
-                    }
-                    .receipt-logo {
-                        max-width: 100px;
-                        max-height: 100px;
-                        width: auto;
-                        height: auto;
-                        margin: 0 auto 8px auto;
-                        display: block;
-                        object-fit: contain;
+                        max-width: 80mm;
+                        background: #fff;
+                        color: #000;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
                     }
                     .header-section {
                         text-align: center;
-                        margin-bottom: 10px;
-                        font-weight: 600;
+                        margin-bottom: 6px;
+                        width: 100%;
                     }
                     .restaurant-name {
-                        font-size: 16px;
-                        font-weight: 900;
-                        margin-bottom: 4px;
+                        font-size: 18px;
+                        font-weight: 800;
+                        letter-spacing: 0.3px;
+                        text-transform: uppercase;
+                        margin-bottom: 2px;
+                        color: #000;
                     }
-                    .report-title {
-                        font-size: 14px;
+                    .report-title-badge {
+                        display: inline-block;
+                        border: 1.5px solid #000;
+                        padding: 2px 14px;
+                        font-size: 11px;
                         font-weight: 700;
-                        margin: 8px 0;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                        margin: 4px 0 2px 0;
                     }
                     .report-info {
-                        font-size: 10px;
-                        margin: 4px 0;
-                        font-weight: 600;
+                        font-size: 11px;
+                        font-weight: 500;
+                        color: #333;
+                        line-height: 1.35;
                     }
                     .separator {
-                        border-top: 1px dashed #000;
-                        margin: 6px 0;
-                    }
-                    table {
+                        border-top: 1px dashed #999;
+                        margin: 6px 0 7px 0;
                         width: 100%;
-                        border-collapse: collapse;
-                        margin: 4px 0;
-                        font-size: 9px;
-                    }
-                    thead {
-                        border-bottom: 2px solid #000;
-                    }
-                    th {
-                        padding: 6px 2px;
-                        text-align: left;
-                        font-weight: 700;
-                        font-size: 10px;
-                    }
-                    th:nth-child(4) {
-                        text-align: right;
-                    }
-                    td {
-                        padding: 2px 2px;
-                        border-bottom: 1px dotted #ccc;
-                        font-size: 9px;
-                        font-weight: 600;
-                        line-height: 1.2;
-                    }
-                    td:nth-child(4) {
-                        text-align: right;
-                    }
-                    .summary-section {
-                        text-align: center;
-                        margin-top: 8px;
-                        font-size: 10px;
-                        font-weight: 600;
                     }
                     @media print {
                         * {
                             margin: 0;
                             padding: 0;
+                            box-sizing: border-box;
                         }
                         body {
-                            padding: 5mm 0;
+                            padding: 3mm 0;
                             margin: 0;
-                            min-height: auto;
-                            display: block;
-                            height: auto;
-                            max-width: 80mm;
-                        }
-                        .receipt-logo {
-                            max-width: 80px;
-                            max-height: 80px;
-                            margin: 0 auto 6px auto;
-                        }
-                        table {
-                            font-size: 9px;
-                            border-spacing: 0;
-                        }
-                        th, td {
-                            font-size: 9px;
-                            padding: 1px 1px;
-                            font-weight: 600 !important;
-                            line-height: 1.2 !important;
-                        }
-                        .header-section, .report-info, .summary-section {
-                            font-weight: 600 !important;
+                            max-width: 100%;
+                            width: 100%;
+                            background: #fff;
+                            color: #000;
+                            -webkit-print-color-adjust: exact;
+                            print-color-adjust: exact;
                         }
                         @page {
                             size: 80mm auto;
-                            margin: 5mm;
+                            margin: 3mm;
                         }
                     }
                 </style>
             </head>
             <body>
-
                 <div class="header-section">
-                    <div class="restaurant-name">Khyber Charsi Tikka Karahi & Restaurant</div>
-                    <div class="report-info">Contact: 0319-9922922</div>
-                    <div class="report-info">Main Bazar, Nathia Gali</div>
+                    <div class="restaurant-name">Hangout Lounge & Co.</div>
+                    <div class="report-info">Wah Cantt</div>
+                    <div class="report-info">Phone: 0300-9509536</div>
+                    <div><span class="report-title-badge">EXPENSES REPORT</span></div>
                     <div class="separator"></div>
-                    <div class="report-title">EXPENSES REPORT</div>
-                    <div class="separator"></div>
-                    <div class="report-info">Date: ${currentDate}</div>
-                    <div class="report-info">Filter: ${dateFilterLabel} | ${categoryFilterLabel}</div>
-                    <div class="separator"></div>
+                    <div style="font-size: 11.5px; text-align: left; line-height: 1.5; color: #000;">
+                        <div style="display: flex; justify-content: space-between;"><span style="font-weight: 600;">Date:</span> <span style="font-weight: 400; color: #333;">${currentDate}</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span style="font-weight: 600;">Filter:</span> <span style="font-weight: 400; color: #333;">${dateFilterLabel} | ${categoryFilterLabel}</span></div>
+                    </div>
                 </div>
-                <table>
+
+                <div class="separator"></div>
+
+                <table style="width: 100%; border-collapse: collapse; margin: 4px 0 6px 0; border: 1.5px solid #000; background: #fff;">
                     <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Title</th>
-                            <th>Category</th>
-                            <th>Amount</th>
+                        <tr style="border-bottom: 1.5px solid #000;">
+                            <th style="text-align: left; padding: 4px 5px; font-size: 11px; font-weight: 600; border-right: 1px solid #000; width: 22%; color: #000;">DATE</th>
+                            <th style="text-align: left; padding: 4px 6px; font-size: 11px; font-weight: 600; border-right: 1px solid #000; width: 34%; color: #000;">TITLE</th>
+                            <th style="text-align: left; padding: 4px 5px; font-size: 11px; font-weight: 600; border-right: 1px solid #000; width: 22%; color: #000;">CATEGORY</th>
+                            <th style="text-align: right; padding: 4px 6px; font-size: 11px; font-weight: 600; width: 22%; color: #000;">AMOUNT</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -6475,18 +6718,21 @@ window.printExpenses = () => {
                         ${summaryRow}
                     </tbody>
                 </table>
-                <div class="summary-section">
-                    <div class="separator"></div>
-                    <div style="font-weight: 700; margin: 4px 0;">Total Expenses: Rs.${formatNumber(totalExpenses)}</div>
-                    <div style="margin: 4px 0;">Thank You!</div>
-                    <div style="margin-top: 10px;"></div>
+                <div class="separator"></div>
+                <div style="width: 100%; font-size: 11.5px; line-height: 1.5; color: #000; text-align: center; margin-top: 4px;">
+                    <div style="font-weight: 600;">Total Expenses: Rs. ${formatNumber(totalExpenses)}</div>
+                    <div style="font-size: 10.5px; color: #555; margin-top: 4px;">Report Generated Successfully</div>
                 </div>
+
                 <script>
                     window.onload = function() {
                         setTimeout(function() {
                             window.print();
-                        }, 100);
+                        }, 180);
                     };
+                    window.addEventListener('afterprint', function() {
+                        window.close();
+                    });
                 </script>
             </body>
         </html>
@@ -6497,11 +6743,44 @@ window.printExpenses = () => {
 // Expenses Management
 let editingExpenseId = null;
 
+// Get all expenses combined with employee payouts
+function getCombinedExpenses() {
+    const rawExpenses = Storage.get('expenses') || [];
+    const employees = Storage.get('employees') || [];
+
+    const payoutExpenses = [];
+    employees.forEach(emp => {
+        const payouts = Array.isArray(emp.payouts) ? emp.payouts : [];
+        payouts.forEach(p => {
+            const date = p.date || (p.createdAt ? p.createdAt.split('T')[0] : getLocalISODate());
+            payoutExpenses.push({
+                id: `payout_${emp.id}_${p.id}`,
+                payoutId: p.id,
+                employeeId: emp.id,
+                employeeName: emp.name,
+                isEmployeePayout: true,
+                title: `Salary Payout - ${emp.name}${p.notes ? ` (${p.notes})` : ''}`,
+                amount: parseFloat(p.amount) || 0,
+                category: 'salary',
+                date: date,
+                createdAt: p.createdAt || (date ? `${date}T00:00:00.000Z` : new Date().toISOString()),
+                time: p.time || ''
+            });
+        });
+    });
+
+    return [...rawExpenses, ...payoutExpenses];
+}
+
 // Initialize expense categories
 function initializeExpenseCategories() {
-    const categories = Storage.get('expenseCategories');
+    let categories = Storage.get('expenseCategories');
     if (!categories || categories.length === 0) {
-        Storage.set('expenseCategories', ['kitchen', 'bill', 'factory']);
+        categories = ['kitchen', 'bill', 'factory', 'salary'];
+        Storage.set('expenseCategories', categories);
+    } else if (!categories.includes('salary')) {
+        categories.push('salary');
+        Storage.set('expenseCategories', categories);
     }
 }
 
@@ -6584,9 +6863,9 @@ function loadExpenseCategories() {
         categoryRow.style.cssText = 'display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 15px; background: #f8f8f8; border-radius: 6px; border: 1px solid #e0e0e0;';
         categoryRow.innerHTML = `
             <span style="font-weight: 600; color: #333; text-transform: capitalize; flex: 1;">${category}</span>
-            <div style="display: flex; gap: 8px;">
-                <button onclick="editExpenseCategory('${category}')" style="background: #4a90e2; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.1px;">Edit</button>
-                <button onclick="deleteExpenseCategory('${category}', this)" style="background: #e74c3c; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.1px;">Delete</button>
+            <div class="table-actions-cell">
+                <button class="btn-action btn-action-edit" onclick="editExpenseCategory('${category}')" title="Edit Category">${ICONS.edit}</button>
+                <button class="btn-action btn-action-delete" onclick="deleteExpenseCategory('${category}', this)" title="Delete Category">${ICONS.delete}</button>
             </div>
         `;
         container.appendChild(categoryRow);
@@ -6696,11 +6975,12 @@ if (expenseForm) {
         document.getElementById('expenseForm').reset();
         closeAddExpenseModal();
         loadExpenses();
+        if (typeof loadDashboard === 'function') loadDashboard();
     });
 }
 
 window.loadExpenses = function loadExpenses() {
-    const expenses = Storage.get('expenses') || [];
+    const expenses = getCombinedExpenses();
     const tbody = document.getElementById('expenseTableBody');
     if (!tbody) return;
 
@@ -6718,47 +6998,42 @@ window.loadExpenses = function loadExpenses() {
 
     // Calculate summary totals
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    today.setHours(0, 0, 0, 0);
-    const todayEnd = new Date(today);
-    todayEnd.setHours(23, 59, 59, 999);
-
-    const weekAgo = new Date(today);
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    const monthAgo = new Date(today);
-    monthAgo.setMonth(monthAgo.getMonth() - 1);
+    const todayStr = getLocalISODate(now);
+    const thisMonthStr = getLocalISOMonth(now);
+    const thisYearNum = now.getFullYear();
 
     const todayExpenses = expenses.filter(exp => {
         if (!exp.date) return false;
         const expDate = new Date(exp.date);
-        expDate.setHours(0, 0, 0, 0);
-        return expDate.getTime() === today.getTime();
-    }).reduce((sum, exp) => sum + (exp.amount || 0), 0);
-
-    const weekExpenses = expenses.filter(exp => {
-        if (!exp.date) return false;
-        const expDate = new Date(exp.date);
-        expDate.setHours(0, 0, 0, 0);
-        return expDate >= weekAgo && expDate <= todayEnd;
+        return !isNaN(expDate.getTime()) && getLocalISODate(expDate) === todayStr;
     }).reduce((sum, exp) => sum + (exp.amount || 0), 0);
 
     const monthExpenses = expenses.filter(exp => {
         if (!exp.date) return false;
         const expDate = new Date(exp.date);
-        expDate.setHours(0, 0, 0, 0);
-        return expDate >= monthAgo && expDate <= todayEnd;
+        return !isNaN(expDate.getTime()) && getLocalISODate(expDate).substring(0, 7) === thisMonthStr;
+    }).reduce((sum, exp) => sum + (exp.amount || 0), 0);
+
+    const yearExpenses = expenses.filter(exp => {
+        if (!exp.date) return false;
+        const expDate = new Date(exp.date);
+        return !isNaN(expDate.getTime()) && expDate.getFullYear() === thisYearNum;
     }).reduce((sum, exp) => sum + (exp.amount || 0), 0);
 
     // Update summary cards
     const expensesTodayEl = document.getElementById('expensesToday');
-    const expensesWeekEl = document.getElementById('expensesWeek');
     const expensesMonthEl = document.getElementById('expensesMonth');
+    const expensesYearEl = document.getElementById('expensesYear');
 
     if (expensesTodayEl) expensesTodayEl.textContent = `Rs. ${formatNumber(todayExpenses)}`;
-    if (expensesWeekEl) expensesWeekEl.textContent = `Rs. ${formatNumber(weekExpenses)}`;
     if (expensesMonthEl) expensesMonthEl.textContent = `Rs. ${formatNumber(monthExpenses)}`;
+    if (expensesYearEl) expensesYearEl.textContent = `Rs. ${formatNumber(yearExpenses)}`;
 
     // Apply filters
+    const selectedDate = document.getElementById('expenseDateInput')?.value || getLocalISODate();
+    const selectedMonth = document.getElementById('expenseMonthInput')?.value || getLocalISOMonth();
+    const selectedYear = document.getElementById('expenseYearInput')?.value || String(new Date().getFullYear());
+
     let filteredExpenses = expenses.filter(exp => {
         const matchesCategory = categoryFilter === 'all' || exp.category === categoryFilter;
 
@@ -6769,45 +7044,25 @@ window.loadExpenses = function loadExpenses() {
 
         let matchesDateRange = true;
 
-        // Handle date filter dropdown
-        if (dateFilter === 'custom') {
-            // Custom date range
-            if (startDate || endDate) {
+        if (dateFilter !== 'all') {
+            if (!exp.date) {
+                matchesDateRange = false;
+            } else {
                 const expDate = new Date(exp.date);
-                expDate.setHours(0, 0, 0, 0);
-                if (startDate) {
-                    const start = new Date(startDate);
-                    start.setHours(0, 0, 0, 0);
-                    if (expDate < start) matchesDateRange = false;
+                if (isNaN(expDate.getTime())) {
+                    matchesDateRange = false;
+                } else {
+                    const isoDate = getLocalISODate(expDate);
+                    if (dateFilter === 'today') {
+                        matchesDateRange = (isoDate === selectedDate);
+                    } else if (dateFilter === 'month') {
+                        matchesDateRange = (isoDate.substring(0, 7) === selectedMonth);
+                    } else if (dateFilter === 'year') {
+                        matchesDateRange = (String(expDate.getFullYear()) === String(selectedYear));
+                    }
                 }
-                if (endDate) {
-                    const end = new Date(endDate);
-                    end.setHours(23, 59, 59, 999);
-                    if (expDate > end) matchesDateRange = false;
-                }
-            }
-        } else if (dateFilter === 'today') {
-            const expDate = new Date(exp.date);
-            expDate.setHours(0, 0, 0, 0);
-            matchesDateRange = expDate.getTime() === today.getTime();
-        } else if (dateFilter === 'week') {
-            const expDate = new Date(exp.date);
-            expDate.setHours(0, 0, 0, 0);
-            matchesDateRange = expDate >= weekAgo && expDate <= todayEnd;
-        } else if (dateFilter === 'month') {
-            const expDate = new Date(exp.date);
-            expDate.setHours(0, 0, 0, 0);
-            matchesDateRange = expDate >= monthAgo && expDate <= todayEnd;
-        } else if (dateFilter === 'specific-month') {
-            const selectedMonth = document.getElementById('expenseMonthFilter')?.value;
-            if (selectedMonth) {
-                const [year, month] = selectedMonth.split('-').map(Number);
-                const expDate = new Date(exp.date);
-                matchesDateRange = expDate.getFullYear() === year && (expDate.getMonth() + 1) === month;
             }
         }
-
-        // 'all' or other values - no date filtering
 
         return matchesCategory && matchesDateRange && matchesSearch;
     });
@@ -6861,9 +7116,13 @@ window.loadExpenses = function loadExpenses() {
     // Category colors for tags
     const categories = Storage.get('expenseCategories') || [];
     const categoryColors = ['#e91e63', '#9c27b0', '#3f51b5', '#2196f3', '#00bcd4', '#4caf50', '#8bc34a', '#ffc107', '#ff9800', '#f44336'];
-    const colorMap = {};
+    const colorMap = {
+        'salary': '#27ae60'
+    };
     categories.forEach((cat, index) => {
-        colorMap[cat] = categoryColors[index % categoryColors.length];
+        if (!colorMap[cat]) {
+            colorMap[cat] = categoryColors[index % categoryColors.length];
+        }
     });
 
     filteredExpenses.forEach(expense => {
@@ -6872,23 +7131,34 @@ window.loadExpenses = function loadExpenses() {
         const dateStr = formatDate(expenseDate);
 
         // Get time from createdAt if available, otherwise derive from id (timestamp)
-        let timeStr = '';
-        if (expense.createdAt) {
-            timeStr = formatTime(new Date(expense.createdAt));
-        } else if (expense.id && typeof expense.id === 'number' && expense.id > 1000000000000) {
-            // id is a timestamp (milliseconds since epoch)
-            timeStr = formatTime(new Date(expense.id));
-        } else {
-            // Default to current time if no timestamp available
-            timeStr = formatTime(new Date());
+        let timeStr = expense.time || '';
+        if (!timeStr) {
+            if (expense.createdAt) {
+                timeStr = formatTime(new Date(expense.createdAt));
+            } else if (expense.id && typeof expense.id === 'number' && expense.id > 1000000000000) {
+                timeStr = formatTime(new Date(expense.id));
+            } else {
+                timeStr = '';
+            }
         }
 
-        const dateTimeStr = `${dateStr} ${timeStr}`;
+        const dateTimeStr = timeStr ? `${dateStr} ${timeStr}` : dateStr;
         const categoryColor = colorMap[expense.category] || '#999';
+
+        const editAction = expense.isEmployeePayout
+            ? `onclick="editPayout(${expense.employeeId}, ${expense.payoutId})"`
+            : `onclick="editExpense(${expense.id})"`;
+
+        const deleteAction = expense.isEmployeePayout
+            ? `onclick="deleteExpensePayout('${expense.employeeId}', '${expense.payoutId}', this)"`
+            : `onclick="deleteExpense(${expense.id}, this)"`;
 
         tr.innerHTML = `
             <td>
-                <div style="font-weight: 600; color: #333;">${expense.title || 'Untitled'}</div>
+                <div style="font-weight: 600; color: #333; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <span>${expense.title || 'Untitled'}</span>
+                    ${expense.isEmployeePayout ? '<span style="font-size: 11px; background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; padding: 1px 7px; border-radius: 4px; font-weight: 600;">Staff Payout</span>' : ''}
+                </div>
             </td>
             <td style="font-weight: 700; color: #1e3a5f;">Rs. ${formatNumber(expense.amount || 0)}</td>
             <td>
@@ -6896,8 +7166,10 @@ window.loadExpenses = function loadExpenses() {
             </td>
             <td>${dateTimeStr}</td>
             <td>
-                <button class="btn-edit" onclick="editExpense(${expense.id})">Edit</button>
-                <button class="btn-delete" onclick="deleteExpense(${expense.id}, this)">Delete</button>
+                <div class="table-actions-cell">
+                    <button class="btn-action btn-action-edit" ${editAction} title="Edit Expense">${ICONS.edit}</button>
+                    <button class="btn-action btn-action-delete" ${deleteAction} title="Delete Expense">${ICONS.delete}</button>
+                </div>
             </td>
         `;
         tbody.appendChild(tr);
@@ -6938,6 +7210,14 @@ window.closeAddExpenseModal = () => {
 };
 
 window.editExpense = (id) => {
+    if (typeof id === 'string' && id.startsWith('payout_')) {
+        const parts = id.split('_');
+        const empId = isNaN(Number(parts[1])) ? parts[1] : Number(parts[1]);
+        const pId = isNaN(Number(parts[2])) ? parts[2] : Number(parts[2]);
+        editPayout(empId, pId);
+        return;
+    }
+
     // Require password before editing
     openActionPasswordModal(() => {
         const expenses = Storage.get('expenses') || [];
@@ -6958,6 +7238,14 @@ window.editExpense = (id) => {
 };
 
 window.deleteExpense = (id, buttonElement) => {
+    if (typeof id === 'string' && id.startsWith('payout_')) {
+        const parts = id.split('_');
+        const empId = parts[1];
+        const pId = parts[2];
+        deleteExpensePayout(empId, pId, buttonElement);
+        return;
+    }
+
     // Require password before deleting
     openActionPasswordModal(() => {
         // Re-find button element after password verification (in case DOM changed)
@@ -6984,18 +7272,96 @@ window.deleteExpense = (id, buttonElement) => {
     });
 };
 
+window.deleteExpensePayout = (employeeId, payoutId, buttonElement) => {
+    openActionPasswordModal(() => {
+        if (buttonElement) {
+            showDeleteConfirmation(buttonElement, deleteExpensePayoutConfirmed, employeeId, payoutId);
+        } else {
+            deleteExpensePayoutConfirmed(employeeId, payoutId);
+        }
+    });
+};
+
+function deleteExpensePayoutConfirmed(employeeId, payoutId) {
+    const employees = Storage.get('employees') || [];
+    const emp = employees.find(e => String(e.id) === String(employeeId));
+    if (!emp) return;
+
+    emp.payouts = (Array.isArray(emp.payouts) ? emp.payouts : []).filter(p => String(p.id) !== String(payoutId));
+    Storage.set('employees', employees);
+
+    loadExpenses();
+    loadEmployees();
+    if (currentPayoutsListEmployeeId && String(currentPayoutsListEmployeeId) === String(employeeId)) {
+        renderPayoutsListModal(employeeId);
+    }
+    if (typeof loadDashboard === 'function') loadDashboard();
+}
+
 function deleteExpenseConfirmed(id) {
     const expenses = Storage.get('expenses') || [];
     const filtered = expenses.filter(exp => exp.id !== id);
     Storage.set('expenses', filtered);
     loadExpenses();
+    if (typeof loadDashboard === 'function') loadDashboard();
 }
 
-// Stock Management
+// ==========================================
+// STOCK & INGREDIENT MANAGEMENT SYSTEM
+// ==========================================
 let editingStockId = null;
+let currentQuickAdjustStockId = null;
+let currentQuickAdjustType = 'add';
+
+// Default starter cafe raw materials & ingredients
+const DEFAULT_CAFE_STOCK_ITEMS = [
+    { itemName: "Potatoes", quantity: 30, unit: "kg", unitPrice: 90, minLevel: 5 },
+    { itemName: "Chicken (Boneless / Chunks)", quantity: 20, unit: "kg", unitPrice: 650, minLevel: 3 },
+    { itemName: "Chicken (With Bone)", quantity: 15, unit: "kg", unitPrice: 420, minLevel: 3 },
+    { itemName: "Mayonnaise", quantity: 10, unit: "kg", unitPrice: 380, minLevel: 2 },
+    { itemName: "Special Masala / Spices", quantity: 5, unit: "kg", unitPrice: 850, minLevel: 1 },
+    { itemName: "Cooking Oil", quantity: 25, unit: "L", unitPrice: 450, minLevel: 5 },
+    { itemName: "Cheese Slices", quantity: 100, unit: "pcs", unitPrice: 35, minLevel: 15 },
+    { itemName: "Burger Buns", quantity: 50, unit: "pcs", unitPrice: 40, minLevel: 10 },
+    { itemName: "Sandwich Bread", quantity: 20, unit: "pack", unitPrice: 120, minLevel: 4 },
+    { itemName: "Eggs", quantity: 120, unit: "pcs", unitPrice: 28, minLevel: 24 },
+    { itemName: "Milk (Packed)", quantity: 30, unit: "L", unitPrice: 260, minLevel: 6 },
+    { itemName: "Tea Leaves", quantity: 5, unit: "kg", unitPrice: 1200, minLevel: 1 },
+    { itemName: "Coffee Beans / Powder", quantity: 3, unit: "kg", unitPrice: 2800, minLevel: 0.5 },
+    { itemName: "Flour (Atta / Maida)", quantity: 40, unit: "kg", unitPrice: 140, minLevel: 10 },
+    { itemName: "Sugar", quantity: 25, unit: "kg", unitPrice: 160, minLevel: 5 },
+    { itemName: "Tomato Ketchup / Sauce", quantity: 8, unit: "kg", unitPrice: 320, minLevel: 2 },
+    { itemName: "Garlic Mayo Sauce", quantity: 6, unit: "kg", unitPrice: 420, minLevel: 1.5 },
+    { itemName: "Fish Fillet", quantity: 10, unit: "kg", unitPrice: 950, minLevel: 2 },
+    { itemName: "Chicken Wings", quantity: 12, unit: "kg", unitPrice: 480, minLevel: 3 },
+    { itemName: "Rice (Basmati)", quantity: 25, unit: "kg", unitPrice: 320, minLevel: 5 },
+    { itemName: "Nutella", quantity: 4, unit: "kg", unitPrice: 1800, minLevel: 1 }
+];
+
+// Retrieve or initialize stocks
+function syncAndGetStockItems() {
+    let savedStocks = Storage.get('stocks');
+    
+    if (!savedStocks || !Array.isArray(savedStocks) || savedStocks.length === 0) {
+        const baseId = Date.now();
+        savedStocks = DEFAULT_CAFE_STOCK_ITEMS.map((item, index) => ({
+            id: 'stock_' + (baseId + index),
+            itemName: item.itemName,
+            quantity: item.quantity,
+            unit: item.unit,
+            unitPrice: item.unitPrice,
+            minLevel: item.minLevel,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        }));
+        Storage.set('stocks', savedStocks);
+    }
+
+    return savedStocks;
+}
 
 window.loadStock = function loadStock() {
-    const stocks = Storage.get('stocks') || [];
+    const stocks = syncAndGetStockItems();
     const tbody = document.getElementById('stockTableBody');
     if (!tbody) return;
 
@@ -7014,7 +7380,7 @@ window.loadStock = function loadStock() {
     }
 
     // Apply sorting
-    const sortFilter = document.getElementById('stockSortFilter')?.value || 'name-asc';
+    const sortFilter = document.getElementById('stockSortFilter')?.value || 'quantity-desc';
     filteredStocks = [...filteredStocks].sort((a, b) => {
         const qtyA = parseFloat(a.quantity || 0);
         const qtyB = parseFloat(b.quantity || 0);
@@ -7046,15 +7412,14 @@ window.loadStock = function loadStock() {
     });
 
     if (filteredStocks.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: #999;">No stock items found. Add a stock item to get started.</td></tr>';
-
-        // Update summary
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: #999;">No stock items found. Click "+ Add Stock Item" to add ingredients.</td></tr>';
         updateStockSummary(stocks);
         return;
     }
 
     filteredStocks.forEach(stock => {
         const tr = document.createElement('tr');
+        tr.setAttribute('data-stock-id', stock.id);
         const quantity = parseFloat(stock.quantity || 0);
         const unitPrice = parseFloat(stock.unitPrice || 0);
         const totalValue = quantity * unitPrice;
@@ -7066,30 +7431,42 @@ window.loadStock = function loadStock() {
         let statusText, statusStyle;
         if (isOutOfStock) {
             statusText = 'Out of Stock';
-            statusStyle = 'background: #f8d7da; color: #721c24;';
+            statusStyle = 'background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;';
         } else if (isLowStock) {
             statusText = 'Low Stock';
-            statusStyle = 'background: #fff3cd; color: #856404;';
+            statusStyle = 'background: #fef3c7; color: #d97706; border: 1px solid #fde68a;';
         } else {
             statusText = 'In Stock';
-            statusStyle = 'background: #d4edda; color: #155724;';
+            statusStyle = 'background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0;';
         }
 
         tr.innerHTML = `
-            <td style="padding: 12px; font-weight: 600; color: #333;">${escapeHtml(stock.itemName || 'N/A')}</td>
-            <td style="padding: 12px; text-align: right; color: #333;">${formatQuantity(quantity)}</td>
-            <td style="padding: 12px; color: #666;">${escapeHtml(stock.unit || 'N/A')}</td>
-            <td style="padding: 12px; text-align: right; color: #333;">Rs. ${formatNumber(unitPrice)}</td>
-            <td style="padding: 12px; text-align: right; font-weight: 600; color: #2c3e50;">Rs. ${formatNumber(totalValue)}</td>
-            <td style="padding: 12px; text-align: right; color: #666;">${minLevel > 0 ? formatNumber(minLevel) : '-'}</td>
-            <td style="padding: 12px; text-align: center;">
-                <span style="padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; ${statusStyle}">
+            <td style="padding: 12px 14px; font-size: 14.5px;">
+                <a href="javascript:void(0)" onclick="openStockItemLedgerModal('${stock.id}')"
+                    style="color: #2563eb; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 7px; cursor: pointer; transition: all 0.15s;"
+                    onmouseover="this.style.textDecoration='underline'; this.style.color='#1d4ed8';"
+                    onmouseout="this.style.textDecoration='none'; this.style.color='#2563eb';"
+                    title="Click to view Excel stock ledger & full add/removal history">
+                    <span>${escapeHtml(stock.itemName || 'N/A')}</span>
+                    <span style="font-size: 13px; color: #2563eb; opacity: 0.85;">📊</span>
+                </a>
+            </td>
+            <td style="padding: 12px 14px; text-align: right; font-weight: 700; color: #0f172a; font-size: 14.5px;">${formatQuantity(quantity)}</td>
+            <td style="padding: 12px 14px; color: #64748b; font-weight: 600;">${escapeHtml(stock.unit || 'pcs')}</td>
+            <td style="padding: 12px 14px; text-align: right; color: #334155; font-weight: 500;">Rs. ${formatNumber(unitPrice)}</td>
+            <td style="padding: 12px 14px; text-align: right; font-weight: 700; color: #0f766e;">Rs. ${formatNumber(totalValue)}</td>
+            <td style="padding: 12px 14px; text-align: right; color: #64748b; font-weight: 500;">${minLevel > 0 ? formatNumber(minLevel) : '-'}</td>
+            <td style="padding: 12px 14px; text-align: center;">
+                <span style="display: inline-block; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 700; letter-spacing: 0.2px; ${statusStyle}">
                     ${statusText}
                 </span>
             </td>
-            <td style="padding: 12px; text-align: center;">
-                <button onclick="editStock('${stock.id}')" style="background: #4a90e2; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; margin-right: 5px;">Edit</button>
-                <button onclick="deleteStock('${stock.id}', this)" style="background: #f44336; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">Delete</button>
+            <td style="padding: 10px 14px; text-align: center;">
+                <div class="table-actions-cell center" style="display: flex; gap: 6px; justify-content: center; align-items: center;">
+                    <button class="btn-action" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 6px;" onclick="openQuickAdjustModal('${stock.id}')" title="Quick +/- Adjust Stock">+/-</button>
+                    <button class="btn-action btn-action-edit" onclick="editStock('${stock.id}')" title="Edit Item Details">${ICONS.edit}</button>
+                    <button class="btn-action btn-action-delete" onclick="deleteStock('${stock.id}', this)" title="Delete Stock Item">${ICONS.delete}</button>
+                </div>
             </td>
         `;
         tbody.appendChild(tr);
@@ -7100,7 +7477,8 @@ window.loadStock = function loadStock() {
 
     // Setup search functionality
     const searchInput = document.getElementById('stockSearch');
-    if (searchInput) {
+    if (searchInput && !searchInput.dataset.bound) {
+        searchInput.dataset.bound = 'true';
         searchInput.addEventListener('input', () => {
             loadStock();
         });
@@ -7118,7 +7496,7 @@ function updateStockSummary(stocks) {
     const lowStockCount = stocks.filter(stock => {
         const quantity = parseFloat(stock.quantity || 0);
         const minLevel = parseFloat(stock.minLevel || 0);
-        return minLevel > 0 && quantity <= minLevel;
+        return (minLevel > 0 && quantity <= minLevel) || quantity <= 0;
     }).length;
 
     const totalItemsEl = document.getElementById('totalStockItems');
@@ -7130,18 +7508,134 @@ function updateStockSummary(stocks) {
     if (lowStockEl) lowStockEl.textContent = lowStockCount;
 }
 
+// Helper to populate datalist for quick ingredient search
+function populateStockQuickSearchList() {
+    const dataList = document.getElementById('stockQuickSearchList');
+    if (!dataList) return;
+    const stocks = syncAndGetStockItems();
+    dataList.innerHTML = stocks.map(s => `<option value="${escapeHtml(s.itemName)}">${escapeHtml(s.itemName)} (${formatQuantity(s.quantity)} ${s.unit} available)</option>`).join('');
+}
+
+// Auto-check and show previous price when user types or chooses an item in Add Stock
+window.checkExistingStockItemOnInput = function checkExistingStockItemOnInput() {
+    const nameInput = document.getElementById('stockItemName');
+    const hintEl = document.getElementById('stockExistingItemHint');
+    const modeContainer = document.getElementById('stockAddModeContainer');
+    const priceInput = document.getElementById('stockUnitPrice');
+    const priceSubHint = document.getElementById('stockUnitPriceSubHint');
+    const unitSelect = document.getElementById('stockUnit');
+    const minLevelInput = document.getElementById('stockMinLevel');
+    const qtyLabel = document.getElementById('stockQuantityLabel');
+
+    if (!nameInput) return;
+
+    const rawName = (nameInput.value || '').trim();
+    if (!rawName) {
+        if (hintEl) hintEl.style.display = 'none';
+        if (modeContainer) modeContainer.style.display = 'none';
+        if (priceSubHint) priceSubHint.textContent = '';
+        if (qtyLabel) qtyLabel.textContent = 'Quantity *';
+        return;
+    }
+
+    const stocks = syncAndGetStockItems();
+    // Exclude the current editing item if editing
+    const found = stocks.find(s => (!editingStockId || String(s.id) !== String(editingStockId)) && s.itemName && s.itemName.trim().toLowerCase() === rawName.toLowerCase());
+
+    if (found) {
+        const prevPrice = parseFloat(found.unitPrice || 0);
+        const currQty = parseFloat(found.quantity || 0);
+
+        if (hintEl) {
+            hintEl.style.display = 'flex';
+            hintEl.innerHTML = `
+                <span style="font-size: 16px;">📦</span>
+                <div>
+                    <strong>Existing Stock Found:</strong> "${escapeHtml(found.itemName)}" &nbsp;|&nbsp; 
+                    Current In-Stock: <strong style="color: #0f172a;">${formatQuantity(currQty)} ${escapeHtml(found.unit)}</strong> &nbsp;|&nbsp; 
+                    Last Purchase Price: <strong style="color: #15803d;">Rs. ${formatNumber(prevPrice)} / ${escapeHtml(found.unit)}</strong>
+                </div>
+            `;
+        }
+
+        if (modeContainer && !editingStockId) {
+            modeContainer.style.display = 'block';
+        }
+
+        if (unitSelect && found.unit) {
+            unitSelect.value = found.unit;
+        }
+
+        if (minLevelInput && (minLevelInput.value === '' || minLevelInput.value === '0') && found.minLevel) {
+            minLevelInput.value = found.minLevel;
+        }
+
+        // Prefill previous price by default if empty or unchanged
+        if (priceInput && (!priceInput.dataset.userEdited || priceInput.value === '')) {
+            priceInput.value = prevPrice > 0 ? prevPrice : '';
+        }
+
+        if (priceSubHint) {
+            priceSubHint.textContent = `(Previous: Rs. ${formatNumber(prevPrice)}/${found.unit})`;
+        }
+
+        updateStockQtyLabel();
+    } else {
+        if (hintEl) hintEl.style.display = 'none';
+        if (modeContainer) modeContainer.style.display = 'none';
+        if (priceSubHint) priceSubHint.textContent = '';
+        if (qtyLabel) qtyLabel.textContent = 'Quantity *';
+    }
+};
+
+window.updateStockQtyLabel = function updateStockQtyLabel() {
+    const qtyLabel = document.getElementById('stockQuantityLabel');
+    const modeAdd = document.querySelector('input[name="stockAddMode"]:checked')?.value;
+    if (!qtyLabel) return;
+
+    if (modeAdd === 'add') {
+        qtyLabel.textContent = 'Quantity to Add (نئی خریدی گئی مقدار) *';
+    } else if (modeAdd === 'set') {
+        qtyLabel.textContent = 'Total Stock Quantity (کل نیا اسٹاک) *';
+    } else {
+        qtyLabel.textContent = 'Quantity *';
+    }
+};
+
 window.openAddStockModal = function openAddStockModal() {
     editingStockId = null;
     const form = document.getElementById('stockForm');
     const modalTitle = document.getElementById('stockModalTitle');
 
     if (form) form.reset();
-    if (modalTitle) modalTitle.textContent = 'Add Stock Item';
+    if (modalTitle) modalTitle.textContent = 'Add Stock Item / Ingredient';
 
-    // Populate menu items dropdown
-    populateStockMenuItemDropdown();
+    document.getElementById('stockQuantity').value = '';
+    document.getElementById('stockUnitPrice').value = '';
+    document.getElementById('stockMinLevel').value = '';
+    document.getElementById('stockUnit').value = 'kg';
+
+    const priceInput = document.getElementById('stockUnitPrice');
+    if (priceInput) delete priceInput.dataset.userEdited;
+
+    const hintEl = document.getElementById('stockExistingItemHint');
+    if (hintEl) hintEl.style.display = 'none';
+
+    const modeContainer = document.getElementById('stockAddModeContainer');
+    if (modeContainer) modeContainer.style.display = 'none';
+
+    const priceSubHint = document.getElementById('stockUnitPriceSubHint');
+    if (priceSubHint) priceSubHint.textContent = '';
+
+    const qtyLabel = document.getElementById('stockQuantityLabel');
+    if (qtyLabel) qtyLabel.textContent = 'Quantity *';
+
+    populateStockQuickSearchList();
 
     document.getElementById('addStockModal').style.display = 'flex';
+    setTimeout(() => {
+        document.getElementById('stockItemName')?.focus();
+    }, 50);
 };
 
 window.closeAddStockModal = function closeAddStockModal() {
@@ -7153,40 +7647,45 @@ window.closeAddStockModal = function closeAddStockModal() {
 
 window.editStock = function editStock(id) {
     openActionPasswordModal(() => {
-        const stocks = Storage.get('stocks') || [];
-        const stock = stocks.find(s => s.id === id);
+        const stocks = syncAndGetStockItems();
+        const stock = stocks.find(s => String(s.id) === String(id));
 
         if (!stock) {
             alert('Stock item not found!');
             return;
         }
 
-        editingStockId = id;
+        editingStockId = String(stock.id);
         const form = document.getElementById('stockForm');
         const modalTitle = document.getElementById('stockModalTitle');
 
-        if (modalTitle) modalTitle.textContent = 'Edit Stock Item';
+        if (modalTitle) modalTitle.textContent = `Edit Stock: ${stock.itemName}`;
 
-        // Populate menu items dropdown first
-        populateStockMenuItemDropdown(() => {
-            // Then set the selected value
-            const itemNameSelect = document.getElementById('stockItemName');
-            if (itemNameSelect && stock.itemName) {
-                // Find the option that matches the stock item name
-                const options = itemNameSelect.options;
-                for (let i = 0; i < options.length; i++) {
-                    if (options[i].value === stock.itemName) {
-                        itemNameSelect.selectedIndex = i;
-                        break;
-                    }
-                }
-            }
-        });
-
-        document.getElementById('stockQuantity').value = stock.quantity || 0;
+        document.getElementById('stockItemName').value = stock.itemName || '';
+        document.getElementById('stockQuantity').value = stock.quantity !== undefined ? stock.quantity : 0;
         document.getElementById('stockUnit').value = stock.unit || 'kg';
-        document.getElementById('stockUnitPrice').value = stock.unitPrice || 0;
-        document.getElementById('stockMinLevel').value = stock.minLevel || 0;
+        document.getElementById('stockUnitPrice').value = stock.unitPrice !== undefined ? stock.unitPrice : 0;
+        document.getElementById('stockMinLevel').value = stock.minLevel !== undefined ? stock.minLevel : 0;
+
+        const hintEl = document.getElementById('stockExistingItemHint');
+        if (hintEl) {
+            hintEl.style.display = 'flex';
+            hintEl.innerHTML = `
+                <span style="font-size: 16px;">💡</span>
+                <div>
+                    Current Rate: <strong>Rs. ${formatNumber(stock.unitPrice || 0)} / ${stock.unit}</strong> | Available: <strong>${formatQuantity(stock.quantity)} ${stock.unit}</strong>
+                </div>
+            `;
+        }
+
+        const modeContainer = document.getElementById('stockAddModeContainer');
+        if (modeContainer) modeContainer.style.display = 'none';
+
+        const qtyLabel = document.getElementById('stockQuantityLabel');
+        if (qtyLabel) qtyLabel.textContent = 'Current Total Quantity *';
+
+        const priceSubHint = document.getElementById('stockUnitPriceSubHint');
+        if (priceSubHint) priceSubHint.textContent = `(Previous: Rs. ${formatNumber(stock.unitPrice || 0)}/${stock.unit})`;
 
         document.getElementById('addStockModal').style.display = 'flex';
     });
@@ -7194,13 +7693,11 @@ window.editStock = function editStock(id) {
 
 window.deleteStock = function deleteStock(id, buttonElement) {
     openActionPasswordModal(() => {
-        // Re-find the button element after password verification
         let btnElement = buttonElement;
         if (!btnElement || !btnElement.parentElement || !document.contains(buttonElement)) {
-            // Try to find the button in the DOM by looking for the stock row
             const stockRows = document.querySelectorAll('#stockTableBody tr');
             for (let row of stockRows) {
-                if (row.getAttribute('data-stock-id') === id) {
+                if (row.getAttribute('data-stock-id') === String(id)) {
                     const deleteBtn = row.querySelector('button[onclick*="deleteStock"]');
                     if (deleteBtn) {
                         btnElement = deleteBtn;
@@ -7213,381 +7710,1194 @@ window.deleteStock = function deleteStock(id, buttonElement) {
         if (btnElement) {
             showDeleteConfirmation(btnElement, deleteStockConfirmed, id);
         } else {
-            // If button not found, directly delete (skip confirmation)
             deleteStockConfirmed(id);
         }
     });
 };
 
 function deleteStockConfirmed(id) {
-    const stocks = Storage.get('stocks') || [];
-    const filtered = stocks.filter(s => s.id !== id);
-    Storage.set('stocks', filtered);
+    let stocks = Storage.get('stocks') || [];
+    stocks = stocks.filter(s => String(s.id) !== String(id));
+    Storage.set('stocks', stocks);
     loadStock();
 }
 
-// Populate the menu items dropdown in stock form
-function populateStockMenuItemDropdown(callback) {
-    const itemNameSelect = document.getElementById('stockItemName');
-    if (!itemNameSelect) {
-        if (callback) callback();
-        return;
-    }
-
-    // Get all menu items
-    const menuItems = Storage.get('menuItems') || [];
-
-    // Get all existing stock items (for backward compatibility - include stock items that might not be in menu items)
-    const stocks = Storage.get('stocks') || [];
-    const existingStockNames = new Set(stocks.map(s => s.itemName).filter(Boolean));
-
-    // Create a set of menu item names
-    const menuItemNames = new Set(menuItems.map(item => item.name).filter(Boolean));
-
-    // Combine menu items and existing stock items (to handle legacy data)
-    const allItemNames = new Set([...menuItemNames, ...existingStockNames]);
-
-    // Clear existing options except the first one
-    itemNameSelect.innerHTML = '<option value="">Select a menu item</option>';
-
-    // Sort items by name for better UX
-    const sortedNames = Array.from(allItemNames).sort((a, b) => {
-        const nameA = a.toLowerCase();
-        const nameB = b.toLowerCase();
-        return nameA.localeCompare(nameB);
-    });
-
-    // Add items as options
-    sortedNames.forEach(itemName => {
-        const option = document.createElement('option');
-        option.value = itemName;
-        option.textContent = itemName;
-        itemNameSelect.appendChild(option);
-    });
-
-    if (callback) callback();
-}
-
-// Automatically create stock item when a menu item is added
 function createStockItemForMenuItem(itemName) {
-    if (!itemName) return;
-
-    const stocks = Storage.get('stocks') || [];
-
-    // Check if stock item with this name already exists
-    const existingStock = stocks.find(s => s.itemName && s.itemName.toLowerCase() === itemName.toLowerCase());
-    if (existingStock) {
-        // Stock item already exists, don't create duplicate
-        return;
-    }
-
-    // Create new stock item with default values
-    const newStock = {
-        id: `STOCK-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        itemName: itemName,
-        quantity: 0, // Default quantity
-        unit: 'pcs', // Default unit
-        unitPrice: 0, // Default unit price
-        minLevel: 0, // Default min level
-        createdAt: new Date().toISOString()
-    };
-
-    stocks.push(newStock);
-    Storage.set('stocks', stocks);
-
-    // Refresh stock list if on stock tab
+    // Legacy support stub
     if (document.getElementById('stock')?.classList.contains('active')) {
         loadStock();
     }
 }
 
-// Load all menu items into stock (skip existing items)
-window.loadMenuItemsToStock = function loadMenuItemsToStock() {
-    const menuItems = Storage.get('menuItems') || [];
-    const stocks = Storage.get('stocks') || [];
+// Automatic stock deduction on sale is permanently disabled per user requirement.
+// The user manually records daily ingredient consumption at the end of the day.
+function updateStockFromSale(items) {
+    return;
+}
 
-    if (menuItems.length === 0) {
-        const loadMenuBtn = document.querySelector('button[onclick="loadMenuItemsToStock()"]');
-        if (loadMenuBtn) {
-            // Remove any existing message
-            const existingMessage = document.querySelector('.load-menu-message');
-            if (existingMessage) {
-                existingMessage.remove();
+// ==========================================
+// QUICK ADJUST STOCK (+ / -)
+// ==========================================
+window.openQuickAdjustModal = function openQuickAdjustModal(stockId) {
+    const stocks = syncAndGetStockItems();
+    const item = stocks.find(s => String(s.id) === String(stockId));
+    if (!item) return;
+
+    currentQuickAdjustStockId = String(stockId);
+    currentQuickAdjustType = 'add';
+
+    const prevPrice = parseFloat(item.unitPrice || 0);
+
+    const infoEl = document.getElementById('quickAdjustItemInfo');
+    if (infoEl) {
+        infoEl.innerHTML = `
+            <div style="font-size: 15px; font-weight: 700; color: #0f172a;">${escapeHtml(item.itemName)}</div>
+            <div style="font-size: 13px; color: #475569; margin-top: 4px; display: flex; justify-content: space-between;">
+                <span>Available: <strong style="color: #0284c7;">${formatQuantity(item.quantity)} ${escapeHtml(item.unit)}</strong></span>
+                <span>Current Rate: <strong style="color: #15803d;">Rs. ${formatNumber(prevPrice)} / ${escapeHtml(item.unit)}</strong></span>
+            </div>
+        `;
+    }
+
+    document.getElementById('quickAdjustQty').value = '';
+    document.getElementById('quickAdjustNote').value = '';
+
+    const priceInput = document.getElementById('quickAdjustUnitPrice');
+    if (priceInput) priceInput.value = prevPrice > 0 ? prevPrice : '';
+
+    const prevRateHint = document.getElementById('quickAdjustPrevRateHint');
+    if (prevRateHint) prevRateHint.textContent = `(Previous: Rs. ${formatNumber(prevPrice)}/${item.unit})`;
+
+    setQuickAdjustType('add');
+    document.getElementById('quickStockAdjustModal').style.display = 'flex';
+};
+
+window.closeQuickAdjustModal = function closeQuickAdjustModal() {
+    document.getElementById('quickStockAdjustModal').style.display = 'none';
+    currentQuickAdjustStockId = null;
+};
+
+window.setQuickAdjustType = function setQuickAdjustType(type) {
+    currentQuickAdjustType = type;
+    const addBtn = document.getElementById('quickAdjustTypeAdd');
+    const subBtn = document.getElementById('quickAdjustTypeSubtract');
+    const rateGroup = document.getElementById('quickAdjustRateGroup');
+
+    if (type === 'add') {
+        addBtn.style.background = '#10b981';
+        addBtn.style.borderColor = '#10b981';
+        addBtn.style.color = 'white';
+
+        subBtn.style.background = '#f8fafc';
+        subBtn.style.borderColor = '#e2e8f0';
+        subBtn.style.color = '#334155';
+
+        if (rateGroup) rateGroup.style.display = 'block';
+    } else {
+        subBtn.style.background = '#ef4444';
+        subBtn.style.borderColor = '#ef4444';
+        subBtn.style.color = 'white';
+
+        addBtn.style.background = '#f8fafc';
+        addBtn.style.borderColor = '#e2e8f0';
+        addBtn.style.color = '#334155';
+
+        if (rateGroup) rateGroup.style.display = 'none';
+    }
+};
+
+window.submitQuickAdjust = function submitQuickAdjust() {
+    const qty = parseFloat(document.getElementById('quickAdjustQty').value);
+    if (isNaN(qty) || qty <= 0) {
+        alert('Please enter a valid quantity greater than 0.');
+        return;
+    }
+
+    const note = (document.getElementById('quickAdjustNote').value || '').trim();
+    const stocks = syncAndGetStockItems();
+    const item = stocks.find(s => String(s.id) === String(currentQuickAdjustStockId));
+
+    if (!item) {
+        alert('Stock item not found.');
+        return;
+    }
+
+    const currentQty = parseFloat(item.quantity) || 0;
+    const oldPrice = parseFloat(item.unitPrice || 0);
+
+    if (currentQuickAdjustType === 'subtract' && qty > currentQty) {
+        if (!confirm(`Warning: Deducting ${qty} ${item.unit} will result in negative stock (${(currentQty - qty).toFixed(2)} ${item.unit}). Do you want to proceed?`)) {
+            return;
+        }
+    }
+
+    let newPrice = oldPrice;
+    if (currentQuickAdjustType === 'add') {
+        const enteredPrice = parseFloat(document.getElementById('quickAdjustUnitPrice')?.value);
+        if (!isNaN(enteredPrice) && enteredPrice >= 0) {
+            newPrice = enteredPrice;
+            item.unitPrice = newPrice;
+        }
+    }
+
+    const newQty = currentQuickAdjustType === 'add' ? currentQty + qty : Math.max(0, currentQty - qty);
+    item.quantity = newQty;
+    item.updatedAt = new Date().toISOString();
+
+    Storage.set('stocks', stocks);
+
+    // Record in Stock Ledger
+    const priceNote = (currentQuickAdjustType === 'add' && newPrice !== oldPrice && oldPrice > 0)
+        ? ` (Rate updated: Rs. ${oldPrice} -> Rs. ${newPrice}/${item.unit})`
+        : ` (@ Rs. ${newPrice}/${item.unit})`;
+
+    recordStockLedgerEntry({
+        stockId: item.id,
+        itemName: item.itemName,
+        type: currentQuickAdjustType === 'add' ? 'adjustment_add' : 'adjustment_sub',
+        typeLabel: currentQuickAdjustType === 'add' ? 'Quick Stock Added (+)' : 'Quick Stock Deducted (-)',
+        changeQty: currentQuickAdjustType === 'add' ? qty : -qty,
+        previousQty: currentQty,
+        resultingQty: newQty,
+        unit: item.unit,
+        unitPrice: newPrice,
+        note: (note ? `${note}` : (currentQuickAdjustType === 'add' ? 'Manual stock addition (+)' : 'Manual stock subtraction (-)')) + priceNote,
+        date: getLocalISODate(),
+        timestamp: new Date().toISOString()
+    });
+
+    // Also log in consumption history if it was a subtraction
+    if (currentQuickAdjustType === 'subtract') {
+        const consumptions = Storage.get('stockConsumptions') || [];
+        consumptions.unshift({
+            id: 'cons_' + Date.now(),
+            date: new Date().toISOString().slice(0, 10),
+            timestamp: new Date().toISOString(),
+            note: note || 'Quick stock subtraction',
+            items: [
+                {
+                    stockId: item.id,
+                    itemName: item.itemName,
+                    deductedQty: qty,
+                    unit: item.unit,
+                    note: note
+                }
+            ]
+        });
+        Storage.set('stockConsumptions', consumptions);
+    }
+
+    closeQuickAdjustModal();
+    loadStock();
+    if (typeof showCustomAlert === 'function') {
+        showCustomAlert(`Stock updated: ${item.itemName} is now ${formatQuantity(newQty)} ${item.unit}.`, 'Success');
+    }
+};
+
+// ==========================================
+// DAILY STOCK CONSUMPTION / DEDUCTION (END OF DAY)
+// ==========================================
+function getDailySoldItemsSummary(dateStr) {
+    const sales = Storage.get('sales') || [];
+    const targetDate = dateStr ? new Date(dateStr).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+    
+    const daySales = sales.filter(s => {
+        if (!s.date) return false;
+        try {
+            const sDate = new Date(s.date).toISOString().slice(0, 10);
+            return sDate === targetDate;
+        } catch (e) {
+            return false;
+        }
+    });
+
+    const itemMap = {};
+    daySales.forEach(sale => {
+        (sale.items || []).forEach(item => {
+            const name = (item.name || 'Unnamed').trim();
+            const qty = parseFloat(item.quantity) || 0;
+            itemMap[name] = (itemMap[name] || 0) + qty;
+        });
+    });
+
+    return {
+        date: targetDate,
+        totalOrders: daySales.length,
+        items: Object.keys(itemMap).map(name => ({
+            name: name,
+            quantity: itemMap[name]
+        })).sort((a, b) => b.quantity - a.quantity)
+    };
+}
+
+window.openDailyConsumptionModal = function openDailyConsumptionModal() {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const dateInput = document.getElementById('consumptionDate');
+    if (dateInput) {
+        dateInput.value = todayStr;
+    }
+
+    populateStockQuickSearchList();
+    loadDailySalesSummaryForConsumption();
+
+    // Clear and add first empty row
+    const container = document.getElementById('consumptionRowsContainer');
+    if (container) {
+        container.innerHTML = '';
+        addConsumptionRow();
+    }
+
+    const quickSearchInput = document.getElementById('consumptionQuickSearchInput');
+    if (quickSearchInput) quickSearchInput.value = '';
+
+    document.getElementById('dailyConsumptionModal').style.display = 'flex';
+};
+
+window.closeDailyConsumptionModal = function closeDailyConsumptionModal() {
+    document.getElementById('dailyConsumptionModal').style.display = 'none';
+};
+
+window.loadDailySalesSummaryForConsumption = function loadDailySalesSummaryForConsumption() {
+    const dateInput = document.getElementById('consumptionDate');
+    const selectedDate = dateInput ? dateInput.value : new Date().toISOString().slice(0, 10);
+
+    const summary = getDailySoldItemsSummary(selectedDate);
+    const ordersEl = document.getElementById('consumptionOrdersSummary');
+    const chipsEl = document.getElementById('consumptionSoldItemsChips');
+
+    if (ordersEl) {
+        ordersEl.textContent = `Total Orders: ${summary.totalOrders}`;
+    }
+
+    if (chipsEl) {
+        if (summary.items.length === 0) {
+            chipsEl.innerHTML = '<span style="color: #94a3b8; font-size: 13px; font-style: italic;">No sales recorded for this date.</span>';
+        } else {
+            chipsEl.innerHTML = summary.items.map(item => `
+                <span style="display: inline-flex; align-items: center; gap: 6px; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 4px 10px; border-radius: 9999px; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all 0.15s;"
+                    onclick="prefillConsumptionRowFromChip('${escapeHtml(item.name)}', ${item.quantity})"
+                    title="Click to add a deduction row for ${escapeHtml(item.name)}">
+                    <strong style="color: #0284c7;">${item.quantity}x</strong> ${escapeHtml(item.name)}
+                </span>
+            `).join('');
+        }
+    }
+};
+
+window.prefillConsumptionRowFromChip = function prefillConsumptionRowFromChip(itemName, qty) {
+    addConsumptionRow('', '', '', `For ${qty}x ${itemName}`);
+};
+
+// 1-Click addition by ingredient name (e.g. from popular chips or quick search)
+window.addConsumptionRowByName = function addConsumptionRowByName(ingredientName) {
+    const stocks = syncAndGetStockItems();
+    const target = stocks.find(s => s.itemName.trim().toLowerCase() === ingredientName.trim().toLowerCase() || s.itemName.toLowerCase().includes(ingredientName.toLowerCase()));
+
+    if (target) {
+        const rowId = addConsumptionRow(target.id, '', target.unit, '');
+        // Focus the newly added quantity input
+        setTimeout(() => {
+            const row = document.getElementById(rowId);
+            if (row) {
+                const qtyInput = row.querySelector('.cons-qty-input');
+                if (qtyInput) qtyInput.focus();
             }
+        }, 50);
+    } else {
+        addConsumptionRow('', '', 'kg', `For ${ingredientName}`);
+    }
+};
 
-            // Create message element
-            const messageEl = document.createElement('div');
-            messageEl.className = 'load-menu-message';
-            messageEl.textContent = 'No menu items found!';
-            messageEl.style.cssText = `
-                position: fixed;
-                background: #e74c3c;
-                color: white;
-                padding: 10px 18px;
-                border-radius: 8px;
-                font-size: 14px;
-                font-weight: 600;
-                white-space: nowrap;
-                z-index: 10000;
-                box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
-                pointer-events: none;
-                font-family: 'Poppins', 'Inter', sans-serif;
-            `;
+window.handleQuickIngredientSearchKey = function handleQuickIngredientSearchKey(event) {
+    if (event.key === 'Enter') {
+        const input = document.getElementById('consumptionQuickSearchInput');
+        if (input && input.value.trim()) {
+            addConsumptionRowByName(input.value.trim());
+            input.value = '';
+        }
+    }
+};
 
-            // Position message below the button
-            const buttonRect = loadMenuBtn.getBoundingClientRect();
-            messageEl.style.top = `${buttonRect.bottom + 10}px`;
-            messageEl.style.left = `${buttonRect.left + (buttonRect.width / 2)}px`;
-            messageEl.style.transform = 'translateX(-50%)';
+window.addConsumptionRow = function addConsumptionRow(prefillStockId = '', prefillQty = '', prefillUnit = '', prefillNote = '') {
+    const container = document.getElementById('consumptionRowsContainer');
+    if (!container) return;
 
-            document.body.appendChild(messageEl);
+    const stocks = syncAndGetStockItems();
+    const rowId = 'c_row_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
 
-            // Function to remove the message
-            const removeMessage = () => {
-                if (messageEl.parentElement) {
-                    messageEl.remove();
+    const tr = document.createElement('tr');
+    tr.id = rowId;
+    tr.style.borderBottom = '1px solid #e2e8f0';
+
+    let optionsHtml = '<option value="">-- Select Ingredient --</option>';
+    stocks.forEach(stock => {
+        const isSelected = prefillStockId && (String(stock.id) === String(prefillStockId) || stock.itemName.toLowerCase() === String(prefillStockId).toLowerCase());
+        optionsHtml += `<option value="${stock.id}" data-unit="${escapeHtml(stock.unit)}" data-available="${stock.quantity}" ${isSelected ? 'selected' : ''}>
+            ${escapeHtml(stock.itemName)} (Available: ${formatQuantity(stock.quantity)} ${stock.unit})
+        </option>`;
+    });
+
+    tr.innerHTML = `
+        <td style="padding: 10px 14px;">
+            <select class="cons-item-select" onchange="onConsumptionItemChange('${rowId}')" required
+                style="width: 100%; padding: 8px 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; font-family: inherit; background: white; font-weight: 600;">
+                ${optionsHtml}
+            </select>
+            <div id="${rowId}_balancePreview" class="cons-live-balance-preview" style="display: none;"></div>
+        </td>
+        <td style="padding: 10px 14px;">
+            <input type="number" class="cons-qty-input" step="any" min="0.001" placeholder="e.g. 2.3 or 25" value="${prefillQty}" required
+                oninput="updateConsumptionRowBalance('${rowId}')"
+                style="width: 100%; padding: 8px 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 14px; box-sizing: border-box; font-family: inherit; font-weight: 600;">
+        </td>
+        <td style="padding: 10px 14px;">
+            <select class="cons-unit-select" onchange="updateConsumptionRowBalance('${rowId}')"
+                style="width: 100%; padding: 8px 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; font-family: inherit; background: white; font-weight: 500;">
+                <option value="kg">kg (Kilogram)</option>
+                <option value="g">g (Gram)</option>
+                <option value="L">L (Liter)</option>
+                <option value="mL">mL (Milli-liter)</option>
+                <option value="pcs">pcs (Pieces)</option>
+                <option value="pack">pack</option>
+                <option value="box">box</option>
+                <option value="bottle">bottle</option>
+                <option value="portion">portion</option>
+                <option value="other">other</option>
+            </select>
+        </td>
+        <td style="padding: 10px 14px;">
+            <input type="text" class="cons-note-input" placeholder="e.g. For 8 loaded fries / kitchen" value="${escapeHtml(prefillNote)}"
+                style="width: 100%; padding: 8px 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; box-sizing: border-box; font-family: inherit;">
+        </td>
+        <td style="padding: 10px 14px; text-align: center;">
+            <button type="button" onclick="removeConsumptionRow('${rowId}')"
+                style="background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; width: 32px; height: 32px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s;"
+                title="Remove row">✕</button>
+        </td>
+    `;
+
+    container.appendChild(tr);
+
+    // Trigger change to set default unit matching the stock item
+    onConsumptionItemChange(rowId);
+    updateConsumptionRowCount();
+    return rowId;
+};
+
+window.onConsumptionItemChange = function onConsumptionItemChange(rowId) {
+    const row = document.getElementById(rowId);
+    if (!row) return;
+
+    const select = row.querySelector('.cons-item-select');
+    const unitSelect = row.querySelector('.cons-unit-select');
+    const selectedOption = select.options[select.selectedIndex];
+    const stockUnit = selectedOption?.dataset?.unit || 'kg';
+
+    if (unitSelect && stockUnit) {
+        unitSelect.value = stockUnit;
+    }
+
+    updateConsumptionRowBalance(rowId);
+};
+
+window.updateConsumptionRowBalance = function updateConsumptionRowBalance(rowId) {
+    const row = document.getElementById(rowId);
+    if (!row) return;
+
+    const select = row.querySelector('.cons-item-select');
+    const qtyInput = row.querySelector('.cons-qty-input');
+    const unitSelect = row.querySelector('.cons-unit-select');
+    const previewEl = document.getElementById(`${rowId}_balancePreview`);
+
+    if (!previewEl) return;
+
+    const selectedOption = select.options[select.selectedIndex];
+    if (!selectedOption || !selectedOption.value) {
+        previewEl.style.display = 'none';
+        return;
+    }
+
+    const availableQty = parseFloat(selectedOption.dataset.available || 0);
+    const stockUnit = selectedOption.dataset.unit || 'kg';
+    const enteredQty = parseFloat(qtyInput.value) || 0;
+    const enteredUnit = unitSelect.value || stockUnit;
+
+    const convertedDeduct = convertDeductionToStockUnit(enteredQty, enteredUnit, stockUnit);
+    const remaining = availableQty - convertedDeduct;
+
+    previewEl.style.display = 'flex';
+    if (remaining >= 0) {
+        previewEl.className = 'cons-live-balance-preview ok';
+        previewEl.innerHTML = `✓ Available: <strong>${formatQuantity(availableQty)} ${stockUnit}</strong> ➔ Remaining: <strong>${formatQuantity(remaining)} ${stockUnit}</strong>`;
+    } else {
+        previewEl.className = 'cons-live-balance-preview warning';
+        previewEl.innerHTML = `⚠️ Available: <strong>${formatQuantity(availableQty)} ${stockUnit}</strong> ➔ Shortage: <strong>${formatQuantity(Math.abs(remaining))} ${stockUnit}</strong>`;
+    }
+};
+
+window.removeConsumptionRow = function removeConsumptionRow(rowId) {
+    const row = document.getElementById(rowId);
+    if (row) {
+        row.remove();
+        updateConsumptionRowCount();
+    }
+};
+
+function updateConsumptionRowCount() {
+    const rows = document.querySelectorAll('#consumptionRowsContainer tr');
+    const countEl = document.getElementById('consumptionTotalRowsCount');
+    if (countEl) {
+        countEl.textContent = rows.length;
+    }
+}
+
+// Convert units smoothly (e.g. g -> kg, mL -> L)
+function convertDeductionToStockUnit(deductQty, deductUnit, stockUnit) {
+    const dUnit = (deductUnit || '').toLowerCase().trim();
+    const sUnit = (stockUnit || '').toLowerCase().trim();
+    const qty = parseFloat(deductQty) || 0;
+
+    if (dUnit === sUnit) return qty;
+
+    // Weight conversions
+    if (dUnit === 'g' && sUnit === 'kg') return qty / 1000;
+    if (dUnit === 'mg' && sUnit === 'kg') return qty / 1000000;
+    if (dUnit === 'mg' && sUnit === 'g') return qty / 1000;
+    if (dUnit === 'kg' && sUnit === 'g') return qty * 1000;
+
+    // Volume conversions
+    if (dUnit === 'ml' && sUnit === 'l') return qty / 1000;
+    if (dUnit === 'l' && sUnit === 'ml') return qty * 1000;
+
+    // Default 1:1 if units are different custom types (e.g. pcs, pack)
+    return qty;
+}
+
+window.submitDailyConsumption = function submitDailyConsumption() {
+    const rows = document.querySelectorAll('#consumptionRowsContainer tr');
+    if (rows.length === 0) {
+        alert('Please add at least one ingredient row to deduct.');
+        return;
+    }
+
+    const dateInput = document.getElementById('consumptionDate');
+    const consumptionDate = dateInput ? dateInput.value : new Date().toISOString().slice(0, 10);
+
+    const stocks = syncAndGetStockItems();
+    const deductions = [];
+    let hasError = false;
+
+    rows.forEach(row => {
+        const itemSelect = row.querySelector('.cons-item-select');
+        const qtyInput = row.querySelector('.cons-qty-input');
+        const unitSelect = row.querySelector('.cons-unit-select');
+        const noteInput = row.querySelector('.cons-note-input');
+
+        const stockId = itemSelect.value;
+        const qtyVal = parseFloat(qtyInput.value);
+        const deductUnit = unitSelect.value;
+        const note = (noteInput.value || '').trim();
+
+        if (!stockId) {
+            alert('Please select a stock ingredient for all rows.');
+            hasError = true;
+            return;
+        }
+
+        if (isNaN(qtyVal) || qtyVal <= 0) {
+            alert('Please enter a valid quantity greater than 0 for all rows.');
+            hasError = true;
+            return;
+        }
+
+        const stockItem = stocks.find(s => String(s.id) === String(stockId));
+        if (!stockItem) {
+            alert('Selected stock item not found.');
+            hasError = true;
+            return;
+        }
+
+        const finalDeductInStockUnit = convertDeductionToStockUnit(qtyVal, deductUnit, stockItem.unit);
+
+        deductions.push({
+            stockId: stockItem.id,
+            itemName: stockItem.itemName,
+            enteredQty: qtyVal,
+            enteredUnit: deductUnit,
+            finalDeductQty: finalDeductInStockUnit,
+            stockUnit: stockItem.unit,
+            note: note
+        });
+    });
+
+    if (hasError || deductions.length === 0) return;
+
+    // Apply deductions to stock items
+    let warningMsg = '';
+    deductions.forEach(d => {
+        const stockItem = stocks.find(s => String(s.id) === String(d.stockId));
+        if (stockItem) {
+            const currentQty = parseFloat(stockItem.quantity) || 0;
+            const newQty = Math.max(0, currentQty - d.finalDeductQty);
+            if (currentQty < d.finalDeductQty) {
+                warningMsg += `\n• ${stockItem.itemName}: available was ${currentQty} ${stockItem.unit}, deducted ${d.finalDeductQty.toFixed(3)} ${stockItem.unit}.`;
+            }
+            stockItem.quantity = newQty;
+            stockItem.updatedAt = new Date().toISOString();
+
+            // Record in Stock Ledger
+            recordStockLedgerEntry({
+                stockId: stockItem.id,
+                itemName: stockItem.itemName,
+                type: 'consumption',
+                typeLabel: 'Daily Consumption',
+                changeQty: -d.finalDeductQty,
+                previousQty: currentQty,
+                resultingQty: newQty,
+                unit: stockItem.unit,
+                unitPrice: stockItem.unitPrice || 0,
+                note: (d.note ? `${d.note} — ` : '') + `Daily sales deduction (Entered: ${d.enteredQty} ${d.enteredUnit})`,
+                date: consumptionDate,
+                timestamp: new Date().toISOString()
+            });
+        }
+    });
+
+    Storage.set('stocks', stocks);
+
+    // Save consumption history log
+    const consumptions = Storage.get('stockConsumptions') || [];
+    consumptions.unshift({
+        id: 'cons_' + Date.now(),
+        date: consumptionDate,
+        timestamp: new Date().toISOString(),
+        items: deductions
+    });
+    Storage.set('stockConsumptions', consumptions);
+
+    closeDailyConsumptionModal();
+    loadStock();
+
+    const successMsg = `Daily stock consumption for ${consumptionDate} recorded successfully! ${deductions.length} ingredient(s) subtracted from stock.` + (warningMsg ? `\n\nStock Alert:${warningMsg}` : '');
+    if (typeof showCustomAlert === 'function') {
+        showCustomAlert(successMsg, 'Consumption Recorded');
+    } else {
+        alert(successMsg);
+    }
+};
+
+// ==========================================
+// CONSUMPTION HISTORY LOGS
+// ==========================================
+window.openConsumptionHistoryModal = function openConsumptionHistoryModal() {
+    renderConsumptionHistoryList();
+    document.getElementById('consumptionHistoryModal').style.display = 'flex';
+};
+
+window.closeConsumptionHistoryModal = function closeConsumptionHistoryModal() {
+    document.getElementById('consumptionHistoryModal').style.display = 'none';
+};
+
+window.renderConsumptionHistoryList = function renderConsumptionHistoryList() {
+    const tbody = document.getElementById('consumptionHistoryTableBody');
+    if (!tbody) return;
+
+    const consumptions = Storage.get('stockConsumptions') || [];
+    const search = (document.getElementById('consumptionLogSearch')?.value || '').toLowerCase().trim();
+
+    let filtered = consumptions;
+    if (search) {
+        filtered = consumptions.filter(c => {
+            const dateStr = (c.date || '').toLowerCase();
+            const noteStr = (c.note || '').toLowerCase();
+            const itemsStr = (c.items || []).map(i => `${i.itemName} ${i.note}`).join(' ').toLowerCase();
+            return dateStr.includes(search) || noteStr.includes(search) || itemsStr.includes(search);
+        });
+    }
+
+    const countEl = document.getElementById('consumptionLogCount');
+    if (countEl) countEl.textContent = `Total Logs: ${filtered.length}`;
+
+    tbody.innerHTML = '';
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px; color: #94a3b8;">No consumption logs found.</td></tr>';
+        return;
+    }
+
+    filtered.forEach(log => {
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid #f1f5f9';
+
+        const dateObj = new Date(log.timestamp || log.date);
+        const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const formattedTime = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+        const itemsListHtml = (log.items || []).map(i => {
+            const entered = `${formatQuantity(i.enteredQty || i.deductedQty)} ${i.enteredUnit || i.unit}`;
+            const noteSuffix = i.note ? ` <span style="color: #64748b; font-size: 12px;">(${escapeHtml(i.note)})</span>` : '';
+            return `<div style="margin: 2px 0;"><strong>${escapeHtml(i.itemName)}:</strong> <span style="color: #dc2626; font-weight: 600;">-${entered}</span>${noteSuffix}</div>`;
+        }).join('');
+
+        const generalNote = log.note || (log.items && log.items.find(i => i.note)?.note) || 'Daily Sales Consumption';
+
+        tr.innerHTML = `
+            <td style="padding: 12px 14px; font-weight: 600; color: #1e293b;">
+                <div>${formattedDate}</div>
+                <div style="font-size: 12px; color: #64748b; font-weight: 500;">${formattedTime}</div>
+            </td>
+            <td style="padding: 12px 14px;">
+                ${itemsListHtml || '<span style="color: #999;">No details</span>'}
+            </td>
+            <td style="padding: 12px 14px; color: #475569; font-size: 13px;">
+                ${escapeHtml(generalNote)}
+            </td>
+            <td style="padding: 12px 14px; text-align: center;">
+                <button type="button" onclick="deleteConsumptionRecord('${log.id}')"
+                    style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;"
+                    title="Revert and delete this log">Revert</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+};
+
+window.deleteConsumptionRecord = function deleteConsumptionRecord(logId) {
+    openActionPasswordModal(() => {
+        const consumptions = Storage.get('stockConsumptions') || [];
+        const log = consumptions.find(c => c.id === logId);
+        if (!log) return;
+
+        if (confirm('Do you want to revert this consumption log and restore the deducted quantities back to inventory?')) {
+            const stocks = syncAndGetStockItems();
+            (log.items || []).forEach(item => {
+                const stockItem = stocks.find(s => String(s.id) === String(item.stockId) || s.itemName.toLowerCase() === (item.itemName || '').toLowerCase());
+                if (stockItem) {
+                    const restoreQty = parseFloat(item.finalDeductQty || item.enteredQty || item.deductedQty) || 0;
+                    const prevQty = parseFloat(stockItem.quantity) || 0;
+                    const newQty = prevQty + restoreQty;
+                    stockItem.quantity = newQty;
+                    stockItem.updatedAt = new Date().toISOString();
+
+                    // Record Revert in Stock Ledger
+                    recordStockLedgerEntry({
+                        stockId: stockItem.id,
+                        itemName: stockItem.itemName,
+                        type: 'revert',
+                        typeLabel: 'Consumption Reverted (+)',
+                        changeQty: restoreQty,
+                        previousQty: prevQty,
+                        resultingQty: newQty,
+                        unit: stockItem.unit,
+                        unitPrice: stockItem.unitPrice || 0,
+                        note: 'Reverted daily consumption log',
+                        date: getLocalISODate(),
+                        timestamp: new Date().toISOString()
+                    });
                 }
-            };
+            });
 
-            // Remove message when clicking anywhere
-            const clickHandler = (e) => {
-                if (!messageEl.contains(e.target)) {
-                    removeMessage();
-                    document.removeEventListener('click', clickHandler);
-                }
-            };
+            Storage.set('stocks', stocks);
 
-            // Add click listener after a small delay to avoid immediate removal
-            setTimeout(() => {
-                document.addEventListener('click', clickHandler);
-            }, 10);
+            const filteredLogs = consumptions.filter(c => c.id !== logId);
+            Storage.set('stockConsumptions', filteredLogs);
 
-            // Remove message after 3 seconds
-            setTimeout(() => {
-                removeMessage();
-                document.removeEventListener('click', clickHandler);
-            }, 3000);
+            renderConsumptionHistoryList();
+            loadStock();
+            if (typeof showCustomAlert === 'function') {
+                showCustomAlert('Consumption log reverted and stock quantities restored.', 'Restored');
+            }
+        }
+    });
+};
+
+// ==========================================
+// STOCK LEDGER & TRANSACTION HISTORY (EXCEL VIEW)
+// ==========================================
+function recordStockLedgerEntry(entry) {
+    if (!entry || !entry.stockId) return;
+    const ledger = Storage.get('stockLedgerLogs') || [];
+    const newEntry = {
+        id: 'ledg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        stockId: String(entry.stockId),
+        itemName: entry.itemName || 'Stock Item',
+        type: entry.type || 'addition',
+        typeLabel: entry.typeLabel || (entry.changeQty >= 0 ? 'Stock Added (+)' : 'Stock Deducted (-)'),
+        changeQty: parseFloat(entry.changeQty) || 0,
+        previousQty: parseFloat(entry.previousQty) || 0,
+        resultingQty: parseFloat(entry.resultingQty) || 0,
+        unit: entry.unit || 'pcs',
+        unitPrice: parseFloat(entry.unitPrice) || 0,
+        note: entry.note || '',
+        date: entry.date || getLocalISODate(),
+        timestamp: entry.timestamp || new Date().toISOString()
+    };
+    ledger.unshift(newEntry);
+    Storage.set('stockLedgerLogs', ledger);
+    return newEntry;
+}
+
+let currentLedgerStockItem = null;
+let currentLedgerEntries = [];
+
+window.openStockItemLedgerModal = function openStockItemLedgerModal(stockId) {
+    const stocks = syncAndGetStockItems();
+    const item = stocks.find(s => String(s.id) === String(stockId));
+    if (!item) {
+        if (typeof showCustomAlert === 'function') {
+            showCustomAlert('Stock item not found.', 'Error');
+        } else {
+            alert('Stock item not found.');
         }
         return;
     }
 
-    let loadedCount = 0;
-    let skippedCount = 0;
+    currentLedgerStockItem = item;
 
-    menuItems.forEach(menuItem => {
-        const itemName = menuItem.name || menuItem.dishName;
-        if (!itemName) return;
+    // Set title and subtitle
+    const titleEl = document.getElementById('itemStockLedgerTitle');
+    const subtitleEl = document.getElementById('itemStockLedgerSubtitle');
+    if (titleEl) titleEl.textContent = `${item.itemName} — Excel Stock Ledger`;
+    if (subtitleEl) subtitleEl.textContent = `Unit: ${item.unit} | Unit Cost: Rs. ${formatNumber(item.unitPrice || 0)} | Min Alert: ${item.minLevel || 0} ${item.unit}`;
 
-        // Check if stock item with this name already exists (case-insensitive)
-        const existingStock = stocks.find(s => s.itemName && s.itemName.toLowerCase() === itemName.toLowerCase());
+    // Reset filters
+    const searchInput = document.getElementById('ledgerSearchInput');
+    const typeFilter = document.getElementById('ledgerTypeFilter');
+    if (searchInput) searchInput.value = '';
+    if (typeFilter) typeFilter.value = 'all';
 
-        if (existingStock) {
-            // Stock item already exists, skip it
-            skippedCount++;
-            return;
-        }
+    // Fetch and assemble transactions
+    const ledgerLogs = Storage.get('stockLedgerLogs') || [];
+    let itemLogs = ledgerLogs.filter(l => String(l.stockId) === String(item.id) || (l.itemName && l.itemName.trim().toLowerCase() === item.itemName.trim().toLowerCase()));
 
-        // Create new stock item
-        const newStock = {
-            id: `STOCK-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            itemName: itemName,
-            quantity: 0, // Default quantity
-            unit: 'pcs', // Default unit
-            unitPrice: menuItem.price || 0, // Use menu item price
-            minLevel: 0, // Default min level
-            createdAt: new Date().toISOString()
-        };
-
-        stocks.push(newStock);
-        loadedCount++;
+    // Also scan historical consumptions if not in ledgerLogs yet
+    const consumptions = Storage.get('stockConsumptions') || [];
+    consumptions.forEach(c => {
+        (c.items || []).forEach(ci => {
+            if (String(ci.stockId) === String(item.id) || (ci.itemName && ci.itemName.trim().toLowerCase() === item.itemName.trim().toLowerCase())) {
+                const deductQty = parseFloat(ci.finalDeductQty || ci.enteredQty || ci.deductedQty) || 0;
+                const dateKey = c.date || c.timestamp?.slice(0, 10) || getLocalISODate();
+                
+                const exists = itemLogs.some(l => l.timestamp === c.timestamp || (l.date === dateKey && Math.abs(l.changeQty - (-deductQty)) < 0.001));
+                if (!exists) {
+                    itemLogs.push({
+                        id: 'hist_' + c.id + '_' + (ci.stockId || '0'),
+                        stockId: String(item.id),
+                        itemName: item.itemName,
+                        type: 'consumption',
+                        typeLabel: 'Daily Consumption',
+                        changeQty: -deductQty,
+                        previousQty: 0,
+                        resultingQty: 0,
+                        unit: ci.stockUnit || ci.enteredUnit || item.unit,
+                        note: ci.note ? `${ci.note} (Daily Sales Deduct)` : 'Daily Sales Consumption',
+                        date: dateKey,
+                        timestamp: c.timestamp || new Date(dateKey).toISOString()
+                    });
+                }
+            }
+        });
     });
 
-    // Save updated stock list
-    Storage.set('stocks', stocks);
-
-    // Reload stock display
-    loadStock();
-
-    // Show success message below the Load Menu button
-    const loadMenuBtn = document.querySelector('button[onclick="loadMenuItemsToStock()"]');
-    if (loadMenuBtn) {
-        // Remove any existing message
-        const existingMessage = document.querySelector('.load-menu-message');
-        if (existingMessage) {
-            existingMessage.remove();
-        }
-
-        // Create message element
-        const messageEl = document.createElement('div');
-        messageEl.className = 'load-menu-message';
-        messageEl.textContent = `Loaded ${loadedCount} item${loadedCount !== 1 ? 's' : ''}!`;
-        messageEl.style.cssText = `
-            position: fixed;
-            background: #e74c3c;
-            color: white;
-            padding: 10px 18px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            white-space: nowrap;
-            z-index: 10000;
-            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
-            pointer-events: none;
-            font-family: 'Poppins', 'Inter', sans-serif;
-        `;
-
-        // Position message below the button
-        const buttonRect = loadMenuBtn.getBoundingClientRect();
-        messageEl.style.top = `${buttonRect.bottom + 10}px`;
-        messageEl.style.left = `${buttonRect.left + (buttonRect.width / 2)}px`;
-        messageEl.style.transform = 'translateX(-50%)';
-
-        document.body.appendChild(messageEl);
-
-        // Function to remove the message
-        const removeMessage = () => {
-            if (messageEl.parentElement) {
-                messageEl.remove();
-            }
-        };
-
-        // Remove message when clicking anywhere
-        const clickHandler = (e) => {
-            if (!messageEl.contains(e.target)) {
-                removeMessage();
-                document.removeEventListener('click', clickHandler);
-            }
-        };
-
-        // Add click listener after a small delay to avoid immediate removal
-        setTimeout(() => {
-            document.addEventListener('click', clickHandler);
-        }, 10);
-
-        // Remove message after 1 second
-        setTimeout(() => {
-            removeMessage();
-            document.removeEventListener('click', clickHandler);
-        }, 1000);
+    // If itemLogs is empty, synthesize initial entry based on creation or current stock
+    if (itemLogs.length === 0) {
+        itemLogs.push({
+            id: 'init_' + item.id,
+            stockId: String(item.id),
+            itemName: item.itemName,
+            type: 'initial',
+            typeLabel: 'Current / Initial Stock',
+            changeQty: parseFloat(item.quantity) || 0,
+            previousQty: 0,
+            resultingQty: parseFloat(item.quantity) || 0,
+            unit: item.unit,
+            unitPrice: item.unitPrice || 0,
+            note: 'Initial inventory record',
+            date: (item.createdAt || item.updatedAt || new Date().toISOString()).slice(0, 10),
+            timestamp: item.createdAt || item.updatedAt || new Date().toISOString()
+        });
     }
+
+    // Sort newest first
+    itemLogs.sort((a, b) => new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date));
+    currentLedgerEntries = itemLogs;
+
+    // Calculate Summary Metrics
+    const currentQty = parseFloat(item.quantity) || 0;
+    let totalAdded = 0;
+    let totalDeducted = 0;
+
+    itemLogs.forEach(entry => {
+        const cq = parseFloat(entry.changeQty) || 0;
+        if (cq > 0) totalAdded += cq;
+        else if (cq < 0) totalDeducted += Math.abs(cq);
+    });
+
+    const currEl = document.getElementById('ledgerCurrentStockQty');
+    const addEl = document.getElementById('ledgerTotalAddedQty');
+    const dedEl = document.getElementById('ledgerTotalDeductedQty');
+    const txEl = document.getElementById('ledgerTotalTransactions');
+
+    if (currEl) currEl.textContent = `${formatQuantity(currentQty)} ${item.unit}`;
+    if (addEl) addEl.textContent = `+${formatQuantity(totalAdded)} ${item.unit}`;
+    if (dedEl) dedEl.textContent = `-${formatQuantity(totalDeducted)} ${item.unit}`;
+    if (txEl) txEl.textContent = `${itemLogs.length} Records`;
+
+    renderStockItemLedgerTable(itemLogs);
+    document.getElementById('itemStockLedgerModal').style.display = 'flex';
 };
 
-// Update stock quantities when a sale is made
-function updateStockFromSale(items) {
-    if (!items || !Array.isArray(items)) return;
+window.closeStockItemLedgerModal = function closeStockItemLedgerModal() {
+    document.getElementById('itemStockLedgerModal').style.display = 'none';
+    currentLedgerStockItem = null;
+    currentLedgerEntries = [];
+};
 
-    const stocks = Storage.get('stocks') || [];
-    let stockUpdated = false;
+window.renderStockItemLedgerTable = function renderStockItemLedgerTable(entries) {
+    const tbody = document.getElementById('stockLedgerTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
 
-    items.forEach(saleItem => {
-        const itemName = saleItem.name;
-        const quantity = saleItem.quantity || 0;
+    if (!entries || entries.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 40px; color: #94a3b8; font-size: 14px;">
+                    No transactions found matching your filter criteria.
+                </td>
+            </tr>
+        `;
+        return;
+    }
 
-        if (!itemName || quantity <= 0) return;
+    entries.forEach((entry, index) => {
+        const tr = document.createElement('tr');
+        const dt = new Date(entry.timestamp || entry.date);
+        const formattedDate = !isNaN(dt.getTime()) ? dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : entry.date;
+        const formattedTime = !isNaN(dt.getTime()) ? dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '';
 
-        // Find stock item by name (case-insensitive)
-        const stockItem = stocks.find(s => s.itemName && s.itemName.toLowerCase() === itemName.toLowerCase());
+        const changeQty = parseFloat(entry.changeQty) || 0;
+        const isAddition = changeQty > 0;
+        const isDeduction = changeQty < 0;
 
-        if (stockItem) {
-            // Subtract the sold quantity from stock
-            const currentQuantity = parseFloat(stockItem.quantity) || 0;
-            stockItem.quantity = Math.max(0, currentQuantity - quantity);
-            stockItem.updatedAt = new Date().toISOString();
-            stockUpdated = true;
+        let badgeClass = 'type-adjust';
+        if (isAddition) badgeClass = 'type-in';
+        else if (isDeduction) badgeClass = 'type-out';
+
+        const qtyDisplay = (isAddition ? '+' : '') + formatQuantity(changeQty);
+        const qtyColor = isAddition ? '#15803d' : (isDeduction ? '#b91c1c' : '#475569');
+
+        tr.innerHTML = `
+            <td style="text-align: center; font-weight: 700; color: #64748b; font-size: 12px;">${index + 1}</td>
+            <td style="font-weight: 600; color: #1e293b; white-space: nowrap;">
+                <div>${formattedDate}</div>
+                <div style="font-size: 11px; color: #64748b; font-weight: 500;">${formattedTime}</div>
+            </td>
+            <td style="text-align: center;">
+                <span class="stock-ledger-badge ${badgeClass}">
+                    ${escapeHtml(entry.typeLabel || (isAddition ? 'Added' : 'Deducted'))}
+                </span>
+            </td>
+            <td style="text-align: right; font-weight: 800; font-size: 14px; color: ${qtyColor}; white-space: nowrap;">
+                ${qtyDisplay}
+            </td>
+            <td style="text-align: right; color: #64748b; font-weight: 600;">
+                ${entry.previousQty !== undefined && entry.previousQty !== null ? formatQuantity(entry.previousQty) : '-'}
+            </td>
+            <td style="text-align: right; font-weight: 800; color: #0f172a;">
+                ${entry.resultingQty !== undefined && entry.resultingQty !== null ? formatQuantity(entry.resultingQty) : '-'}
+            </td>
+            <td style="text-align: center; color: #475569; font-weight: 600;">
+                ${escapeHtml(entry.unit || (currentLedgerStockItem ? currentLedgerStockItem.unit : ''))}
+            </td>
+            <td style="color: #334155; font-size: 12.5px;">
+                ${escapeHtml(entry.note || '-')}
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+};
+
+window.filterStockItemLedgerTable = function filterStockItemLedgerTable() {
+    if (!currentLedgerEntries) return;
+    const search = (document.getElementById('ledgerSearchInput')?.value || '').toLowerCase().trim();
+    const typeFilter = document.getElementById('ledgerTypeFilter')?.value || 'all';
+
+    let filtered = currentLedgerEntries.filter(entry => {
+        const matchesSearch = !search ||
+            (entry.note || '').toLowerCase().includes(search) ||
+            (entry.typeLabel || '').toLowerCase().includes(search) ||
+            (entry.date || '').toLowerCase().includes(search);
+
+        let matchesType = true;
+        const cq = parseFloat(entry.changeQty) || 0;
+        if (typeFilter === 'in') {
+            matchesType = cq > 0;
+        } else if (typeFilter === 'out') {
+            matchesType = cq < 0;
         }
+
+        return matchesSearch && matchesType;
     });
 
-    if (stockUpdated) {
-        Storage.set('stocks', stocks);
+    renderStockItemLedgerTable(filtered);
+};
 
-        // Refresh stock list if on stock tab
-        if (document.getElementById('stock')?.classList.contains('active')) {
-            loadStock();
+window.exportStockLedgerToCSV = function exportStockLedgerToCSV() {
+    if (!currentLedgerStockItem || !currentLedgerEntries || currentLedgerEntries.length === 0) {
+        if (typeof showCustomAlert === 'function') {
+            showCustomAlert('No ledger entries to export.', 'Notice');
+        } else {
+            alert('No ledger entries to export.');
         }
+        return;
     }
-}
 
-// Handle stock form submission
-document.addEventListener('DOMContentLoaded', () => {
+    const item = currentLedgerStockItem;
+    const headers = ['#', 'Date', 'Time', 'Transaction Type', 'Qty Changed', 'Prev Stock', 'Balance Stock', 'Unit', 'Notes'];
+    const rows = currentLedgerEntries.map((e, idx) => {
+        const dt = new Date(e.timestamp || e.date);
+        const dateStr = !isNaN(dt.getTime()) ? dt.toLocaleDateString('en-US') : e.date;
+        const timeStr = !isNaN(dt.getTime()) ? dt.toLocaleTimeString('en-US') : '';
+        const qtyChanged = (parseFloat(e.changeQty) > 0 ? '+' : '') + formatQuantity(e.changeQty);
+        const prevStock = e.previousQty !== undefined ? formatQuantity(e.previousQty) : '';
+        const balStock = e.resultingQty !== undefined ? formatQuantity(e.resultingQty) : '';
+        const cleanNote = (e.note || '').replace(/"/g, '""');
+
+        return [
+            idx + 1,
+            `"${dateStr}"`,
+            `"${timeStr}"`,
+            `"${e.typeLabel || ''}"`,
+            `"${qtyChanged}"`,
+            `"${prevStock}"`,
+            `"${balStock}"`,
+            `"${e.unit || item.unit}"`,
+            `"${cleanNote}"`
+        ].join(',');
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    const safeName = (item.itemName || 'stock_item').replace(/[^a-zA-Z0-9_-]/g, '_');
+    link.setAttribute('download', `Stock_Ledger_${safeName}_${getLocalISODate()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
+window.printStockItemLedgerReport = function printStockItemLedgerReport() {
+    if (!currentLedgerStockItem || !currentLedgerEntries) return;
+
+    const item = currentLedgerStockItem;
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+    let rowsHtml = '';
+    currentLedgerEntries.forEach((e, idx) => {
+        const dt = new Date(e.timestamp || e.date);
+        const dStr = !isNaN(dt.getTime()) ? dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : e.date;
+        const tStr = !isNaN(dt.getTime()) ? dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '';
+        const cq = parseFloat(e.changeQty) || 0;
+        const isAdd = cq > 0;
+        const isSub = cq < 0;
+        const color = isAdd ? '#15803d' : (isSub ? '#b91c1c' : '#333');
+        const qtyDisplay = (isAdd ? '+' : '') + formatQuantity(cq);
+
+        rowsHtml += `
+            <tr>
+                <td style="text-align: center; border-right: 1px solid #000; padding: 3px 4px; font-size: 10px;">${idx + 1}</td>
+                <td style="border-right: 1px solid #000; padding: 3px 4px; font-size: 10px;">${dStr} ${tStr}</td>
+                <td style="border-right: 1px solid #000; padding: 3px 4px; font-size: 10px;">${escapeHtml(e.typeLabel || '')}</td>
+                <td style="text-align: right; border-right: 1px solid #000; padding: 3px 4px; font-weight: 700; color: ${color}; font-size: 10px;">${qtyDisplay}</td>
+                <td style="text-align: right; border-right: 1px solid #000; padding: 3px 4px; font-weight: 700; font-size: 10px;">${e.resultingQty !== undefined ? formatQuantity(e.resultingQty) : '-'} ${e.unit || item.unit}</td>
+                <td style="padding: 3px 4px; font-size: 9.5px;">${escapeHtml(e.note || '-')}</td>
+            </tr>
+        `;
+    });
+
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Stock Ledger — ${escapeHtml(item.itemName)}</title>
+            <style>
+                body { font-family: 'Poppins', -apple-system, sans-serif; font-size: 11px; width: 80mm; max-width: 80mm; margin: 0 auto; padding: 8px; color: #000; background: #fff; }
+                .text-center { text-align: center; }
+                .text-right { text-align: right; }
+                .bold { font-weight: 700; }
+                .header h1 { font-size: 16px; margin: 0 0 2px 0; text-transform: uppercase; }
+                .divider { border-bottom: 1.5px dashed #000; margin: 5px 0; }
+                table { width: 100%; border-collapse: collapse; border: 1.5px solid #000; margin-top: 5px; }
+                th { background: #fff; border-bottom: 1.5px solid #000; padding: 3px 4px; font-size: 9.5px; font-weight: 700; text-transform: uppercase; }
+                td { border-bottom: 1px solid #ddd; }
+                @media print { body { width: 100%; margin: 0; padding: 2mm; } @page { size: 80mm auto; margin: 2mm; } }
+            </style>
+        </head>
+        <body>
+            <div class="header text-center">
+                <h1>Hangout Lounge & Co.</h1>
+                <p style="margin: 2px 0;">Wah Cantt | 0300-9509536</p>
+                <div style="border: 1.5px solid #000; display: inline-block; padding: 2px 10px; font-weight: 700; text-transform: uppercase; margin: 4px 0;">
+                    ITEM STOCK LEDGER
+                </div>
+                <div style="font-size: 12px; font-weight: 800; margin-top: 2px;">${escapeHtml(item.itemName)}</div>
+                <div style="font-size: 10.5px; color: #444;">Current Stock: <strong>${formatQuantity(item.quantity)} ${escapeHtml(item.unit)}</strong></div>
+                <div style="font-size: 10px; color: #666;">Generated: ${dateStr} ${timeStr}</div>
+            </div>
+            <div class="divider"></div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 25px; border-right: 1px solid #000;">#</th>
+                        <th style="border-right: 1px solid #000;">DATE</th>
+                        <th style="border-right: 1px solid #000;">ACTION</th>
+                        <th style="border-right: 1px solid #000; text-align: right;">QTY</th>
+                        <th style="border-right: 1px solid #000; text-align: right;">BAL</th>
+                        <th>NOTE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rowsHtml}
+                </tbody>
+            </table>
+            <div style="margin-top: 8px; text-align: center; font-size: 10px; font-weight: 600;">
+                End of Ledger Report
+            </div>
+            <script>
+                window.onload = function() {
+                    setTimeout(function() { window.print(); }, 250);
+                };
+            </script>
+        </body>
+        </html>
+    `;
+
+    openReportPrintWindow(html, `Stock Ledger - ${item.itemName}`);
+};
+
+// Handle Stock form submission (Add / Edit)
+onDOMReady(() => {
     const stockForm = document.getElementById('stockForm');
     if (stockForm) {
-        // Auto-populate price when menu item is selected
-        const stockItemNameSelect = document.getElementById('stockItemName');
-        if (stockItemNameSelect) {
-            stockItemNameSelect.addEventListener('change', (e) => {
-                const selectedItemName = e.target.value.trim();
-                if (selectedItemName) {
-                    // Find the menu item by name
-                    const menuItems = Storage.get('menuItems') || [];
-                    const menuItem = menuItems.find(item => item.name === selectedItemName);
-
-                    if (menuItem && menuItem.price) {
-                        // Auto-populate the unit price with the menu item's price
-                        const stockUnitPriceInput = document.getElementById('stockUnitPrice');
-                        if (stockUnitPriceInput) {
-                            stockUnitPriceInput.value = menuItem.price;
-                        }
-                    }
-                }
-            });
-        }
-
         stockForm.addEventListener('submit', (e) => {
             e.preventDefault();
 
-            const stocks = Storage.get('stocks') || [];
-            const itemName = document.getElementById('stockItemName').value.trim();
-            const quantity = parseFloat(document.getElementById('stockQuantity').value) || 0;
-            const unit = document.getElementById('stockUnit').value;
+            const stocks = syncAndGetStockItems();
+            const itemName = (document.getElementById('stockItemName').value || '').trim();
+            const enteredQuantity = parseFloat(document.getElementById('stockQuantity').value) || 0;
+            const unit = document.getElementById('stockUnit').value || 'kg';
             const unitPrice = parseFloat(document.getElementById('stockUnitPrice').value) || 0;
             const minLevel = parseFloat(document.getElementById('stockMinLevel').value) || 0;
+            const addMode = document.querySelector('input[name="stockAddMode"]:checked')?.value || 'add';
 
             if (!itemName) {
-                alert('Please select a menu item');
+                alert('Please enter an item or ingredient name.');
                 return;
             }
 
-            if (editingStockId) {
-                // Update existing stock
-                const index = stocks.findIndex(s => s.id === editingStockId);
-                if (index !== -1) {
-                    stocks[index] = {
-                        ...stocks[index],
-                        itemName,
-                        quantity,
-                        unit,
-                        unitPrice,
-                        minLevel,
-                        updatedAt: new Date().toISOString()
-                    };
-                }
-            } else {
-                // Check if stock item with this name already exists
-                const existingStock = stocks.find(s => s.itemName && s.itemName.toLowerCase() === itemName.toLowerCase());
-                if (existingStock) {
-                    const saveButton = stockForm.querySelector('button[type="submit"]');
-                    if (saveButton) {
-                        showButtonMessage(saveButton, 'Already Exists');
-                    }
-                    return;
+            const targetIndex = stocks.findIndex(s => 
+                (editingStockId && String(s.id) === String(editingStockId)) ||
+                (!editingStockId && s.itemName && s.itemName.trim().toLowerCase() === itemName.toLowerCase())
+            );
+
+            if (targetIndex !== -1) {
+                const oldItem = stocks[targetIndex];
+                const oldQty = parseFloat(oldItem.quantity) || 0;
+                const oldPrice = parseFloat(oldItem.unitPrice || 0);
+
+                let newQty = enteredQuantity;
+                let changeQty = enteredQuantity - oldQty;
+                let actionType = 'addition';
+                let actionLabel = 'Stock Added (+)';
+                let noteMsg = '';
+
+                if (!editingStockId && addMode === 'add') {
+                    // User added newly purchased batch to existing stock
+                    newQty = oldQty + enteredQuantity;
+                    changeQty = enteredQuantity;
+                    actionType = 'addition';
+                    actionLabel = 'Stock Purchase Added (+)';
+                    const priceDiffNote = (unitPrice !== oldPrice && oldPrice > 0)
+                        ? ` (Price updated: Rs. ${oldPrice} -> Rs. ${unitPrice}/${unit})`
+                        : ` (@ Rs. ${unitPrice}/${unit})`;
+                    noteMsg = `Purchased +${enteredQuantity} ${unit}${priceDiffNote}`;
+                } else {
+                    // Direct edit/overwrite
+                    newQty = enteredQuantity;
+                    changeQty = enteredQuantity - oldQty;
+                    actionType = changeQty >= 0 ? 'addition' : 'deduction';
+                    actionLabel = changeQty >= 0 ? 'Stock Updated / Added (+)' : 'Stock Updated / Reduced (-)';
+                    noteMsg = `Stock edited (${oldQty} -> ${newQty} ${unit}) @ Rs. ${unitPrice}/${unit}`;
                 }
 
-                // Add new stock
-                const newStock = {
-                    id: `STOCK-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                stocks[targetIndex] = {
+                    ...stocks[targetIndex],
                     itemName,
-                    quantity,
+                    quantity: newQty,
                     unit,
                     unitPrice,
                     minLevel,
-                    createdAt: new Date().toISOString()
+                    updatedAt: new Date().toISOString()
                 };
-                stocks.push(newStock);
+
+                // Record edit in ledger
+                if (Math.abs(changeQty) > 0.0001 || unitPrice !== oldPrice) {
+                    recordStockLedgerEntry({
+                        stockId: stocks[targetIndex].id,
+                        itemName,
+                        type: actionType,
+                        typeLabel: actionLabel,
+                        changeQty: changeQty,
+                        previousQty: oldQty,
+                        resultingQty: newQty,
+                        unit,
+                        unitPrice,
+                        note: noteMsg,
+                        date: getLocalISODate(),
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            } else {
+                const newStockId = 'stock_' + Date.now();
+                stocks.push({
+                    id: newStockId,
+                    itemName,
+                    quantity: enteredQuantity,
+                    unit,
+                    unitPrice,
+                    minLevel,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                });
+
+                // Record initial stock in ledger
+                recordStockLedgerEntry({
+                    stockId: newStockId,
+                    itemName,
+                    type: 'initial',
+                    typeLabel: 'New Item Created / Initial Stock',
+                    changeQty: enteredQuantity,
+                    previousQty: 0,
+                    resultingQty: enteredQuantity,
+                    unit,
+                    unitPrice,
+                    note: `Initial stock @ Rs. ${unitPrice}/${unit}`,
+                    date: getLocalISODate(),
+                    timestamp: new Date().toISOString()
+                });
             }
 
             Storage.set('stocks', stocks);
             loadStock();
             closeAddStockModal();
+            if (typeof showCustomAlert === 'function') {
+                showCustomAlert(`Saved: ${itemName} stock updated successfully.`, 'Stock Saved');
+            }
         });
     }
 });
@@ -7629,78 +8939,77 @@ function isOrderInTableTimeFilter(orderDateStr, filterType, filterValue) {
         return true;
     }
     
-    const yearStr = orderDateStr.substring(0, 4); // "YYYY"
-    const monthStr = orderDateStr.substring(0, 7); // "YYYY-MM"
-    const dayStr = orderDateStr.substring(0, 10); // "YYYY-MM-DD"
+    const isoDate = getLocalISODate(orderDate);
     
     if (filterType === 'daily') {
-        return dayStr === filterValue;
-    }
-    
-    if (filterType === 'weekly') {
-        const match = filterValue.match(/^(\d{4})-W(\d{1,2})$/);
-        if (match) {
-            const targetYear = parseInt(match[1], 10);
-            const targetWeek = parseInt(match[2], 10);
-            const { year, week } = getISOWeekAndYear(orderDate);
-            return year === targetYear && week === targetWeek;
-        }
-        return false;
+        return isoDate === filterValue;
     }
     
     if (filterType === 'monthly') {
-        return monthStr === filterValue;
+        return isoDate.substring(0, 7) === filterValue;
     }
     
     if (filterType === 'annual') {
-        return yearStr === String(filterValue);
+        return String(orderDate.getFullYear()) === String(filterValue);
     }
     
     return false;
 }
 
 window.handleTableTimeFilterTypeChange = function() {
-    const filterType = document.getElementById('tableTimeFilterType').value;
+    const filterSelect = document.getElementById('tableTimeFilterType');
     const container = document.getElementById('tableTimeValueContainer');
-    if (!container) return;
+    if (!filterSelect || !container) return;
 
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
-    const monthStr = todayStr.substring(0, 7);
-    const currentWeekStr = getISOWeekString(now);
+    const filterType = filterSelect.value;
+    const todayStr = getLocalISODate();
+    const monthStr = getLocalISOMonth();
+    const currentYear = new Date().getFullYear();
 
     container.innerHTML = '';
 
     if (filterType === 'daily') {
         container.innerHTML = `
             <label style="font-size: 12px; font-weight: 600; color: #4b5563; font-family: 'Inter', sans-serif;">Select Date</label>
-            <input type="date" id="tableTimeDateInput" value="${todayStr}" onchange="loadTables()" style="padding: 8px 12px; border: 1.5px solid #d1d5db; border-radius: 8px; font-size: 14px; outline: none; font-family: 'Inter', sans-serif; height: 38px;">
-        `;
-    } else if (filterType === 'weekly') {
-        container.innerHTML = `
-            <label style="font-size: 12px; font-weight: 600; color: #4b5563; font-family: 'Inter', sans-serif;">Select Week</label>
-            <input type="week" id="tableTimeWeekInput" value="${currentWeekStr}" onchange="loadTables()" style="padding: 8px 12px; border: 1.5px solid #d1d5db; border-radius: 8px; font-size: 14px; outline: none; font-family: 'Inter', sans-serif; height: 38px;">
+            <input type="date" id="tableTimeDateInput" value="${todayStr}" onchange="loadTables(); updateTableResetBtn();" style="padding: 8px 12px; border: 1.5px solid #d1d5db; border-radius: 8px; font-size: 14px; outline: none; font-family: 'Inter', sans-serif; height: 38px;">
         `;
     } else if (filterType === 'monthly') {
         container.innerHTML = `
             <label style="font-size: 12px; font-weight: 600; color: #4b5563; font-family: 'Inter', sans-serif;">Select Month</label>
-            <input type="month" id="tableTimeMonthInput" value="${monthStr}" onchange="loadTables()" style="padding: 8px 12px; border: 1.5px solid #d1d5db; border-radius: 8px; font-size: 14px; outline: none; font-family: 'Inter', sans-serif; height: 38px;">
+            <input type="month" id="tableTimeMonthInput" value="${monthStr}" onchange="loadTables(); updateTableResetBtn();" style="padding: 8px 12px; border: 1.5px solid #d1d5db; border-radius: 8px; font-size: 14px; outline: none; font-family: 'Inter', sans-serif; height: 38px;">
         `;
     } else if (filterType === 'annual') {
-        let yearOptions = '';
-        const currentYear = now.getFullYear();
-        for (let y = currentYear - 5; y <= currentYear + 5; y++) {
-            yearOptions += `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`;
-        }
         container.innerHTML = `
             <label style="font-size: 12px; font-weight: 600; color: #4b5563; font-family: 'Inter', sans-serif;">Select Year</label>
-            <select id="tableTimeYearInput" onchange="loadTables()" style="padding: 8px 12px; border: 1.5px solid #d1d5db; border-radius: 8px; font-size: 14px; outline: none; background: white; font-family: 'Inter', sans-serif; height: 38px; cursor: pointer;">
-                ${yearOptions}
+            <select id="tableTimeYearInput" onchange="loadTables(); updateTableResetBtn();" style="padding: 8px 12px; border: 1.5px solid #d1d5db; border-radius: 8px; font-size: 14px; outline: none; background: white; font-family: 'Inter', sans-serif; height: 38px; cursor: pointer;">
+                ${getFilterYearOptions(currentYear)}
             </select>
         `;
     }
 
+    updateTableResetBtn();
     loadTables();
+};
+
+window.updateTableResetBtn = function() {
+    const filterSelect = document.getElementById('tableTimeFilterType');
+    const resetBtn = document.getElementById('tableResetFilterBtn');
+    if (!filterSelect || !resetBtn) return;
+
+    const filterType = filterSelect.value;
+    const dateInput = document.getElementById('tableTimeDateInput');
+    const todayStr = getLocalISODate();
+
+    let isDefault = (filterType === 'daily' && (!dateInput || dateInput.value === todayStr));
+    resetBtn.style.display = isDefault ? 'none' : 'inline-flex';
+};
+
+window.resetTableTimeFilter = function() {
+    const filterSelect = document.getElementById('tableTimeFilterType');
+    if (filterSelect) {
+        filterSelect.value = 'daily';
+        handleTableTimeFilterTypeChange();
+    }
 };
 
 function toggleOrdersRow(tableId, parentTr) {
@@ -7941,9 +9250,9 @@ function loadTables() {
             if (unbookBtn) {
                 unbookBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    if (confirm(`Are you sure you want to unbook Table ${table.number}?`)) {
+                    showCustomConfirm(`Are you sure you want to unbook Table ${table.number}?`, () => {
                         unbookTableConfirmed(table.id);
-                    }
+                    }, null, { title: 'Unbook Table', confirmText: 'Unbook', type: 'warning' });
                 });
             }
         }
@@ -8093,9 +9402,16 @@ window.printTablesReport = () => {
         <html>
             <head>
                 <title>Tables Report</title>
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
                 <style>
+                    *, *::before, *::after {
+                        box-sizing: border-box;
+                        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+                    }
                     body {
-                        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
                         padding: 10px 0;
                         margin: 0;
                         width: 80mm;
@@ -8306,7 +9622,7 @@ window.searchExpenses = () => {
 function loadDashboard() {
     // Get all data
     const sales = Storage.get('sales') || [];
-    const expenses = Storage.get('expenses') || [];
+    const expenses = getCombinedExpenses();
     const employees = Storage.get('employees') || [];
     const menuItems = Storage.get('menuItems') || [];
     const holdOrders = Storage.get('holdOrders') || [];
@@ -8543,428 +9859,6 @@ function loadDashboard() {
     if (weekExpensesEl) weekExpensesEl.textContent = `Rs. ${formatNumber(weekExpenses)}`;
     if (monthSalesEl) monthSalesEl.textContent = `Rs. ${formatNumber(monthSales)}`;
     if (monthExpensesEl) monthExpensesEl.textContent = `Rs. ${formatNumber(monthExpenses)}`;
-}
-
-window.printDashboard = () => {
-    // Get all data (same logic as loadDashboard)
-    const sales = Storage.get('sales') || [];
-    const expenses = Storage.get('expenses') || [];
-    const employees = Storage.get('employees') || [];
-    const menuItems = Storage.get('menuItems') || [];
-    const holdOrders = Storage.get('holdOrders') || [];
-    const tables = Storage.get('tables') || [];
-
-    // Calculate today's date range
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    today.setHours(0, 0, 0, 0);
-    const todayEnd = new Date(today);
-    todayEnd.setHours(23, 59, 59, 999);
-
-    // Calculate week date range
-    const weekAgo = new Date(today);
-    weekAgo.setDate(weekAgo.getDate() - 7);
-
-    // Calculate month date range
-    const monthAgo = new Date(today);
-    monthAgo.setMonth(monthAgo.getMonth() - 1);
-
-    // Today's Sales
-    const todaySales = sales.filter(sale => {
-        if (!sale.date) return false;
-        const saleDate = new Date(sale.date);
-        saleDate.setHours(0, 0, 0, 0);
-        return saleDate.getTime() === today.getTime();
-    }).reduce((sum, sale) => {
-        if (sale.total) {
-            return sum + sale.total;
-        } else if (sale.items && Array.isArray(sale.items)) {
-            const subtotal = sale.items.reduce((s, item) => s + (item.price * item.quantity), 0);
-            return sum + subtotal;
-        } else {
-            const amount = sale.amount || sale.total || 0;
-            const subtotal = amount;
-            return sum + subtotal;
-        }
-    }, 0);
-
-    // Today's Expenses
-    const todayExpenses = expenses.filter(exp => {
-        if (!exp.date) return false;
-        const expDate = new Date(exp.date);
-        expDate.setHours(0, 0, 0, 0);
-        return expDate.getTime() === today.getTime();
-    }).reduce((sum, exp) => sum + (exp.amount || 0), 0);
-
-    // Today's Profit
-    const todayProfit = todaySales - todayExpenses;
-
-    // This Week Sales
-    const weekSales = sales.filter(sale => {
-        if (!sale.date) return false;
-        const saleDate = new Date(sale.date);
-        saleDate.setHours(0, 0, 0, 0);
-        return saleDate >= weekAgo && saleDate <= todayEnd;
-    }).reduce((sum, sale) => {
-        if (sale.total) {
-            return sum + sale.total;
-        } else if (sale.items && Array.isArray(sale.items)) {
-            const subtotal = sale.items.reduce((s, item) => s + (item.price * item.quantity), 0);
-            return sum + subtotal;
-        } else {
-            const amount = sale.amount || sale.total || 0;
-            const subtotal = amount;
-            return sum + subtotal;
-        }
-    }, 0);
-
-    // This Week Expenses
-    const weekExpenses = expenses.filter(exp => {
-        if (!exp.date) return false;
-        const expDate = new Date(exp.date);
-        expDate.setHours(0, 0, 0, 0);
-        return expDate >= weekAgo && expDate <= todayEnd;
-    }).reduce((sum, exp) => sum + (exp.amount || 0), 0);
-
-    // This Month Sales
-    const monthSales = sales.filter(sale => {
-        if (!sale.date) return false;
-        const saleDate = new Date(sale.date);
-        saleDate.setHours(0, 0, 0, 0);
-        return saleDate >= monthAgo && saleDate <= todayEnd;
-    }).reduce((sum, sale) => {
-        if (sale.total) {
-            return sum + sale.total;
-        } else if (sale.items && Array.isArray(sale.items)) {
-            const subtotal = sale.items.reduce((s, item) => s + (item.price * item.quantity), 0);
-            return sum + subtotal;
-        } else {
-            const amount = sale.amount || sale.total || 0;
-            const subtotal = amount;
-            return sum + subtotal;
-        }
-    }, 0);
-
-    // This Month Expenses
-    const monthExpenses = expenses.filter(exp => {
-        if (!exp.date) return false;
-        const expDate = new Date(exp.date);
-        expDate.setHours(0, 0, 0, 0);
-        return expDate >= monthAgo && expDate <= todayEnd;
-    }).reduce((sum, exp) => sum + (exp.amount || 0), 0);
-
-    // Tables Status
-    const availableTables = tables.filter(t => t.status !== 'booked').length;
-    const totalTables = tables.length;
-
-    // Today's Discounts
-    const todayDiscounts = sales.filter(sale => {
-        if (!sale.date) return false;
-        const saleDate = new Date(sale.date);
-        saleDate.setHours(0, 0, 0, 0);
-        return saleDate.getTime() === today.getTime();
-    }).reduce((sum, sale) => {
-        const subtotalFallback = (typeof sale.subtotal === 'number')
-            ? sale.subtotal
-            : (sale.items && Array.isArray(sale.items) ? sale.items.reduce((s, it) => s + (it.price * it.quantity), 0) : (sale.total || 0));
-        return sum + getDiscountAmountFromOrder(sale, subtotalFallback);
-    }, 0);
-
-    // Weekly Discounts
-    const weeklyDiscounts = sales.filter(sale => {
-        if (!sale.date) return false;
-        const saleDate = new Date(sale.date);
-        saleDate.setHours(0, 0, 0, 0);
-        return saleDate >= weekAgo && saleDate <= todayEnd;
-    }).reduce((sum, sale) => {
-        const subtotalFallback = (typeof sale.subtotal === 'number')
-            ? sale.subtotal
-            : (sale.items && Array.isArray(sale.items) ? sale.items.reduce((s, it) => s + (it.price * it.quantity), 0) : (sale.total || 0));
-        return sum + getDiscountAmountFromOrder(sale, subtotalFallback);
-    }, 0);
-
-    // Calculate Today's Tax
-    const todayTax = sales.filter(sale => {
-        if (!sale.date) return false;
-        const saleDate = new Date(sale.date);
-        saleDate.setHours(0, 0, 0, 0);
-        return saleDate.getTime() === today.getTime();
-    }).reduce((sum, sale) => {
-        // Exclude tax for Parcel/Delivery orders
-        const paymentMethod = sale.paymentMethod || 'cash';
-        if (paymentMethod === 'delivery' || paymentMethod === 'parcel') {
-            return sum; // No tax for parcel orders
-        }
-        // Use sale.tax if available
-        if (sale.tax) {
-            return sum + sale.tax;
-        } else if (sale.subtotal) {
-            // Calculate tax from subtotal (5% of subtotal after discount)
-            const discountAmount = sale.discount && sale.discount.amount ? sale.discount.amount : 0;
-            const discountedSubtotal = Math.max(0, sale.subtotal - discountAmount);
-            return sum + (discountedSubtotal * SALES_TAX_RATE);
-        } else if (sale.items && Array.isArray(sale.items)) {
-            // Calculate from items
-            const subtotal = sale.items.reduce((s, item) => s + (item.price * item.quantity), 0);
-            const discountAmount = sale.discount && sale.discount.amount ? sale.discount.amount : 0;
-            const discountedSubtotal = Math.max(0, subtotal - discountAmount);
-            return sum + (discountedSubtotal * SALES_TAX_RATE);
-        } else {
-            // Fallback: estimate tax from total (assuming total includes tax)
-            return sum + (sale.total || 0) * (SALES_TAX_RATE / (1 + SALES_TAX_RATE));
-        }
-    }, 0);
-
-    // Calculate Weekly Tax
-    const weeklyTax = sales.filter(sale => {
-        if (!sale.date) return false;
-        const saleDate = new Date(sale.date);
-        saleDate.setHours(0, 0, 0, 0);
-        return saleDate >= weekAgo && saleDate <= todayEnd;
-    }).reduce((sum, sale) => {
-        // Exclude tax for Parcel/Delivery orders
-        const paymentMethod = sale.paymentMethod || 'cash';
-        if (paymentMethod === 'delivery' || paymentMethod === 'parcel') {
-            return sum; // No tax for parcel orders
-        }
-        // Use sale.tax if available
-        if (sale.tax) {
-            return sum + sale.tax;
-        } else if (sale.subtotal) {
-            // Calculate tax from subtotal (5% of subtotal after discount)
-            const discountAmount = sale.discount && sale.discount.amount ? sale.discount.amount : 0;
-            const discountedSubtotal = Math.max(0, sale.subtotal - discountAmount);
-            return sum + (discountedSubtotal * SALES_TAX_RATE);
-        } else if (sale.items && Array.isArray(sale.items)) {
-            // Calculate from items
-            const subtotal = sale.items.reduce((s, item) => s + (item.price * item.quantity), 0);
-            const discountAmount = sale.discount && sale.discount.amount ? sale.discount.amount : 0;
-            const discountedSubtotal = Math.max(0, subtotal - discountAmount);
-            return sum + (discountedSubtotal * SALES_TAX_RATE);
-        } else {
-            // Fallback: estimate tax from total (assuming total includes tax)
-            return sum + (sale.total || 0) * (SALES_TAX_RATE / (1 + SALES_TAX_RATE));
-        }
-    }, 0);
-
-    // Total Sales (all time)
-    const totalSales = sales.reduce((sum, sale) => {
-        if (sale.total) {
-            return sum + sale.total;
-        } else if (sale.items && Array.isArray(sale.items)) {
-            const subtotal = sale.items.reduce((s, item) => s + (item.price * item.quantity), 0);
-            return sum + subtotal;
-        } else {
-            const amount = sale.amount || sale.total || 0;
-            return sum + amount;
-        }
-    }, 0);
-
-    // Total Expenses (all time)
-    const totalExpenses = expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
-
-    // Total Profit (all time)
-    const totalProfit = totalSales - totalExpenses;
-
-    const printWindow = window.open('', '_blank');
-    const nowDate = new Date();
-    const dateStr = nowDate.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-    const timeStr = nowDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    const currentDate = dateStr + ' ' + timeStr;
-
-    const weekProfit = weekSales - weekExpenses;
-    const monthProfit = monthSales - monthExpenses;
-
-    printWindow.document.write(`
-        <html>
-            <head>
-                <title>Dashboard Report</title>
-                <style>
-                    body {
-                        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                        padding: 10px;
-                        font-size: 11px;
-                        display: flex;
-                        flex-direction: column;
-                        justify-content: flex-start;
-                        align-items: center;
-                        min-height: auto;
-                        margin: 0;
-                        max-width: 80mm;
-                        margin: 0 auto;
-                    }
-                    .receipt-logo {
-                        max-width: 100px;
-                        max-height: 100px;
-                        width: auto;
-                        height: auto;
-                        margin: 0 auto 8px auto;
-                        display: block;
-                        object-fit: contain;
-                    }
-                    .header-section {
-                        text-align: center;
-                        margin-bottom: 10px;
-                        font-weight: 600;
-                    }
-                    .restaurant-name {
-                        font-size: 16px;
-                        font-weight: 900;
-                        margin-bottom: 4px;
-                    }
-                    .report-title {
-                        font-size: 14px;
-                        font-weight: 700;
-                        margin: 8px 0;
-                    }
-                    .report-info {
-                        font-size: 10px;
-                        margin: 4px 0;
-                        font-weight: 600;
-                    }
-                    .separator {
-                        border-top: 1px dashed #000;
-                        margin: 6px 0;
-                    }
-                    .section-title {
-                        font-size: 11px;
-                        font-weight: 700;
-                        margin: 8px 0 4px 0;
-                        text-align: center;
-                    }
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin: 4px 0;
-                        font-size: 9px;
-                    }
-                    td {
-                        padding: 2px 2px;
-                        border-bottom: 1px dotted #ccc;
-                        font-size: 9px;
-                        font-weight: 600;
-                        line-height: 1.2;
-                    }
-                    td:first-child {
-                        text-align: left;
-                    }
-                    td:last-child {
-                        text-align: right;
-                    }
-                    .summary-section {
-                        text-align: center;
-                        margin-top: 8px;
-                        font-size: 10px;
-                        font-weight: 600;
-                    }
-                    @media print {
-                        * {
-                            margin: 0;
-                            padding: 0;
-                        }
-                        body {
-                            padding: 5mm 0;
-                            margin: 0;
-                            min-height: auto;
-                            display: block;
-                            height: auto;
-                            max-width: 80mm;
-                        }
-                        .receipt-logo {
-                            max-width: 80px;
-                            max-height: 80px;
-                            margin: 0 auto 6px auto;
-                        }
-                        table {
-                            font-size: 9px;
-                            border-spacing: 0;
-                        }
-                        td {
-                            font-size: 9px;
-                            padding: 1px 1px;
-                            font-weight: 600 !important;
-                            line-height: 1.2 !important;
-                        }
-                        .header-section, .report-info, .summary-section, .section-title {
-                            font-weight: 600 !important;
-                        }
-                        @page {
-                            size: 80mm auto;
-                            margin: 5mm;
-                        }
-                    }
-                </style>
-            </head>
-            <body>
-
-                <div class="header-section">
-                    <div class="restaurant-name">Khyber Charsi Tikka Karahi & Restaurant</div>
-                    <div class="report-info">Contact: 0319-9922922</div>
-                    <div class="report-info">Main Bazar, Nathia Gali</div>
-                    <div class="separator"></div>
-                    <div class="report-title">DASHBOARD REPORT</div>
-                    <div class="separator"></div>
-                    <div class="report-info">Date: ${currentDate}</div>
-                    <div class="separator"></div>
-                </div>
-                
-                <div class="section-title">TODAY'S PERFORMANCE</div>
-                <table>
-                    <tr><td>Today's Sales</td><td>Rs.${formatNumber(todaySales)}</td></tr>
-                    <tr><td>Today's Expenses</td><td>Rs.${formatNumber(todayExpenses)}</td></tr>
-                    <tr><td>Today's Profit</td><td style="color: ${todayProfit >= 0 ? '#27ae60' : '#e74c3c'};">Rs.${formatNumber(todayProfit)}</td></tr>
-                    <tr><td>Hold Orders</td><td>${formatNumber(holdOrders.length)}</td></tr>
-                    <tr><td>Today's Discounts</td><td>Rs.${formatNumber(todayDiscounts)}</td></tr>
-                    <tr><td>Weekly Discounts</td><td>Rs.${formatNumber(weeklyDiscounts)}</td></tr>
-                    <tr><td>Today's Taxes</td><td>Rs.${formatNumber(todayTax)}</td></tr>
-                    <tr><td>Weekly Taxes</td><td>Rs.${formatNumber(weeklyTax)}</td></tr>
-                </table>
-                
-                <div class="separator"></div>
-                <div class="section-title">THIS WEEK</div>
-                <table>
-                    <tr><td>Sales</td><td>Rs.${formatNumber(weekSales)}</td></tr>
-                    <tr><td>Expenses</td><td>Rs.${formatNumber(weekExpenses)}</td></tr>
-                    <tr><td>Profit</td><td style="color: ${weekProfit >= 0 ? '#27ae60' : '#e74c3c'};">Rs.${formatNumber(weekProfit)}</td></tr>
-                </table>
-                
-                <div class="separator"></div>
-                <div class="section-title">THIS MONTH</div>
-                <table>
-                    <tr><td>Sales</td><td>Rs.${formatNumber(monthSales)}</td></tr>
-                    <tr><td>Expenses</td><td>Rs.${formatNumber(monthExpenses)}</td></tr>
-                    <tr><td>Profit</td><td style="color: ${monthProfit >= 0 ? '#27ae60' : '#e74c3c'};">Rs.${formatNumber(monthProfit)}</td></tr>
-                </table>
-                
-                <div class="separator"></div>
-                <div class="section-title">ALL TIME</div>
-                <table>
-                    <tr><td>Total Sales</td><td>Rs.${formatNumber(totalSales)}</td></tr>
-                    <tr><td>Total Expenses</td><td>Rs.${formatNumber(totalExpenses)}</td></tr>
-                    <tr><td>Total Profit</td><td style="color: ${totalProfit >= 0 ? '#27ae60' : '#e74c3c'};">Rs.${formatNumber(totalProfit)}</td></tr>
-                </table>
-                
-                <div class="summary-section">
-                    <div class="separator"></div>
-                    <div style="font-weight: 700; margin: 4px 0;">Total Orders: ${formatNumber(sales.length)}</div>
-                    <div style="margin: 4px 0;">Thank You!</div>
-                    <div style="margin-top: 10px;"></div>
-                </div>
-                <script>
-                    window.onload = function() {
-                        setTimeout(function() {
-                            window.print();
-                        }, 100);
-                    };
-                </script>
-            </body>
-        </html>
-    `);
-    printWindow.document.close();
 
     // Load Recent Sales
     if (recentSalesEl) {
@@ -10303,16 +11197,31 @@ window.unbookTable = (id) => {
 
 // Functions are already assigned to window above
 
-// POS Category Colors
-const categoryColors = ['#e74c3c', '#9b59b6', '#e91e63', '#8b4513', '#3498db', '#27ae60', '#c0392b', '#8e44ad', '#f39c12', '#16a085'];
-let colorIndex = 0;
-
-let selectedCategory = 'favorites';
+let selectedCategory = 'all';
 let menuItemQuantities = {}; // Track quantities for each menu item
 let draggedElement = null; // Track element being dragged
 window.searchQuery = ''; // Track search query
 let searchQuery = window.searchQuery; // Alias for backward compatibility
 window.positionManagementMode = false; // Track if position management mode is active
+
+let showCategories = localStorage.getItem('posShowCategories') !== 'false';
+
+function updateCategoriesToggleUI() {
+    const track = document.getElementById('categoriesSwitchTrack');
+    const container = document.getElementById('categoryButtons');
+    if (track) {
+        track.classList.toggle('active', showCategories);
+    }
+    if (container) {
+        container.style.display = showCategories ? 'flex' : 'none';
+    }
+}
+
+window.toggleCategoriesVisibility = function toggleCategoriesVisibility() {
+    showCategories = !showCategories;
+    localStorage.setItem('posShowCategories', showCategories);
+    updateCategoriesToggleUI();
+};
 
 // Favorites Management
 window.addToFavorites = (itemId) => {
@@ -10353,76 +11262,55 @@ function loadCategories() {
     const categoryButtons = document.getElementById('categoryButtons');
     if (!categoryButtons) return;
 
-    const menuCategories = Storage.get('menuCategories');
+    updateCategoriesToggleUI();
+
+    const menuCategories = Storage.get('menuCategories') || [];
     const favorites = Storage.get('favorites') || [];
+    const menuItems = Storage.get('menuItems') || [];
     categoryButtons.innerHTML = '';
 
-    // Add "Favourites" button first (only if there are favorites)
-    const favoritesCount = favorites.length;
-    if (favoritesCount > 0) {
-        const favoritesBtn = document.createElement('button');
-        const isFavoritesActive = selectedCategory === 'favorites';
-        favoritesBtn.className = `category-btn ${isFavoritesActive ? 'active' : ''}`;
-        favoritesBtn.style.background = '#f39c12';
-        favoritesBtn.onclick = () => selectCategory('favorites');
-
-        favoritesBtn.innerHTML = `
-            <span class="category-btn-text">Favourites (${favoritesCount})</span>
-        `;
-        categoryButtons.appendChild(favoritesBtn);
-    } else if (selectedCategory === 'favorites') {
-        // If favorites was selected but is now empty, switch to 'all'
-        selectedCategory = 'all';
-    }
-
-    // Add "All" button
+    // 1. "All Items" Chip
     const allBtn = document.createElement('button');
     const isAllActive = selectedCategory === 'all';
     allBtn.className = `category-btn ${isAllActive ? 'active' : ''}`;
-    allBtn.style.background = '#4a90e2';
     allBtn.onclick = () => selectCategory('all');
-
-    const menuItems = Storage.get('menuItems');
-    const allCount = menuItems.length;
-
     allBtn.innerHTML = `
-        <span class="category-btn-text">All (${allCount})</span>
+        <span class="cat-name">All Items</span>
+        <span class="cat-badge">${menuItems.length}</span>
     `;
     categoryButtons.appendChild(allBtn);
 
-    // Add category buttons (only if they have items)
-    menuCategories.forEach((cat, index) => {
-        const menuItems = Storage.get('menuItems');
+    // 2. "Favourites" Chip
+    const favoritesCount = favorites.length;
+    const favoritesBtn = document.createElement('button');
+    const isFavoritesActive = selectedCategory === 'favorites';
+    favoritesBtn.className = `category-btn ${isFavoritesActive ? 'active' : ''}`;
+    favoritesBtn.onclick = () => selectCategory('favorites');
+    favoritesBtn.innerHTML = `
+        <span class="cat-name">Favourites</span>
+        <span class="cat-badge">${favoritesCount}</span>
+    `;
+    categoryButtons.appendChild(favoritesBtn);
+
+    // 3. Category Chips
+    menuCategories.forEach((cat) => {
         const count = menuItems.filter(item => {
-            // Ensure both are numbers for comparison
             const itemCategoryId = typeof item.categoryId === 'number' ? item.categoryId : parseInt(item.categoryId);
             const catId = typeof cat.id === 'number' ? cat.id : parseInt(cat.id);
             return itemCategoryId === catId;
         }).length;
 
-        // Skip empty categories
-        if (count === 0) {
-            // If this category was selected but is now empty, switch to 'all'
-            const catId = typeof cat.id === 'number' ? cat.id : parseInt(cat.id);
-            if ((typeof selectedCategory === 'number' && selectedCategory === catId) ||
-                (typeof selectedCategory === 'string' && parseInt(selectedCategory) === catId)) {
-                selectedCategory = 'all';
-            }
-            return;
-        }
-
-        const color = categoryColors[index % categoryColors.length];
         const catId = typeof cat.id === 'number' ? cat.id : parseInt(cat.id);
         const isActive = typeof selectedCategory === 'number'
             ? selectedCategory === catId
-            : selectedCategory === 'all' ? false : parseInt(selectedCategory) === catId;
+            : selectedCategory === 'all' || selectedCategory === 'favorites' ? false : parseInt(selectedCategory) === catId;
 
         const btn = document.createElement('button');
         btn.className = `category-btn ${isActive ? 'active' : ''}`;
-        btn.style.background = color;
         btn.onclick = () => selectCategory(catId);
         btn.innerHTML = `
-            <span class="category-btn-text">${cat.name} (${count})</span>
+            <span class="cat-name">${escapeHtml(cat.name || 'Category')}</span>
+            <span class="cat-badge">${count}</span>
         `;
         categoryButtons.appendChild(btn);
     });
@@ -10655,35 +11543,12 @@ window.loadMenuItems = function loadMenuItems() {
         });
     }, 500);
 
-    // Check if content overflows and conditionally enable scrolling
-    updateMenuItemsScrollability();
-}
-
-// Helper function to update menu items container scrollability
-function updateMenuItemsScrollability() {
-    const menuItemsContainer = document.querySelector('.menu-items-container');
-    if (menuItemsContainer) {
-        // Use requestAnimationFrame to ensure DOM is updated
-        requestAnimationFrame(() => {
-            const containerHeight = menuItemsContainer.clientHeight;
-            const contentHeight = menuItemsContainer.scrollHeight;
-
-            // Only enable scrolling if content actually overflows
-            if (contentHeight > containerHeight) {
-                menuItemsContainer.style.overflowY = 'auto';
-            } else {
-                menuItemsContainer.style.overflowY = 'hidden';
-            }
-        });
+    // Scroll to top when reloading items
+    const menuContainerEl = document.querySelector('.menu-items-container');
+    if (menuContainerEl) {
+        menuContainerEl.scrollTop = 0;
     }
 }
-
-// Add resize listener to update scrollability when window is resized
-window.addEventListener('resize', () => {
-    if (document.getElementById('pos')?.classList.contains('active')) {
-        updateMenuItemsScrollability();
-    }
-});
 
 function handleDragStart(e) {
     draggedElement = this;
@@ -10877,6 +11742,55 @@ window.setMenuQuantity = function (itemId, quantity) {
     }
 };
 
+function updateCardQuantityBadge(itemId) {
+    const menuGrid = document.getElementById('menuGrid');
+    if (!menuGrid) return;
+
+    if (itemId !== undefined && itemId !== null) {
+        const card = menuGrid.querySelector(`[data-item-id="${itemId}"]`);
+        if (card) {
+            const cartItem = cart.find(i => i.id === itemId);
+            const quantity = cartItem ? cartItem.quantity : (menuItemQuantities[itemId] || 0);
+
+            let counter = card.querySelector('.menu-item-quantity-counter');
+            if (quantity > 0) {
+                if (!counter) {
+                    counter = document.createElement('div');
+                    counter.className = 'menu-item-quantity-counter';
+                    card.appendChild(counter);
+                }
+                counter.textContent = `x${formatQuantity(quantity)}`;
+            } else {
+                if (counter) {
+                    counter.remove();
+                }
+            }
+        }
+    } else {
+        const cards = menuGrid.querySelectorAll('.menu-item-card');
+        cards.forEach(card => {
+            const id = parseInt(card.dataset.itemId) || card.dataset.itemId;
+            const cartItem = cart.find(i => i.id == id);
+            const quantity = cartItem ? cartItem.quantity : (menuItemQuantities[id] || 0);
+
+            let counter = card.querySelector('.menu-item-quantity-counter');
+            if (quantity > 0) {
+                if (!counter) {
+                    counter = document.createElement('div');
+                    counter.className = 'menu-item-quantity-counter';
+                    card.appendChild(counter);
+                }
+                counter.textContent = `x${formatQuantity(quantity)}`;
+            } else {
+                if (counter) {
+                    counter.remove();
+                }
+            }
+        });
+    }
+}
+window.updateCardQuantityBadge = updateCardQuantityBadge;
+
 function addToCart(itemIdOrItem) {
     const menuItems = Storage.get('menuItems');
     const item = typeof itemIdOrItem === 'number'
@@ -10897,13 +11811,13 @@ function addToCart(itemIdOrItem) {
         });
     }
     updateCart();
-    loadMenuItems();
+    updateCardQuantityBadge(item.id);
 }
 
 function removeFromCart(dishId) {
     cart = cart.filter(item => item.id !== dishId);
     updateCart();
-    loadMenuItems();
+    updateCardQuantityBadge(dishId);
 }
 
 // Function to set cart quantity directly from input
@@ -10919,6 +11833,7 @@ window.setCartQuantityDirect = function (itemId, quantity) {
     } else {
         cartItem.quantity = quantity;
         updateCart();
+        updateCardQuantityBadge(itemId);
     }
 };
 
@@ -10935,6 +11850,7 @@ window.setCartPriceDirect = function (itemId, totalSellPrice) {
             removeFromCart(itemId);
         } else {
             updateCart();
+            updateCardQuantityBadge(itemId);
         }
     }
 };
@@ -10947,7 +11863,7 @@ function updateQuantity(dishId, change) {
             removeFromCart(dishId);
         } else {
             updateCart();
-            loadMenuItems();
+            updateCardQuantityBadge(dishId);
         }
     }
 }
@@ -11009,6 +11925,7 @@ function updateCart() {
         if (cartTotal) cartTotal.textContent = 'Rs.0';
         // Reset discount when cart is empty
         currentDiscount = { type: null, value: 0 };
+        updateCardQuantityBadge();
         // Reset discount display
         if (orderSummary) {
             orderSummary.innerHTML = `
@@ -11051,11 +11968,27 @@ function updateCart() {
             </div>
             <div class="order-item-right">
                 <div class="order-item-actions">
-                    <button class="order-action-btn order-item-remove" onclick="removeFromCart(${item.id})">🗑️</button>
-                    <button class="order-action-btn order-item-subtract" onclick="updateQuantity(${item.id}, -1)">-</button>
+                    <button type="button" class="order-action-btn order-item-remove" title="Remove" onclick="removeFromCart(${item.id})">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
+                    </button>
+                    <button type="button" class="order-action-btn order-item-subtract" title="Decrease" onclick="updateQuantity(${item.id}, -1)">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </button>
                     <input type="number" class="order-item-qty-input" value="${item.quantity}" min="0" step="0.01" data-original-value="${item.quantity}" onchange="setCartQuantityDirect(${item.id}, parseFloat(this.value) || 0); this.setAttribute('data-original-value', this.value);" onblur="if(this.value === '' || parseFloat(this.value) <= 0) { this.value = this.getAttribute('data-original-value') || 1; setCartQuantityDirect(${item.id}, parseFloat(this.value) || 1); }" onclick="event.stopPropagation();">
                     <input type="number" class="order-item-price-input" value="${Math.round(itemTotal)}" min="0" step="1" onchange="setCartPriceDirect(${item.id}, this.value)" onclick="event.stopPropagation();">
-                    <button class="order-action-btn order-item-add" onclick="updateQuantity(${item.id}, 1)">+</button>
+                    <button type="button" class="order-action-btn order-item-add" title="Increase" onclick="updateQuantity(${item.id}, 1)">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </button>
                 </div>
             </div>
         `;
@@ -11136,10 +12069,11 @@ function updateCart() {
 }
 
 function clearCart() {
-    if (confirm('Clear all items from cart?')) {
+    if (!cart || cart.length === 0) return;
+    showCustomConfirm('Clear all items from cart?', () => {
         cart = [];
         updateCart();
-    }
+    }, null, { title: 'Clear Cart', confirmText: 'Clear All', type: 'warning' });
 }
 
 let selectedPaymentMethod = 'cash';
@@ -11257,37 +12191,14 @@ function holdOrder() {
     Storage.set('holdOrders', holdOrders);
 
     // Build Customer Receipt + KOT from the held order (so it prints even after cart clears)
-    let receipt = `Khyber Charsi Tikka Karahi & Restaurant\n`;
-    receipt += `Contact: 0319-9922922\n`;
-    receipt += `Main Bazar, Nathia Gali\n`;
-
-    receipt += `======================\n`;
-    receipt += `${t('Order No.')} ${displayOrderNumber}\n`;
-    receipt += `Customer: ${heldOrder.customerName || '-'}\n`;
-    if (heldOrder.tableNo) {
-        receipt += `Table No: ${heldOrder.tableNo}\n`;
-    }
-    receipt += `${t('Location')}: ${formatLocation(heldOrder.paymentMethod)}\n`;
-    receipt += `${t('Date')}: ${heldOrder.date} ${heldOrder.time}\n`;
-    const receiveTimeReceipt1 = calculateReceiveTime(heldOrder.time, heldOrder.date);
-    receipt += `Order Receive Time: ${receiveTimeReceipt1}\n`;
-    receipt += `--------------------------\n`;
-    receipt += `${t('ITEMS:')}\n`;
-    receipt += formatReceiptItems(heldOrder.items);
-    receipt += formatReceiptSummary(subtotal, discountAmount, tax, serviceCharges, total);
-    receipt += `======================\n`;
-    receipt += `Bank Al Habib: Muhammad Ihsan\n`;
-    receipt += `04210981000927019\n`;
-    receipt += `======================\n`;
-    receipt += `Thank You!\n`;
-    receipt += `\n\n\n`;
+    const receipt = generateFullReceiptHTML(heldOrder);
 
     // Build KOT as HTML instead of plain text
     const kotItemsTable = formatKOTItems(heldOrder.items);
     const receiveTime = calculateReceiveTime(heldOrder.time, heldOrder.date);
     const kotHTML = `
         <div style="text-align: center; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; width: 100%; line-height: 1.2;">
-            <div style="font-size: 20px; font-weight: 900; margin-bottom: 2px;">Khyber Charsi Tikka Karahi & Restaurant</div>
+            <div style="font-size: 20px; font-weight: 900; margin-bottom: 2px;">Hangout Lounge & Co.</div>
 
             <div style="font-size: 16px; font-weight: 900; margin: 3px 0;">====== KOT ======</div>
             <div style="font-size: 14px; margin-bottom: 2px;"><strong>${t('Order No.')} ${displayOrderNumber}</strong></div>
@@ -11296,7 +12207,7 @@ function holdOrder() {
             <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">${t('Date')}: ${heldOrder.date} ${heldOrder.time}</div>
             ${receiveTime ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Order Receive Time: ${receiveTime}</div>` : ''}
             ${heldOrder.tableNo ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Table No: ${escapeHtml(heldOrder.tableNo)}</div>` : ''}
-            ${heldOrder.waiter ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 5px;">Waiter: ${escapeHtml(heldOrder.waiter)}</div>` : '<div style="font-size: 12px; font-weight: 700; margin-bottom: 5px;"></div>'}
+            <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Waiter: ${heldOrder.waiter ? escapeHtml(heldOrder.waiter) : '-'}</div>
             <div style="border-top: 1px dashed #000; margin: 4px 0; padding-top: 4px; width: 100%;">
                 <div style="font-size: 12px; font-weight: 700; margin-bottom: 3px; text-align: center;">${t('ITEMS:')}</div>
                 <div style="width: 100%; display: block;">
@@ -11329,68 +12240,7 @@ function holdOrder() {
     }
 
     // Print KOT only (separate window)
-    const kotWindow = window.open('', '_blank');
-    if (kotWindow) {
-        kotWindow.document.write(`
-            <html>
-                <head>
-                    <title>KOT - ${displayOrderNumber}</title>
-                    <style>
-                        body {
-                            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                            padding: 5px;
-                            margin: 0;
-                            display: flex;
-                            flex-direction: column;
-                            justify-content: flex-start;
-                            align-items: center;
-                            min-height: auto;
-                        }
-                        .receipt-logo {
-                            max-width: 120px;
-                            max-height: 120px;
-                            width: auto;
-                            height: auto;
-                            margin-bottom: 5px;
-                            display: block;
-                            object-fit: contain;
-                        }
-                        @media print {
-                            body {
-                                padding: 2mm 0;
-                                min-height: auto;
-                                display: block;
-                            }
-                            .receipt-logo {
-                                max-width: 100px;
-                                max-height: 100px;
-                                margin-bottom: 4px;
-                            }
-                            @page {
-                                size: auto;
-                                margin: 2mm;
-                            }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div id="kotContent">${kotHTML}</div>
-                    <script>
-                        window.onload = function() {
-                            // Delay print to ensure preview renders first
-                            setTimeout(function() {
-                                window.print();
-                                setTimeout(function() {
-                                    window.close();
-                                }, 100);
-                            }, 100);
-                        }
-                    </script>
-                </body>
-            </html>
-        `);
-        kotWindow.document.close();
-    }
+    printKOTWindow(kotHTML, displayOrderNumber);
 }
 
 function showHoldOrderSuccessModal(orderId, heldOrderId, cartBackup, menuItemQuantitiesBackup) {
@@ -11508,11 +12358,11 @@ function loadHoldOrders() {
             <td>${customerName}</td>
             <td>${waiterName}</td>
             <td>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; max-width: 200px;">
-                    <button class="btn-edit" onclick="editHoldOrder('${order.id}')" style="font-family: 'Poppins', 'Inter', sans-serif; letter-spacing: 0.1px;">Edit</button>
-                    <button id="completeBtn_${order.id}" class="btn-edit" onclick="showCompleteConfirmation('${order.id}', this)" style="background: #4caf50; font-family: 'Poppins', 'Inter', sans-serif; letter-spacing: 0.1px;">Complete</button>
-                    <button class="btn-edit" onclick="printReceiptForOrder('${order.id}')" style="background: #ff9800; font-family: 'Poppins', 'Inter', sans-serif; letter-spacing: 0.1px;">Print</button>
-                    <button class="btn-delete" onclick="deleteHoldOrder('${order.id}', this)" style="font-family: 'Poppins', 'Inter', sans-serif; letter-spacing: 0.1px;">Delete</button>
+                <div class="table-actions-cell">
+                    <button class="btn-action btn-action-edit" onclick="editHoldOrder('${order.id}')" title="Edit Order">${ICONS.edit}</button>
+                    <button id="completeBtn_${order.id}" class="btn-action btn-action-complete" onclick="showCompleteConfirmation('${order.id}', this)" title="Complete Order">${ICONS.check}</button>
+                    <button class="btn-action btn-action-print" onclick="printReceiptForOrder('${order.id}')" title="Print Receipt">${ICONS.print}</button>
+                    <button class="btn-action btn-action-delete" onclick="deleteHoldOrder('${order.id}', this)" title="Delete Order">${ICONS.delete}</button>
                 </div>
             </td>
         `;
@@ -11526,20 +12376,20 @@ function showCompleteConfirmation(orderId, buttonElement) {
 
     // Create a container div to hold both buttons side by side
     const buttonsWrapper = document.createElement('div');
-    buttonsWrapper.style.cssText = 'display: flex; gap: 4px; align-items: center;';
+    buttonsWrapper.style.cssText = 'display: inline-flex; gap: 4px; align-items: center; vertical-align: middle;';
     buttonsWrapper.setAttribute('data-order-id', orderId);
 
     // Create tick and cross buttons
     const tickButton = document.createElement('button');
-    tickButton.className = 'btn-edit';
-    tickButton.style.cssText = 'background: #4caf50; font-family: "Poppins", "Inter", sans-serif; letter-spacing: 0.1px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 4px; cursor: pointer; color: white; font-size: 14px; font-weight: bold; border: none; min-width: 28px; flex-shrink: 0;';
-    tickButton.innerHTML = '✓';
+    tickButton.className = 'btn-action btn-action-complete';
+    tickButton.title = 'Confirm Complete Order';
+    tickButton.innerHTML = ICONS.check;
     tickButton.setAttribute('data-order-id', orderId);
 
     const crossButton = document.createElement('button');
-    crossButton.className = 'btn-delete';
-    crossButton.style.cssText = 'background: #f44336; font-family: "Poppins", "Inter", sans-serif; letter-spacing: 0.1px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 4px; cursor: pointer; color: white; font-size: 14px; font-weight: bold; border: none; min-width: 28px; flex-shrink: 0;';
-    crossButton.innerHTML = '✕';
+    crossButton.className = 'btn-action btn-action-cancel';
+    crossButton.title = 'Cancel';
+    crossButton.innerHTML = ICONS.cross;
     crossButton.setAttribute('data-order-id', orderId);
 
     // Add buttons to wrapper
@@ -11555,9 +12405,9 @@ function showCompleteConfirmation(orderId, buttonElement) {
         const container = buttonsWrapper.parentElement;
         const newCompleteBtn = document.createElement('button');
         newCompleteBtn.id = `completeBtn_${orderId}`;
-        newCompleteBtn.className = 'btn-edit';
-        newCompleteBtn.style.cssText = 'background: #4caf50; font-family: "Poppins", "Inter", sans-serif; letter-spacing: 0.1px;';
-        newCompleteBtn.textContent = 'Complete';
+        newCompleteBtn.className = 'btn-action btn-action-complete';
+        newCompleteBtn.title = 'Complete Order';
+        newCompleteBtn.innerHTML = ICONS.check;
         newCompleteBtn.onclick = () => showCompleteConfirmation(orderId, newCompleteBtn);
         // Replace buttons wrapper with Complete button
         container.replaceChild(newCompleteBtn, buttonsWrapper);
@@ -11568,7 +12418,10 @@ function showCompleteConfirmation(orderId, buttonElement) {
 }
 
 function markOrderSuccessful(orderId, skipConfirmation = false) {
-    if (!skipConfirmation && !confirm('Mark this order as successful and move to sales?')) {
+    if (!skipConfirmation) {
+        showCustomConfirm('Mark this order as successful and move to sales?', () => {
+            markOrderSuccessful(orderId, true);
+        }, null, { title: 'Complete Order', confirmText: 'Complete', type: 'info' });
         return false;
     }
 
@@ -11657,212 +12510,13 @@ function printReceiptForOrder(orderId) {
     const order = holdOrders.find(o => o.id === orderId);
 
     if (!order) {
-        alert('Order not found!');
+        showAppToast('Order not found!', 'error');
         return;
     }
 
-    // Just print the receipt without completing the order
     const displayOrderNumber = (order.orderNumber || extractOrderNumber(order.orderId || order.id) || '').toString().padStart(7, '0');
-
-    // Create receipt content
-    let receipt = `Khyber Charsi Tikka Karahi & Restaurant\n`;
-    receipt += `Contact: 0319-9922922\n`;
-    receipt += `Main Bazar, Nathia Gali\n`;
-    receipt += `======================\n`;
-    receipt += `${t('Order No.')} ${displayOrderNumber}\n`;
-    receipt += `Customer: ${order.customerName || '-'}\n`;
-    if (order.tableNo) {
-        receipt += `Table No: ${order.tableNo}\n`;
-    }
-    if (order.waiter) {
-        receipt += `Waiter: ${order.waiter}\n`;
-    }
-    receipt += `${t('Location')}: ${formatLocation(order.paymentMethod)}\n`;
-    const orderDate = order.date ? new Date(order.date) : (order.createdAt ? new Date(order.createdAt) : new Date());
-    const dateStr = formatDate(orderDate);
-    const timeStr = order.time || formatTime(orderDate);
-    receipt += `${t('Date')}: ${dateStr} ${timeStr}\n`;
-    const receiveTimeReceipt5 = calculateReceiveTime(timeStr, orderDate);
-    receipt += `Order Receive Time: ${receiveTimeReceipt5}\n`;
-    receipt += `--------------------------\n`;
-    receipt += `${t('ITEMS:')}\n`;
-    receipt += formatReceiptItems(order.items);
-
-    // Calculate discount amount
-    const discountAmount = getDiscountAmountFromOrder(order, order.subtotal || 0);
-
-    receipt += formatReceiptSummary(order.subtotal || 0, discountAmount, (order.tax || 0), (order.serviceCharges || 0), order.total);
-    receipt += `======================\n`;
-    receipt += `Bank Al Habib: Muhammad Ihsan\n`;
-    receipt += `04210981000927019\n`;
-    receipt += `======================\n`;
-    receipt += `Thank You!\n`;
-    receipt += `\n\n\n`;
-
-    // Escape receipt content for embedding in JavaScript string
-    const escapedReceipt = receipt
-        .replace(/\\/g, '\\\\')  // Escape backslashes first
-        .replace(/'/g, "\\'")    // Escape single quotes
-        .replace(/"/g, '\\"')    // Escape double quotes
-        .replace(/\n/g, '\\n')   // Escape newlines
-        .replace(/\r/g, '\\r')  // Escape carriage returns
-        .replace(/`/g, '\\`');   // Escape backticks
-
-    // Open print dialog - use same format as Sales receipt
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-        <html>
-            <head>
-                <title>Receipt - ${displayOrderNumber}</title>
-                <style>
-                    body {
-                        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                        padding: 10px;
-                        font-size: 13px;
-                        display: flex;
-                        flex-direction: column;
-                        justify-content: flex-start;
-                        align-items: center;
-                        min-height: auto;
-                        margin: 0;
-                    }
-                    .receipt-logo {
-                        max-width: 120px;
-                        max-height: 120px;
-                        width: auto;
-                        height: auto;
-                        margin: 0 auto 10px auto;
-                        display: block;
-                        object-fit: contain;
-                    }
-                    #receiptContent {
-                        text-align: center;
-                        white-space: pre-wrap;
-                        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                        font-weight: bold;
-                        font-size: 13px;
-                    }
-                    .order-id-line {
-                        font-size: 16px;
-                        font-weight: 700;
-                    }
-                    .restaurant-heading {
-                        font-size: 20px;
-                        font-weight: 900;
-                    }
-                    .items-list {
-                        font-size: 9px;
-                        font-family: 'Courier New', monospace;
-                    }
-                    @media print {
-                        * {
-                            margin: 0;
-                            padding: 0;
-                        }
-                        body {
-                            padding: 5mm 0;
-                            margin: 0;
-                            min-height: auto;
-                            display: block;
-                            height: auto;
-                        }
-                        .receipt-logo {
-                            max-width: 100px;
-                            max-height: 100px;
-                            margin: 0 auto 8px auto;
-                        }
-                        #receiptContent {
-                            page-break-inside: avoid;
-                            break-inside: avoid;
-                            margin: 0;
-                            padding: 0;
-                            line-height: 1.2;
-                            font-size: 13px;
-                        }
-                        #receiptContent table {
-                            page-break-inside: avoid;
-                            break-inside: avoid;
-                        }
-                        .order-id-line {
-                            font-size: 16px !important;
-                            font-weight: 700 !important;
-                        }
-                        @page {
-                            size: auto;
-                            margin: 5mm;
-                        }
-                    }
-                </style>
-            </head>
-            <body>
-
-                <div id="receiptContent" style="text-align: center; white-space: pre-wrap; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-weight: bold; font-size: 13px;"></div>
-                <script>
-                    window.onload = function() {
-                        const receiptDiv = document.getElementById('receiptContent');
-                        const receiptContent = '${escapedReceipt}';
-                        if (receiptDiv) {
-                            // Convert receipt string to HTML, handling tables properly
-                            // Split by newlines but preserve HTML tables
-                            const lines = receiptContent.split('\\n');
-                            let processedLines = [];
-                            
-                            for (let i = 0; i < lines.length; i++) {
-                                const line = lines[i];
-                                
-                                // Check if this line contains HTML table tags
-                                if (line.includes('<table') || line.includes('</table>') || line.includes('<tr') || line.includes('<td') || line.includes('<th') || line.includes('</tr>') || line.includes('</td>') || line.includes('</th>') || line.includes('<thead') || line.includes('</thead>') || line.includes('<tbody') || line.includes('</tbody>')) {
-                                    // This is part of a table, add as-is
-                                    processedLines.push(line);
-                                } else {
-                                    // Regular text line
-                                    if (line.trim() === 'Khyber Charsi Tikka Karahi & Restaurant' || line.includes('Khyber Charsi Tikka Karahi & Restaurant')) {
-                                        processedLines.push('<span class="restaurant-heading">' + line + '</span>');
-                                    } else if (line.includes('Order No.:') || line.includes('Order No.') || line.includes('Order ID:') || line.includes('Order ID') || line.includes('Order:')) {
-                                        processedLines.push('<span class="order-id-line">' + line + '</span>');
-                                    } else {
-                                        // Escape HTML entities for plain text lines
-                                        processedLines.push(line.replace(/</g, '&lt;').replace(/>/g, '&gt;'));
-                                    }
-                                }
-                            }
-                            
-                            // Join lines, but don't add <br> between table lines
-                            let html = '';
-                            for (let i = 0; i < processedLines.length; i++) {
-                                const line = processedLines[i];
-                                const isTableLine = line.includes('<table') || line.includes('</table>') || line.includes('<tr') || line.includes('<td') || line.includes('<th') || line.includes('</tr>') || line.includes('</td>') || line.includes('</th>') || line.includes('<thead') || line.includes('</thead>') || line.includes('<tbody') || line.includes('</tbody>');
-                                
-                                if (isTableLine) {
-                                    html += line;
-                                    // If this is a table closing tag and next line is not a table line, add <br>
-                                    if (line.includes('</table>') && i < processedLines.length - 1) {
-                                        const nextLine = processedLines[i + 1];
-                                        const nextIsTableLine = nextLine.includes('<table') || nextLine.includes('</table>') || nextLine.includes('<tr') || nextLine.includes('<td') || nextLine.includes('<th') || nextLine.includes('</tr>') || nextLine.includes('</td>') || nextLine.includes('</th>') || nextLine.includes('<thead') || nextLine.includes('</thead>') || nextLine.includes('<tbody') || nextLine.includes('</tbody>');
-                                        if (!nextIsTableLine) {
-                                            html += '<br>';
-                                        }
-                                    }
-                                } else {
-                                    html += line + (i < processedLines.length - 1 ? '<br>' : '');
-                                }
-                            }
-                            
-                            receiptDiv.innerHTML = html;
-                        }
-                        // Delay print to ensure preview renders first
-                        setTimeout(function() {
-                            window.print();
-                            setTimeout(function() {
-                                window.close();
-                            }, 100);
-                        }, 100);
-                    }
-                </script>
-            </body>
-        </html>
-    `);
-    printWindow.document.close();
+    const receiptHTML = generateFullReceiptHTML(order);
+    openReceiptPrintWindow(receiptHTML, `Receipt - #${displayOrderNumber}`);
 }
 
 function showCompleteOrderConfirmation() {
@@ -11953,7 +12607,10 @@ function completeOrder(skipConfirmation = false) {
     const total = discountedSubtotal + tax + serviceCharges;
 
     // Ask to complete order (only if not skipping confirmation)
-    if (!skipConfirmation && !confirm('Complete this order?\n\nThe order will be saved to sales.')) {
+    if (!skipConfirmation) {
+        showCustomConfirm('Complete this order?\n\nThe order will be saved to sales.', () => {
+            completeOrder(true);
+        }, null, { title: 'Complete Order', confirmText: 'Save Order', type: 'info' });
         return;
     }
 
@@ -12226,15 +12883,15 @@ function saveHoldOrderChanges() {
         newItemsForKOT.forEach((item, index) => {
             const singleItemTable = formatKOTItems([item]);
             const kotHTML = `
-                <div style="text-align: center; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; width: 100%; line-height: 1.2;">
-                    <div style="font-size: 20px; font-weight: 900; margin-bottom: 2px;">Khyber Charsi Tikka Karahi & Restaurant</div>
+                <div style="text-align: center; font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; width: 100%; line-height: 1.2;">
+                    <div style="font-size: 20px; font-weight: 900; margin-bottom: 2px;">Hangout Lounge & Co.</div>
                     <div style="font-size: 16px; font-weight: 900; margin: 3px 0;">====== KOT ======</div>
                     <div style="font-size: 14px; margin-bottom: 2px;"><strong>${t('Order No.')} ${displayOrderNumber}</strong></div>
                     <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Customer: ${customerName ? escapeHtml(customerName) : '-'}</div>
                     <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">${t('Location')}: ${formatLocation(paymentMethod)}</div>
                     <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">${t('Date')}: ${dateStr} ${timeStr}</div>
                     ${receiveTime ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Order Receive Time: ${receiveTime}</div>` : ''}
-                    ${selectedWaiter ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 5px;">Waiter: ${escapeHtml(selectedWaiter)}</div>` : '<div style="font-size: 12px; font-weight: 700; margin-bottom: 5px;"></div>'}
+                    <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Waiter: ${selectedWaiter ? escapeHtml(selectedWaiter) : '-'}</div>
                     <div style="border-top: 1px dashed #000; margin: 4px 0; padding-top: 4px; width: 100%;">
                         <div style="font-size: 12px; font-weight: 700; margin-bottom: 3px; text-align: center;">${t('ITEMS:')}</div>
                         <div style="width: 100%; display: block;">
@@ -12431,6 +13088,7 @@ function printReceipt() {
         paymentMethod: selectedPaymentMethod,
         waiter: selectedWaiter || null,
         tableNo: selectedTableNo || null,
+        customerName: getCustomerName() || null,
         date: new Date().toISOString()
     };
 
@@ -12441,42 +13099,27 @@ function printReceipt() {
     updateStockFromSale(newSale.items);
 
     const displayOrderNumber = orderNumber.toString().padStart(7, '0');
-
-    // Create receipt content
-    let receipt = `Khyber Charsi Tikka Karahi & Restaurant\n`;
-    receipt += `Contact: 0319-9922922\n`;
-    receipt += `Main Bazar, Nathia Gali\n`;
-    receipt += `======================\n`;
-    receipt += `${t('Order No.')} ${displayOrderNumber}\n`;
-    if (selectedTableNo) {
-        receipt += `Table No: ${selectedTableNo}\n`;
-    }
     const now = new Date();
-    receipt += `${t('Date')}: ${formatDate(now)} ${formatTime(now)}\n`;
-    const receiveTimeReceipt2 = calculateReceiveTime(formatTime(now), now);
-    receipt += `Order Receive Time: ${receiveTimeReceipt2}\n`;
-    receipt += `${t('Location')}: ${formatLocation(selectedPaymentMethod)}\n`;
-    receipt += `--------------------------\n`;
-    receipt += `${t('ITEMS:')}\n`;
-    receipt += formatReceiptItems(cart);
+    const customerName = getCustomerName();
 
-    receipt += formatReceiptSummary(subtotal, discountAmount, tax, serviceCharges, total);
-    receipt += `======================\n`;
+    // Create receipt content via standard generator
+    const receipt = generateFullReceiptHTML(newSale);
 
     // Create KOT (Kitchen Order Ticket) - same details, items without prices
     const kotItemsTable2 = formatKOTItems(cart);
     const receiveTime2 = calculateReceiveTime(formatTime(now), now);
     const kotHTML2 = `
         <div style="text-align: center; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; width: 100%; line-height: 1.2;">
-            <div style="font-size: 20px; font-weight: 900; margin-bottom: 2px;">Khyber Charsi Tikka Karahi & Restaurant</div>
+            <div style="font-size: 20px; font-weight: 900; margin-bottom: 2px;">Hangout Lounge & Co.</div>
 
             <div style="font-size: 16px; font-weight: 900; margin: 3px 0;">====== KOT ======</div>
             <div style="font-size: 14px; margin-bottom: 2px;"><strong>${t('Order No.')} ${displayOrderNumber}</strong></div>
+            <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Customer: ${customerName ? escapeHtml(customerName) : '-'}</div>
+            <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">${t('Location')}: ${formatLocation(selectedPaymentMethod)}</div>
             <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">${t('Date')}: ${formatDate(now)} ${formatTime(now)}</div>
             ${receiveTime2 ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Order Receive Time: ${receiveTime2}</div>` : ''}
-            <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">${t('Location')}: ${formatLocation(selectedPaymentMethod)}</div>
             ${selectedTableNo ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Table No: ${escapeHtml(selectedTableNo)}</div>` : ''}
-            ${selectedWaiter ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 5px;">Waiter: ${escapeHtml(selectedWaiter)}</div>` : '<div style="font-size: 12px; font-weight: 700; margin-bottom: 5px;"></div>'}
+            <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Waiter: ${selectedWaiter ? escapeHtml(selectedWaiter) : '-'}</div>
             <div style="border-top: 1px dashed #000; margin: 4px 0; padding-top: 4px; width: 100%;">
                 <div style="font-size: 12px; font-weight: 700; margin-bottom: 3px; text-align: center;">${t('ITEMS:')}</div>
                 <div style="width: 100%; display: block;">
@@ -12504,181 +13147,12 @@ function printReceipt() {
     }
 
     // Print customer receipt (separate window)
-    const receiptWindow = window.open('', '_blank');
-    if (receiptWindow) {
-        receiptWindow.document.write(`
-            <html>
-                <head>
-                    <title>Customer Receipt</title>
-                    <style>
-                        body {
-                            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                            padding: 10px;
-                            font-size: 13px;
-                            display: flex;
-                            flex-direction: column;
-                            justify-content: flex-start;
-                            align-items: center;
-                            min-height: auto;
-                            margin: 0;
-                        }
-                    .receipt-logo {
-                        max-width: 120px;
-                        max-height: 120px;
-                        width: auto;
-                        height: auto;
-                        margin: 0 auto 2px auto;
-                        display: block;
-                        object-fit: contain;
-                    }
-                    pre {
-                        white-space: pre-wrap;
-                        word-wrap: break-word;
-                        text-align: center;
-                        margin: 0;
-                        padding: 0;
-                        font-weight: bold;
-                        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                    }
-                    .order-id-line {
-                        font-size: 16px;
-                        font-weight: 700;
-                    }
-                    .restaurant-heading {
-                        font-size: 20px;
-                        font-weight: 900;
-                    }
-                    @media print {
-                        body {
-                            padding: 5mm 0;
-                            min-height: auto;
-                            display: block;
-                        }
-                        .receipt-logo {
-                            max-width: 100px;
-                            max-height: 100px;
-                            margin: 0 auto 2px auto;
-                        }
-                            pre {
-                                page-break-inside: avoid;
-                                break-inside: avoid;
-                                padding: 0;
-                            }
-                            .order-id-line {
-                                font-size: 16px !important;
-                                font-weight: 700 !important;
-                            }
-                            @page {
-                                size: auto;
-                                margin: 5mm;
-                            }
-                        }
-                    </style>
-                </head>
-                <body>
-
-                    <pre id="receiptContent">${receipt}</pre>
-                    <script>
-                        window.onload = function() {
-                            const pre = document.getElementById('receiptContent');
-                            if (pre) {
-                                const text = pre.textContent;
-                                const lines = text.split('\\n');
-                                
-                                // Make restaurant heading bigger
-                                const restaurantIndex = lines.findIndex(line => line.trim() === 'Khyber Charsi Tikka Karahi & Restaurant' || line.includes('Khyber Charsi Tikka Karahi & Restaurant'));
-                                if (restaurantIndex !== -1) {
-                                    lines[restaurantIndex] = '<span class="restaurant-heading">' + lines[restaurantIndex] + '</span>';
-                                }
-                                
-                                // Make Order ID line bolder and bigger
-                                const orderIdIndex = lines.findIndex(line => line.includes('Order No.:') || line.includes('Order No.') || line.includes('Order ID:') || line.includes('Order ID') || line.includes('Order:'));
-                                if (orderIdIndex !== -1) {
-                                    lines[orderIdIndex] = '<span class="order-id-line">' + lines[orderIdIndex] + '</span>';
-                                }
-                                
-                                pre.innerHTML = lines.join('\\n');
-                            }
-                            // Delay print to ensure preview renders first
-                            setTimeout(function() {
-                                window.print();
-                                setTimeout(function() {
-                                    window.close();
-                                }, 100);
-                            }, 100);
-                        }
-                    </script>
-                </body>
-            </html>
-        `);
-        receiptWindow.document.close();
-    }
+    openReceiptPrintWindow(receipt, `Customer Receipt - #${displayOrderNumber}`);
 
     // Print KOT (separate window, after a short delay)
     setTimeout(() => {
-        const kotWindow = window.open('', '_blank');
-        if (kotWindow) {
-            kotWindow.document.write(`
-                <html>
-                    <head>
-                        <title>KOT</title>
-                        <style>
-                            body {
-                                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                                padding: 10px;
-                                margin: 0;
-                                display: flex;
-                                flex-direction: column;
-                                justify-content: flex-start;
-                                align-items: center;
-                                min-height: auto;
-                            }
-                            .receipt-logo {
-                                max-width: 120px;
-                                max-height: 120px;
-                                width: auto;
-                                height: auto;
-                                margin-bottom: 10px;
-                                display: block;
-                                object-fit: contain;
-                            }
-                            @media print {
-                                body {
-                                    padding: 5mm 0;
-                                    min-height: auto;
-                                    display: block;
-                                }
-                                .receipt-logo {
-                                    max-width: 100px;
-                                    max-height: 100px;
-                                    margin-bottom: 8px;
-                                }
-                                @page {
-                                    size: auto;
-                                    margin: 5mm;
-                                }
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <div id="kotContent">${kotHTML2}</div>
-                        <script>
-                            window.onload = function() {
-                                // Delay print to ensure preview renders first
-                                setTimeout(function() {
-                                    window.print();
-                                    setTimeout(function() {
-                                        window.close();
-                                    }, 100);
-                                }, 100);
-                            }
-                        </script>
-                    </body>
-                </html>
-            `);
-            kotWindow.document.close();
-        }
-    }, 500);
+        printKOTWindow(kotHTML2, displayOrderNumber);
+    }, 800);
 }
 
 // Helper function to save order and generate receipt/KOT content
@@ -12751,38 +13225,15 @@ function saveOrderAndGenerateContent() {
     // Get customer name from input
     const customerName = getCustomerName();
 
-    // Create receipt content
-    let receipt = `Khyber Charsi Tikka Karahi & Restaurant\n`;
-    receipt += `Contact: 0319-9922922\n`;
-    receipt += `Main Bazar, Nathia Gali\n`;
-    receipt += `======================\n`;
-    receipt += `${t('Order No.')} ${displayOrderNumber}\n`;
-    receipt += `Customer: ${customerName || '-'}\n`;
-    if (selectedTableNo) {
-        receipt += `Table No: ${selectedTableNo}\n`;
-    }
-    receipt += `${t('Location')}: ${formatLocation(selectedPaymentMethod)}\n`;
-    receipt += `${t('Date')}: ${formatDate(now)} ${formatTime(now)}\n`;
-    const receiveTimeReceipt3 = calculateReceiveTime(formatTime(now), now);
-    receipt += `Order Receive Time: ${receiveTimeReceipt3}\n`;
-    receipt += `--------------------------\n`;
-    receipt += `${t('ITEMS:')}\n`;
-    receipt += formatReceiptItems(cart);
-
-    receipt += formatReceiptSummary(subtotal, discountAmount, tax, serviceCharges, total);
-    receipt += `======================\n`;
-    receipt += `Bank Al Habib: Muhammad Ihsan\n`;
-    receipt += `04210981000927019\n`;
-    receipt += `======================\n`;
-    receipt += `Thank You!\n`;
-    receipt += `\n\n\n`;
+    // Create receipt content via standard generator
+    const receipt = generateFullReceiptHTML(newSale);
 
     // Create KOT (Kitchen Order Ticket) - same details, items without prices
     const kotItemsTable3 = formatKOTItems(cart);
     const receiveTime3 = calculateReceiveTime(formatTime(now), now);
     const kotHTML3 = `
         <div style="text-align: center; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; width: 100%; line-height: 1.2;">
-            <div style="font-size: 20px; font-weight: 900; margin-bottom: 2px;">Khyber Charsi Tikka Karahi & Restaurant</div>
+            <div style="font-size: 20px; font-weight: 900; margin-bottom: 2px;">Hangout Lounge & Co.</div>
 
             <div style="font-size: 16px; font-weight: 900; margin: 3px 0;">====== KOT ======</div>
             <div style="font-size: 14px; margin-bottom: 2px;"><strong>${t('Order No.')} ${displayOrderNumber}</strong></div>
@@ -12791,7 +13242,7 @@ function saveOrderAndGenerateContent() {
             <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">${t('Date')}: ${formatDate(now)} ${formatTime(now)}</div>
             ${receiveTime3 ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Order Receive Time: ${receiveTime3}</div>` : ''}
             ${selectedTableNo ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Table No: ${escapeHtml(selectedTableNo)}</div>` : ''}
-            ${selectedWaiter ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 5px;">Waiter: ${escapeHtml(selectedWaiter)}</div>` : '<div style="font-size: 12px; font-weight: 700; margin-bottom: 5px;"></div>'}
+            <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Waiter: ${selectedWaiter ? escapeHtml(selectedWaiter) : '-'}</div>
             <div style="border-top: 1px dashed #000; margin: 4px 0; padding-top: 4px; width: 100%;">
                 <div style="font-size: 12px; font-weight: 700; margin-bottom: 3px; text-align: center;">${t('ITEMS:')}</div>
                 <div style="width: 100%; display: block;">
@@ -12833,176 +13284,144 @@ function saveOrderAndGenerateContent() {
 // Helper function to print KOT
 function printKOTWindow(kotHTML, displayOrderNumber) {
     const kotWindow = window.open('', '_blank');
-    if (kotWindow) {
-        kotWindow.document.open();
-        kotWindow.document.write(`
-            <html>
-                <head>
-                    <title>KOT - ${displayOrderNumber}</title>
-                    <style>
-                        body {
-                            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                            padding: 5px;
+    if (!kotWindow) return;
+
+    kotWindow.document.open();
+    kotWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>KOT - ${displayOrderNumber || ''}</title>
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+                <style>
+                    *, *::before, *::after {
+                        box-sizing: border-box;
+                        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+                    }
+                    body, div, span, p, h1, h2, h3, h4, table, th, td, tr, b, strong {
+                        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+                    }
+                    body {
+                        padding: 8px;
+                        font-size: 12px;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: flex-start;
+                        align-items: center;
+                        min-height: auto;
+                        margin: 0 auto;
+                        max-width: 80mm;
+                        background: #fff;
+                        color: #000;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                    .receipt-logo {
+                        max-width: 120px;
+                        max-height: 120px;
+                        width: auto;
+                        height: auto;
+                        margin-bottom: 5px;
+                        display: block;
+                        object-fit: contain;
+                    }
+                    @media print {
+                        * {
                             margin: 0;
-                            display: flex;
-                            flex-direction: column;
-                            justify-content: flex-start;
-                            align-items: center;
+                            padding: 0;
+                            box-sizing: border-box;
+                        }
+                        body {
+                            padding: 3mm 0;
+                            margin: 0;
                             min-height: auto;
+                            display: block;
+                            height: auto;
+                            max-width: 100%;
+                            width: 100%;
+                            background: #fff;
+                            color: #000;
+                            -webkit-print-color-adjust: exact;
+                            print-color-adjust: exact;
                         }
-                        @media print {
-                            body {
-                                padding: 2mm 0;
-                                min-height: auto;
-                                display: block;
-                            }
-                            @page {
-                                size: auto;
-                                margin: 2mm;
-                            }
+                        .receipt-logo {
+                            max-width: 100px;
+                            max-height: 100px;
+                            margin-bottom: 4px;
                         }
-                    </style>
-                </head>
-                <body>
-                    <div id="kotContent">${kotHTML}</div>
-                    <script>
-                        // More robust print trigger
-                        function startPrint() {
-                            // Ensure content is visible and rendered
-                            setTimeout(function() {
-                                window.print();
-                                setTimeout(function() {
-                                    window.close();
-                                }, 150);
-                            }, 350); // Increased delay for rendering
+                        @page {
+                            size: 80mm auto;
+                            margin: 3mm;
                         }
-                        
-                        // Try both onload and immediate if already loaded
-                        if (document.readyState === 'complete') {
-                            startPrint();
+                    }
+                </style>
+            </head>
+            <body>
+                <div id="kotContent" style="width: 100%;">${kotHTML}</div>
+                <script>
+                    var hasPrinted = false;
+                    function triggerPrint() {
+                        if (hasPrinted) return;
+                        hasPrinted = true;
+                        try {
+                            window.focus();
+                            window.print();
+                        } catch(e) {
+                            console.error(e);
+                        }
+                    }
+                    window.addEventListener('afterprint', function() {
+                        setTimeout(function() {
+                            try { window.close(); } catch(e) {}
+                        }, 150);
+                    });
+                    function schedulePrint() {
+                        if (document.fonts && document.fonts.ready) {
+                            document.fonts.ready.then(function() {
+                                if (window.requestAnimationFrame) {
+                                    window.requestAnimationFrame(function() {
+                                        window.requestAnimationFrame(function() {
+                                            setTimeout(triggerPrint, 250);
+                                        });
+                                    });
+                                } else {
+                                    setTimeout(triggerPrint, 250);
+                                }
+                            }).catch(function() {
+                                setTimeout(triggerPrint, 250);
+                            });
                         } else {
-                            window.onload = startPrint;
+                            if (window.requestAnimationFrame) {
+                                window.requestAnimationFrame(function() {
+                                    window.requestAnimationFrame(function() {
+                                        setTimeout(triggerPrint, 250);
+                                    });
+                                });
+                            } else {
+                                setTimeout(triggerPrint, 250);
+                            }
                         }
-                    </script>
-                </body>
-            </html>
-        `);
-        kotWindow.document.close();
-    }
+                    }
+                    if (document.readyState === 'complete') {
+                        schedulePrint();
+                    } else {
+                        window.addEventListener('load', schedulePrint, { once: true });
+                        setTimeout(schedulePrint, 500);
+                    }
+                </script>
+            </body>
+        </html>
+    `);
+    kotWindow.document.close();
 }
 
 // Helper function to print Order receipt
 function printOrderWindow(receipt, displayOrderNumber) {
-    const receiptWindow = window.open('', '_blank');
-    if (receiptWindow) {
-        const safeReceipt = escapeHtml(receipt);
-        receiptWindow.document.write(`
-            <html>
-                <head>
-                    <title>Customer Receipt - ${displayOrderNumber}</title>
-                    <style>
-                        body {
-                            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                            padding: 10px;
-                            font-size: 13px;
-                            display: flex;
-                            flex-direction: column;
-                            justify-content: flex-start;
-                            align-items: center;
-                            min-height: auto;
-                            margin: 0;
-                        }
-                        .receipt-logo {
-                            max-width: 120px;
-                            max-height: 120px;
-                            width: auto;
-                            height: auto;
-                            margin: 0 auto 0 auto;
-                            display: block;
-                            object-fit: contain;
-                        }
-                        pre {
-                            white-space: pre-wrap;
-                            word-wrap: break-word;
-                            text-align: center;
-                            margin: 0;
-                            padding: 0;
-                            font-weight: bold;
-                            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                        }
-                        .order-id-line {
-                            font-size: 16px;
-                            font-weight: 700;
-                        }
-                        .restaurant-heading {
-                            font-size: 20px;
-                            font-weight: 900;
-                        }
-                        @media print {
-                            body {
-                                padding: 5mm 0;
-                                min-height: auto;
-                                display: block;
-                            }
-                            .receipt-logo {
-                                max-width: 100px;
-                                max-height: 100px;
-                                margin: 0 auto 0 auto;
-                            }
-                            pre {
-                                page-break-inside: avoid;
-                                break-inside: avoid;
-                                padding: 0;
-                            }
-                            .order-id-line {
-                                font-size: 16px !important;
-                                font-weight: 700 !important;
-                            }
-                            @page {
-                                size: auto;
-                                margin: 5mm;
-                            }
-                        }
-                    </style>
-                </head>
-                <body>
-
-                    <pre id="receiptContent">${safeReceipt}</pre>
-                    <script>
-                        window.onload = function() {
-                            const pre = document.getElementById('receiptContent');
-                            if (pre) {
-                                const text = pre.textContent;
-                                const lines = text.split('\\n');
-                                
-                                // Make restaurant heading bigger
-                                const restaurantIndex = lines.findIndex(line => line.trim() === 'Khyber Charsi Tikka Karahi & Restaurant' || line.includes('Khyber Charsi Tikka Karahi & Restaurant'));
-                                if (restaurantIndex !== -1) {
-                                    lines[restaurantIndex] = '<span class="restaurant-heading">' + lines[restaurantIndex] + '</span>';
-                                }
-                                
-                                // Make Order ID line bolder and bigger
-                                const orderIdIndex = lines.findIndex(line => line.includes('Order No.:') || line.includes('Order No.') || line.includes('Order ID:') || line.includes('Order ID') || line.includes('Order:'));
-                                if (orderIdIndex !== -1) {
-                                    lines[orderIdIndex] = '<span class="order-id-line">' + lines[orderIdIndex] + '</span>';
-                                }
-                                
-                                pre.innerHTML = lines.join('\\n');
-                            }
-                            // Delay print to ensure preview renders first
-                            setTimeout(function() {
-                                window.print();
-                                setTimeout(function() {
-                                    window.close();
-                                }, 100);
-                            }, 100);
-                        }
-                    </script>
-                </body>
-            </html>
-        `);
-        receiptWindow.document.close();
-    }
+    if (!receipt) return;
+    openReceiptPrintWindow(receipt, `Customer Receipt - #${displayOrderNumber}`);
 }
 
 // Print only KOT
@@ -13078,37 +13497,14 @@ function holdOrderAndGenerateContent() {
     const customerName = getCustomerName();
 
     // Create receipt content
-    let receipt = `Khyber Charsi Tikka Karahi & Restaurant\n`;
-    receipt += `Contact: 0319-9922922\n`;
-    receipt += `Main Bazar, Nathia Gali\n`;
-    receipt += `======================\n`;
-    receipt += `${t('Order No.')} ${displayOrderNumber}\n`;
-    receipt += `Customer: ${customerName || '-'}\n`;
-    if (selectedTableNo) {
-        receipt += `Table No: ${selectedTableNo}\n`;
-    }
-    receipt += `${t('Date')}: ${heldOrder.date} ${heldOrder.time}\n`;
-    const receiveTimeReceipt4 = calculateReceiveTime(heldOrder.time, heldOrder.date);
-    receipt += `Order Receive Time: ${receiveTimeReceipt4}\n`;
-    receipt += `${t('Location')}: ${formatLocation(selectedPaymentMethod)}\n`;
-    receipt += `--------------------------\n`;
-    receipt += `${t('ITEMS:')}\n`;
-    receipt += formatReceiptItems(cart);
-
-    receipt += formatReceiptSummary(subtotal, discountAmount, tax, serviceCharges, total);
-    receipt += `======================\n`;
-    receipt += `Bank Al Habib: Muhammad Ihsan\n`;
-    receipt += `04210981000927019\n`;
-    receipt += `======================\n`;
-    receipt += `Thank You!\n`;
-    receipt += `\n\n\n`;
+    const receipt = generateFullReceiptHTML(heldOrder);
 
     // Create KOT (Kitchen Order Ticket) - same details, items without prices
     const kotItemsTable4 = formatKOTItems(cart);
     const receiveTime4 = calculateReceiveTime(heldOrder.time, heldOrder.date);
     const kotHTML4 = `
-        <div style="text-align: center; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; width: 100%; line-height: 1.2;">
-            <div style="font-size: 20px; font-weight: 900; margin-bottom: 2px;">Khyber Charsi Tikka Karahi & Restaurant</div>
+        <div style="text-align: center; font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; width: 100%; line-height: 1.2;">
+            <div style="font-size: 20px; font-weight: 900; margin-bottom: 2px;">Hangout Lounge & Co.</div>
 
             <div style="font-size: 16px; font-weight: 900; margin: 3px 0;">====== KOT ======</div>
             <div style="font-size: 14px; margin-bottom: 2px;"><strong>${t('Order No.')} ${displayOrderNumber}</strong></div>
@@ -13117,7 +13513,7 @@ function holdOrderAndGenerateContent() {
             <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">${t('Date')}: ${heldOrder.date} ${heldOrder.time}</div>
             ${receiveTime4 ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Order Receive Time: ${receiveTime4}</div>` : ''}
             ${selectedTableNo ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Table No: ${escapeHtml(selectedTableNo)}</div>` : ''}
-            ${heldOrder.waiter ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 5px;">Waiter: ${escapeHtml(heldOrder.waiter)}</div>` : '<div style="font-size: 12px; font-weight: 700; margin-bottom: 5px;"></div>'}
+            <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Waiter: ${heldOrder.waiter ? escapeHtml(heldOrder.waiter) : (selectedWaiter ? escapeHtml(selectedWaiter) : '-')}</div>
             <div style="border-top: 1px dashed #000; margin: 4px 0; padding-top: 4px; width: 100%;">
                 <div style="font-size: 12px; font-weight: 700; margin-bottom: 3px; text-align: center;">${t('ITEMS:')}</div>
                 <div style="width: 100%; display: block;">
@@ -13171,16 +13567,17 @@ window.printKOT = function () {
     }
 };
 
+// Print separate KOTs for each item in cart
 window.printSeparateKOTs = function () {
     if (cart.length === 0) {
-        const kotsBtn = document.getElementById('kotsBtn');
-        if (kotsBtn) {
-            showButtonMessage(kotsBtn, 'Cart is empty!');
+        const separateKOTsBtn = document.getElementById('separateKOTsBtn') || document.getElementById('kotsBtn');
+        if (separateKOTsBtn) {
+            showButtonMessage(separateKOTsBtn, 'Cart is empty!');
         }
         return;
     }
 
-    // Capture cart and necessary info before it's cleared by holdOrderAndGenerateContent
+    // Capture cart items before clearing
     const cartCopy = cart.map(item => ({ ...item }));
     const customerName = getCustomerName();
     const selectedWaiterElement = document.getElementById('selectedWaiter');
@@ -13206,8 +13603,8 @@ window.printSeparateKOTs = function () {
             // For each item, create a one-item KOT HTML
             const singleItemTable = formatKOTItems([item]);
             const kotHTML = `
-                <div style="text-align: center; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; width: 100%; line-height: 1.2;">
-                    <div style="font-size: 20px; font-weight: 900; margin-bottom: 2px;">Khyber Charsi Tikka Karahi & Restaurant</div>
+                <div style="text-align: center; font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; width: 100%; line-height: 1.2;">
+                    <div style="font-size: 20px; font-weight: 900; margin-bottom: 2px;">Hangout Lounge & Co.</div>
                     <div style="font-size: 16px; font-weight: 900; margin: 3px 0;">====== KOT ======</div>
                     <div style="font-size: 14px; margin-bottom: 2px;"><strong>${t('Order No.')} ${displayOrderNumber}</strong></div>
                     <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Customer: ${customerName ? escapeHtml(customerName) : '-'}</div>
@@ -13215,7 +13612,7 @@ window.printSeparateKOTs = function () {
                     <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">${t('Date')}: ${dateStr} ${timeStr}</div>
                     ${receiveTime ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Order Receive Time: ${receiveTime}</div>` : ''}
                     ${selectedTableNo ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Table No: ${escapeHtml(selectedTableNo)}</div>` : ''}
-                    ${selectedWaiter ? `<div style="font-size: 12px; font-weight: 700; margin-bottom: 5px;">Waiter: ${escapeHtml(selectedWaiter)}</div>` : '<div style="font-size: 12px; font-weight: 700; margin-bottom: 5px;"></div>'}
+                    <div style="font-size: 12px; font-weight: 700; margin-bottom: 2px;">Waiter: ${selectedWaiter ? escapeHtml(selectedWaiter) : '-'}</div>
                     <div style="border-top: 1px dashed #000; margin: 4px 0; padding-top: 4px; width: 100%;">
                         <div style="font-size: 12px; font-weight: 700; margin-bottom: 3px; text-align: center;">${t('ITEMS:')}</div>
                         <div style="width: 100%; display: block;">
@@ -13228,10 +13625,10 @@ window.printSeparateKOTs = function () {
                 </div>
             `;
 
-            // Print with a larger delay between each window to prevent overlapping/blank issues
+            // Stagger separate KOT windows to ensure reliable sequential printing
             setTimeout(() => {
                 printKOTWindow(kotHTML, displayOrderNumber);
-            }, index * 1200); // Increased to 1.2s for stability
+            }, index * 800);
         });
     }
 };
@@ -13321,36 +13718,9 @@ window.processCashOrder = function () {
     updateStockFromSale(newSale.items);
 
     const displayOrderNumber = orderNumber.toString().padStart(7, '0');
-    const now = new Date();
 
-    // Get customer name
-    const customerName = getCustomerName();
-
-    // Create receipt content
-    let receipt = `Khyber Charsi Tikka Karahi & Restaurant\n`;
-    receipt += `Contact: 0319-9922922\n`;
-    receipt += `Main Bazar, Nathia Gali\n`;
-    receipt += `======================\n`;
-    receipt += `${t('Order No.')} ${displayOrderNumber}\n`;
-    receipt += `Customer: ${customerName || '-'}\n`;
-    if (selectedTableNo) {
-        receipt += `Table No: ${selectedTableNo}\n`;
-    }
-    receipt += `${t('Location')}: ${formatLocation(selectedPaymentMethod)}\n`;
-    receipt += `${t('Date')}: ${formatDate(now)} ${formatTime(now)}\n`;
-    const receiveTimeReceipt = calculateReceiveTime(formatTime(now), now);
-    receipt += `Order Receive Time: ${receiveTimeReceipt}\n`;
-    receipt += `--------------------------\n`;
-    receipt += `${t('ITEMS:')}\n`;
-    receipt += formatReceiptItems(cart);
-
-    receipt += formatReceiptSummary(subtotal, discountAmount, tax, serviceCharges, total);
-    receipt += `======================\n`;
-    receipt += `Bank Al Habib: Muhammad Ihsan\n`;
-    receipt += `04210981000927019\n`;
-    receipt += `======================\n`;
-    receipt += `Thank You!\n`;
-    receipt += `\n\n\n`;
+    // Create customer receipt content
+    const receipt = generateFullReceiptHTML(newSale);
 
     // Print customer receipt
     printOrderWindow(receipt, displayOrderNumber);
@@ -13386,77 +13756,67 @@ window.printKOTAndOrder = function () {
 
     const content = holdOrderAndGenerateContent();
     if (content) {
-        // Print KOT first as requested
+        // Print 1 KOT receipt containing all items
         printKOTWindow(content.kot, content.displayOrderNumber);
 
-        // Print Order receipt after a short delay
+        // Print 1 Customer Order receipt after a delay
         setTimeout(() => {
             printOrderWindow(content.receipt, content.displayOrderNumber);
-        }, 500);
+        }, 800);
     }
 };
 
 function resetAllData() {
-    // Show confirmation dialog
-    if (!confirm('⚠️ WARNING: This will delete ALL data!\n\nThis includes:\n- All menu items and categories\n- All sales records\n- All employees and payouts\n- All expenses\n- All tables\n- All hold orders\n- All favorites\n\nThis action cannot be undone!\n\nAre you absolutely sure you want to reset all data?')) {
-        return;
-    }
+    showCustomConfirm('⚠️ WARNING: This will delete ALL data!\n\nThis includes:\n- All menu items and categories\n- All sales records\n- All employees and payouts\n- All expenses\n- All tables\n- All hold orders\n- All favorites\n\nThis action cannot be undone!\n\nAre you absolutely sure you want to reset all data?', () => {
+        showCustomConfirm('This is your last chance to cancel.\n\nClick "Permanently Delete" to wipe ALL data.', () => {
+            const keysToClear = [
+                'menuCategories',
+                'menuItems',
+                'menuItemOrder',
+                'favorites',
+                'holdOrders',
+                'sales',
+                'employees',
+                'expenseCategories',
+                'expenses',
+                'tables',
+                'dishes'
+            ];
 
-    // Show second confirmation
-    if (!confirm('This is your last chance to cancel.\n\nClick OK to permanently delete ALL data.')) {
-        return;
-    }
+            keysToClear.forEach(key => {
+                localStorage.removeItem(key);
+            });
 
-    // Clear all localStorage keys
-    const keysToClear = [
-        'menuCategories',
-        'menuItems',
-        'menuItemOrder',
-        'favorites',
-        'holdOrders',
-        'sales',
-        'employees',
-        'expenseCategories',
-        'expenses',
-        'tables',
-        'dishes' // Legacy key
-    ];
+            cart = [];
+            menuItemQuantities = {};
+            editingHoldOrderId = null;
+            selectedPaymentMethod = 'cash';
 
-    keysToClear.forEach(key => {
-        localStorage.removeItem(key);
-    });
+            loadCategories();
+            loadMenuItems();
+            updateCart();
+            loadMenuCategories();
+            loadMenuItemsList();
+            updateCategoryDropdowns();
+            loadSales();
+            loadEmployees();
+            loadExpenses();
+            loadStock();
+            loadTables();
+            loadHoldOrders();
+            loadDashboard();
 
-    // Clear cart and reset state
-    cart = [];
-    menuItemQuantities = {};
-    editingHoldOrderId = null;
-    selectedPaymentMethod = 'cash';
+            if (document.getElementById('dashboard')) {
+                initCharts();
+            }
 
-    // Reload all data
-    loadCategories();
-    loadMenuItems();
-    updateCart();
-    loadMenuCategories();
-    loadMenuItemsList();
-    updateCategoryDropdowns();
-    loadSales();
-    loadEmployees();
-    loadExpenses();
-    loadTables();
-    loadHoldOrders();
-    loadDashboard();
+            setTimeout(() => {
+                selectPaymentMethod('cash');
+            }, 100);
 
-    // Initialize charts when dashboard tab is active
-    if (document.getElementById('dashboard')) {
-        initCharts();
-    }
-
-    // Initialize payment method button styling
-    setTimeout(() => {
-        selectPaymentMethod('cash');
-    }, 100);
-
-    alert('All data has been reset successfully!');
+            showCustomAlert('All data has been reset successfully!');
+        }, null, { title: 'Final Warning', confirmText: 'Permanently Delete', type: 'danger' });
+    }, null, { title: 'Reset All Data', confirmText: 'Yes, Reset All', type: 'danger' });
 }
 
 function processPayment() {
@@ -13485,7 +13845,7 @@ function processPayment() {
     const serviceCharges = (selectedPaymentMethod === 'delivery' || selectedPaymentMethod === 'parcel') ? 0 : (discountedSubtotal * SERVICE_CHARGE_RATE);
     const total = discountedSubtotal + tax + serviceCharges;
 
-    if (confirm(`Place order for Rs.${formatNumber(total)}?`)) {
+    showCustomConfirm(`Place order for Rs.${formatNumber(total)}?`, () => {
         // Record sales as a single order
         const sales = Storage.get('sales');
         const orderNumber = getNextOrderNumber();
@@ -13537,13 +13897,253 @@ function processPayment() {
         resetWaiterSelection();
         resetTableSelection();
 
-
         // Refresh sales if on sales tab
         if (document.getElementById('sales')?.classList.contains('active')) {
             loadSales();
         }
+    }, null, { title: 'Place Order', confirmText: 'Place Order', type: 'info' });
+}
+
+// Official Menu Definition from Menu WMC (Hangout Lounge & Co.)
+const HANGOUT_WMC_MENU = [
+    {
+        category: "Parathas",
+        items: [
+            { name: "Plain Spiral Paratha", price: 60 },
+            { name: "Sweet Paratha", price: 70 },
+            { name: "Nutella Paratha", price: 160 },
+            { name: "Cheese Paratha", price: 160 },
+            { name: "Aalu Paratha", price: 110 },
+            { name: "Aalu Chicken Paratha", price: 160 },
+            { name: "Chicken Paratha", price: 200 }
+        ]
+    },
+    {
+        category: "Toasts",
+        items: [
+            { name: "Plain Toast (2 pcs)", price: 40 },
+            { name: "Milky Toast (2 pcs)", price: 50 },
+            { name: "French Toast (2 pcs)", price: 120 },
+            { name: "Toast + Jam (2 pcs)", price: 80 },
+            { name: "Toast + Butter (2 Pcs)", price: 100 },
+            { name: "Toast + Butter n Jam (2 pcs)", price: 120 }
+        ]
+    },
+    {
+        category: "Eggs",
+        items: [
+            { name: "Boiled Egg", price: 60 },
+            { name: "Omelet Plain", price: 80 },
+            { name: "Fry Egg (half/full)", price: 70 },
+            { name: "Mushroom Omelet", price: 130 },
+            { name: "Cheese Omelet", price: 130 },
+            { name: "Mushroom Cheese Omelet", price: 150 },
+            { name: "Scrambled Egg", price: 70 }
+        ]
+    },
+    {
+        category: "Teas & Coffees",
+        items: [
+            { name: "Tea Plain", price: 70 },
+            { name: "Cardamom Tea", price: 110 },
+            { name: "Cinnamon Tea", price: 110 },
+            { name: "Green Tea", price: 60 },
+            { name: "Cappuccino", price: 240 },
+            { name: "Latte", price: 240 },
+            { name: "Black Coffee / Tea", price: 200 },
+            { name: "Black Coffee / Tea (with milk)", price: 240 }
+        ]
+    },
+    {
+        category: "Fries",
+        items: [
+            { name: "Potato Spiral", price: 160 },
+            { name: "Plain Fries", price: 110 },
+            { name: "Garlic Mayo Fries", price: 150 },
+            { name: "Loaded Fries", price: 290 }
+        ]
+    },
+    {
+        category: "Sandwiches",
+        items: [
+            { name: "Chicken Spread Sandwich", price: 170 },
+            { name: "Egg Sandwich", price: 140 },
+            { name: "Chicken Sandwich", price: 200 },
+            { name: "Salsa Sandwich", price: 200 },
+            { name: "Nutella Sandwich", price: 200 }
+        ]
+    },
+    {
+        category: "Burgers",
+        items: [
+            { name: "Z Burger", price: 310 },
+            { name: "Petty Burger", price: 250 },
+            { name: "Shami Burger", price: 140 },
+            { name: "Anda Shami Burger", price: 160 }
+        ]
+    },
+    {
+        category: "Fried Munching",
+        items: [
+            { name: "Honey Wings (4 pcs)", price: 220 },
+            { name: "Spicy Wings", price: 200 },
+            { name: "Chicken Chunks", price: 330 },
+            { name: "Nuggets (6 pcs)", price: 200 },
+            { name: "Sliced Chicken", price: 240 },
+            { name: "Finger Fish (3 pcs)", price: 510 }
+        ]
+    },
+    {
+        category: "Desi Chatkhara",
+        items: [
+            { name: "Gol Gappay", price: 200 },
+            { name: "Samosa Chat", price: 150 },
+            { name: "Papri Chat", price: 150 },
+            { name: "Dahi Bhallay", price: 150 },
+            { name: "Samosa (veg)", price: 50 },
+            { name: "Samosa Chicken", price: 70 },
+            { name: "Chicken Veg Rolls", price: 60 }
+        ]
+    },
+    {
+        category: "Khaba",
+        items: [
+            { name: "Biryani", price: 220 },
+            { name: "Pullao", price: 220 },
+            { name: "Naan Chanay", price: 160 },
+            { name: "Daal", price: 150 },
+            { name: "Vegetable", price: 150 },
+            { name: "Shami Kebab (2 pcs)", price: 110 },
+            { name: "Cutlets (2 pcs)", price: 85 },
+            { name: "Seekh Kebab Handi", price: 740 },
+            { name: "Chicken Chow-mein", price: 250 },
+            { name: "Pasta White Sauce", price: 350 }
+        ]
+    },
+    {
+        category: "Salad Bar",
+        items: [
+            { name: "Fresh Salad", price: 100 },
+            { name: "Crunchy Peanut Salad", price: 150 },
+            { name: "Russian Salad", price: 200 },
+            { name: "Beets Salad", price: 150 },
+            { name: "Tortilla Salad", price: 180 },
+            { name: "All Green Cauli Power", price: 180 }
+        ]
+    },
+    {
+        category: "Cold Bar",
+        items: [
+            { name: "Shakes", price: 200 },
+            { name: "Chillers", price: 180 },
+            { name: "Fresh Juices", price: 180 },
+            { name: "Cold Coffee", price: 240 },
+            { name: "Juices (tetra pack)", price: 100 },
+            { name: "Cold Drinks (Pepsi/Coke/Murree Brewery/Gourmet)", price: 80 },
+            { name: "Lassi (sweet/saltish)", price: 120 }
+        ]
+    },
+    {
+        category: "Pizzas",
+        items: [
+            { name: "Special Pizza (Starting by Nov 15th, 2026)", price: 0 }
+        ]
+    }
+];
+
+function seedHangoutWmcMenu(forceReplace = false) {
+    let menuCategories = forceReplace ? [] : (Storage.get('menuCategories') || []);
+    let menuItems = forceReplace ? [] : (Storage.get('menuItems') || []);
+    let itemOrder = forceReplace ? {} : (Storage.get('menuItemOrder') || {});
+
+    const baseId = Date.now();
+
+    HANGOUT_WMC_MENU.forEach((catData, catIndex) => {
+        let category = menuCategories.find(c => (c.name || '').trim().toLowerCase() === catData.category.trim().toLowerCase());
+        if (!category) {
+            category = {
+                id: baseId + (catIndex * 1000) + 1,
+                name: catData.category
+            };
+            menuCategories.push(category);
+        }
+
+        const catKey = category.id.toString();
+        if (!itemOrder[catKey]) {
+            itemOrder[catKey] = [];
+        }
+
+        catData.items.forEach((itemData, itemIndex) => {
+            let existingItem = menuItems.find(i => 
+                (String(i.categoryId) === String(category.id)) &&
+                (i.name || '').trim().toLowerCase() === itemData.name.trim().toLowerCase()
+            );
+
+            if (!existingItem) {
+                const newItem = {
+                    id: baseId + (catIndex * 1000) + itemIndex + 10,
+                    categoryId: category.id,
+                    name: itemData.name,
+                    price: itemData.price,
+                    image: null
+                };
+                menuItems.push(newItem);
+                if (!itemOrder[catKey].includes(newItem.id)) {
+                    itemOrder[catKey].push(newItem.id);
+                }
+            } else if (forceReplace) {
+                existingItem.price = itemData.price;
+            }
+        });
+    });
+
+    Storage.set('menuCategories', menuCategories);
+    Storage.set('menuItems', menuItems);
+    Storage.set('menuItemOrder', itemOrder);
+    localStorage.setItem('hangout_menu_wmc_loaded', 'true');
+
+    // Automatically sync stock items
+    if (typeof syncAndGetStockItems === 'function') {
+        syncAndGetStockItems();
     }
 }
+
+window.promptReloadWmcMenu = function promptReloadWmcMenu() {
+    if (typeof showCustomConfirm === 'function') {
+        showCustomConfirm(
+            'Do you want to load the Hangout Cafe menu (Menu WMC)? This will populate all official categories and menu items.',
+            () => {
+                seedHangoutWmcMenu(false);
+                if (typeof loadMenuItemsList === 'function') loadMenuItemsList();
+                if (typeof loadMenuCategories === 'function') loadMenuCategories();
+                if (typeof updateCategoryDropdowns === 'function') updateCategoryDropdowns();
+                if (typeof loadCategories === 'function') loadCategories();
+                if (typeof loadMenuItems === 'function') loadMenuItems();
+                if (typeof showCustomAlert === 'function') {
+                    showCustomAlert('Hangout Cafe menu items and categories loaded successfully!', 'Success');
+                } else {
+                    alert('Hangout Cafe menu items and categories loaded successfully!');
+                }
+            },
+            null,
+            {
+                title: 'Load Hangout Cafe Menu',
+                confirmText: 'Load Menu',
+                type: 'info'
+            }
+        );
+    } else {
+        if (confirm('Load the Hangout Cafe menu (Menu WMC)?')) {
+            seedHangoutWmcMenu(false);
+            if (typeof loadMenuItemsList === 'function') loadMenuItemsList();
+            if (typeof loadMenuCategories === 'function') loadMenuCategories();
+            if (typeof updateCategoryDropdowns === 'function') updateCategoryDropdowns();
+            if (typeof loadCategories === 'function') loadCategories();
+            if (typeof loadMenuItems === 'function') loadMenuItems();
+            alert('Hangout Cafe menu items and categories loaded successfully!');
+        }
+    }
+};
 
 // Initialize menu structure
 function initializeMenuStructure() {
@@ -13581,34 +14181,14 @@ function initializeMenuStructure() {
         Storage.set('menuItems', menuItems);
     }
 
-    // Initialize with default Karahi category if no categories exist
-    if (menuCategories.length === 0) {
-        const karahiCategory = {
-            id: Date.now(),
-            name: 'Karahi'
-        };
-        menuCategories.push(karahiCategory);
+    // Check if menu is empty OR only has the old default Karahi category OR WMC menu hasn't been initialized
+    const isOnlyOldDefaultKarahi = menuCategories.length === 1 && 
+        (menuCategories[0].name || '').toLowerCase() === 'karahi' && 
+        menuItems.some(i => (i.name || '').toLowerCase().includes('karahi'));
 
-        const defaultItems = [
-            { name: 'Chicken Half Karahi', price: 800 },
-            { name: 'Chicken Full Karahi', price: 1500 },
-            { name: 'Beef Half Karahi', price: 900 },
-            { name: 'Beef Full Karahi', price: 1700 },
-            { name: 'Mutton Half Karahi', price: 1000 },
-            { name: 'Mutton Full Karahi', price: 1900 }
-        ];
-
-        defaultItems.forEach((item, index) => {
-            menuItems.push({
-                id: Date.now() + index + 1,
-                categoryId: karahiCategory.id,
-                name: item.name,
-                price: item.price
-            });
-        });
-
-        Storage.set('menuCategories', menuCategories);
-        Storage.set('menuItems', menuItems);
+    if (menuCategories.length === 0 || isOnlyOldDefaultKarahi || localStorage.getItem('hangout_menu_wmc_loaded') !== 'true') {
+        // Seed full Hangout Cafe menu from Menu WMC
+        seedHangoutWmcMenu(isOnlyOldDefaultKarahi || menuCategories.length === 0);
     }
 }
 
@@ -13698,6 +14278,9 @@ function handleGlobalModalOutsideClick(e) {
     const modal = getTopmostOpenModal();
     if (!modal) return;
 
+    // Do not close addMenuItemModal on outside clicks
+    if (modal.id === 'addMenuItemModal') return;
+
     // If click is inside modal-content, don't close
     const content = modal.querySelector('.modal-content');
     if (content && content.contains(e.target)) return;
@@ -13714,8 +14297,9 @@ function closeAllOpenModals() {
             return false;
         }
     });
-    // Close from topmost down
+    // Close from topmost down (exclude addMenuItemModal from auto-closing on window blur/visibility change)
     for (let i = open.length - 1; i >= 0; i--) {
+        if (open[i].id === 'addMenuItemModal') continue;
         closeModalById(open[i].id);
     }
 }
@@ -14100,56 +14684,9 @@ function setupMenuItemsSearch() {
 
 // Setup sales filters functionality
 function setupSalesFilters() {
-    const salesDateFilter = document.getElementById('salesDateFilter');
-    const salesMonthFilter = document.getElementById('salesMonthFilter');
     const salesPaymentFilter = document.getElementById('salesPaymentFilter');
     const salesSortFilter = document.getElementById('salesSortFilter');
-    const salesCustomDateRange = document.getElementById('salesCustomDateRange');
-    const salesMonthFilterContainer = document.getElementById('salesMonthFilterContainer');
-    const salesStartDate = document.getElementById('salesStartDate');
-    const salesEndDate = document.getElementById('salesEndDate');
 
-    if (salesDateFilter && !salesDateFilter.hasAttribute('data-filter-listener')) {
-        salesDateFilter.setAttribute('data-filter-listener', 'true');
-        salesDateFilter.addEventListener('change', (e) => {
-            const value = e.target.value;
-            if (salesCustomDateRange) {
-                salesCustomDateRange.style.display = value === 'custom' ? 'flex' : 'none';
-            }
-            if (salesMonthFilterContainer) {
-                salesMonthFilterContainer.style.display = value === 'specific-month' ? 'flex' : 'none';
-            }
-            loadSales();
-        });
-    }
-    if (salesMonthFilter && !salesMonthFilter.hasAttribute('data-filter-listener')) {
-        salesMonthFilter.setAttribute('data-filter-listener', 'true');
-        const now = new Date();
-        const yearMonth = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
-        salesMonthFilter.value = yearMonth;
-
-        // Initialize other month filters in the sales tab
-        const itemsSalesMonthFilter = document.getElementById('itemsSalesMonthFilter');
-        if (itemsSalesMonthFilter) itemsSalesMonthFilter.value = yearMonth;
-        const taxHistoryMonthFilter = document.getElementById('taxHistoryMonthFilter');
-        if (taxHistoryMonthFilter) taxHistoryMonthFilter.value = yearMonth;
-
-        salesMonthFilter.addEventListener('change', () => {
-            loadSales();
-        });
-    }
-    if (salesStartDate && !salesStartDate.hasAttribute('data-filter-listener')) {
-        salesStartDate.setAttribute('data-filter-listener', 'true');
-        salesStartDate.addEventListener('change', () => {
-            loadSales();
-        });
-    }
-    if (salesEndDate && !salesEndDate.hasAttribute('data-filter-listener')) {
-        salesEndDate.setAttribute('data-filter-listener', 'true');
-        salesEndDate.addEventListener('change', () => {
-            loadSales();
-        });
-    }
     if (salesPaymentFilter && !salesPaymentFilter.hasAttribute('data-filter-listener')) {
         salesPaymentFilter.setAttribute('data-filter-listener', 'true');
         salesPaymentFilter.addEventListener('change', () => {
@@ -14166,49 +14703,17 @@ function setupSalesFilters() {
 
 // Setup expenses filters functionality
 function setupExpensesFilters() {
-    const expenseDateFilter = document.getElementById('expenseDateFilter');
-    const expenseMonthFilter = document.getElementById('expenseMonthFilter');
     const expenseCategoryFilter = document.getElementById('expenseCategoryFilter');
     const expenseSearch = document.getElementById('expenseSearch');
     const expenseSortFilter = document.getElementById('expenseSortFilter');
-    const expenseStartDate = document.getElementById('expenseStartDate');
-    const expenseEndDate = document.getElementById('expenseEndDate');
-    const expenseCustomDateRange = document.getElementById('expenseCustomDateRange');
-    const expenseMonthFilterContainer = document.getElementById('expenseMonthFilterContainer');
 
-    if (expenseDateFilter && !expenseDateFilter.hasAttribute('data-filter-listener')) {
-        expenseDateFilter.setAttribute('data-filter-listener', 'true');
-        expenseDateFilter.addEventListener('change', (e) => {
-            const value = e.target.value;
-            if (expenseCustomDateRange) {
-                expenseCustomDateRange.style.display = value === 'custom' ? 'flex' : 'none';
-            }
-            if (expenseMonthFilterContainer) {
-                expenseMonthFilterContainer.style.display = value === 'specific-month' ? 'flex' : 'none';
-            }
-            loadExpenses();
-        });
-    }
-    if (expenseMonthFilter && !expenseMonthFilter.hasAttribute('data-filter-listener')) {
-        expenseMonthFilter.setAttribute('data-filter-listener', 'true');
-        const now = new Date();
-        const yearMonth = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
-        expenseMonthFilter.value = yearMonth;
-        expenseMonthFilter.addEventListener('change', () => {
-            loadExpenses();
-        });
-    }
-    if (expenseStartDate && !expenseStartDate.hasAttribute('data-filter-listener')) {
-        expenseStartDate.setAttribute('data-filter-listener', 'true');
-        expenseStartDate.addEventListener('change', () => loadExpenses());
-    }
-    if (expenseEndDate && !expenseEndDate.hasAttribute('data-filter-listener')) {
-        expenseEndDate.setAttribute('data-filter-listener', 'true');
-        expenseEndDate.addEventListener('change', () => loadExpenses());
-    }
     if (expenseCategoryFilter && !expenseCategoryFilter.hasAttribute('data-filter-listener')) {
         expenseCategoryFilter.setAttribute('data-filter-listener', 'true');
         expenseCategoryFilter.addEventListener('change', () => loadExpenses());
+    }
+    if (expenseSearch && !expenseSearch.hasAttribute('data-filter-listener')) {
+        expenseSearch.setAttribute('data-filter-listener', 'true');
+        expenseSearch.addEventListener('input', () => loadExpenses());
     }
     if (expenseSortFilter && !expenseSortFilter.hasAttribute('data-filter-listener')) {
         expenseSortFilter.setAttribute('data-filter-listener', 'true');
@@ -14216,32 +14721,94 @@ function setupExpensesFilters() {
     }
 }
 
+// Function to setup clear buttons (✕) for search input fields across the app
+window.setupSearchClearButtons = function setupSearchClearButtons() {
+    const searchInputIds = [
+        'menuSearch',
+        'menuItemSearch',
+        'itemsSalesSearch',
+        'employeeSearch',
+        'waiterSearch',
+        'expenseSearch',
+        'stockSearch',
+        'tableSearchFilter'
+    ];
+
+    searchInputIds.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+
+        let wrapper = input.parentElement;
+        if (!wrapper) return;
+
+        // Ensure wrapper has relative positioning for clear button alignment
+        const computedPos = window.getComputedStyle(wrapper).position;
+        if (computedPos === 'static') {
+            wrapper.style.position = 'relative';
+        }
+
+        // Adjust padding-right on input so typed text doesn't overlap clear button
+        input.style.paddingRight = '32px';
+
+        // Check if clear button element already exists
+        let clearBtn = wrapper.querySelector(`.search-clear-btn[data-for="${inputId}"]`);
+        if (!clearBtn) {
+            clearBtn = document.createElement('button');
+            clearBtn.type = 'button';
+            clearBtn.className = 'search-clear-btn';
+            clearBtn.setAttribute('data-for', inputId);
+            clearBtn.innerHTML = '✕';
+            clearBtn.title = 'Clear search';
+            clearBtn.style.display = 'none';
+            wrapper.appendChild(clearBtn);
+
+            clearBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                input.value = '';
+                if (inputId === 'menuSearch') {
+                    window.searchQuery = '';
+                    if (typeof searchQuery !== 'undefined') searchQuery = '';
+                }
+                clearBtn.style.display = 'none';
+                input.focus();
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+        }
+
+        const updateBtnVisibility = () => {
+            if (input.value && input.value.trim().length > 0) {
+                clearBtn.style.display = 'flex';
+            } else {
+                clearBtn.style.display = 'none';
+            }
+        };
+
+        if (!input.hasAttribute('data-clear-listener-added')) {
+            input.setAttribute('data-clear-listener-added', 'true');
+            input.addEventListener('input', updateBtnVisibility);
+            input.addEventListener('keyup', updateBtnVisibility);
+        }
+        updateBtnVisibility();
+    });
+};
+
 // Setup employees filters functionality
 function setupEmployeeFilters() {
     const employeeSearch = document.getElementById('employeeSearch');
-    const employeeDateFilter = document.getElementById('employeeDateFilter');
     const employeeMonthFilter = document.getElementById('employeeMonthFilter');
 
     if (employeeSearch && !employeeSearch.hasAttribute('data-filter-listener')) {
         employeeSearch.setAttribute('data-filter-listener', 'true');
         employeeSearch.addEventListener('input', () => loadEmployees());
     }
-    if (employeeDateFilter && !employeeDateFilter.hasAttribute('data-filter-listener')) {
-        employeeDateFilter.setAttribute('data-filter-listener', 'true');
-        employeeDateFilter.addEventListener('change', (e) => {
-            const value = e.target.value;
-            const monthRange = document.getElementById('employeeMonthFilterContainer');
-            if (monthRange) {
-                monthRange.style.display = value === 'specific-month' ? 'flex' : 'none';
-            }
-            loadEmployees();
-        });
-    }
     if (employeeMonthFilter && !employeeMonthFilter.hasAttribute('data-filter-listener')) {
         employeeMonthFilter.setAttribute('data-filter-listener', 'true');
         const now = new Date();
         const yearMonth = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
-        employeeMonthFilter.value = yearMonth;
+        if (!employeeMonthFilter.value) {
+            employeeMonthFilter.value = yearMonth;
+        }
         employeeMonthFilter.addEventListener('change', () => loadEmployees());
     }
 }
@@ -14264,10 +14831,12 @@ window.resetExpenseFilter = () => {
 };
 
 window.resetEmployeeFilter = () => {
-    const filterSelect = document.getElementById('employeeDateFilter');
-    if (filterSelect) {
-        filterSelect.value = 'all';
-        filterSelect.dispatchEvent(new Event('change'));
+    const monthFilter = document.getElementById('employeeMonthFilter');
+    if (monthFilter) {
+        const now = new Date();
+        const yearMonth = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+        monthFilter.value = yearMonth;
+        loadEmployees();
     }
 };
 
@@ -14298,10 +14867,17 @@ function setLogoPath() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+onDOMReady(() => {
     setLogoPath();
     // Initialize menu structure
     initializeMenuStructure();
+
+    // Initialize unified dynamic time filters
+    if (typeof handleSalesDateFilterChange === 'function') handleSalesDateFilterChange();
+    if (typeof handleTaxHistoryFilterChange === 'function') handleTaxHistoryFilterChange();
+    if (typeof handleItemsSalesDateFilterChange === 'function') handleItemsSalesDateFilterChange();
+    if (typeof handleExpenseDateFilterChange === 'function') handleExpenseDateFilterChange();
+    if (typeof handleTableTimeFilterTypeChange === 'function') handleTableTimeFilterTypeChange();
 
     // Seed 50 dummy tables data if tables list is less than 40
     let existingTables = Storage.get('tables') || [];
@@ -14333,9 +14909,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (activeTab === 'pos') {
         if (orderSectionWrapper) orderSectionWrapper.classList.add('show');
         if (mainContent) mainContent.classList.add('has-order-section');
-        // Load waiters dropdown for POS
+        // Load initial POS data
+        loadCategories();
+        loadMenuItems();
         loadWaitersDropdown();
         loadTablesDropdown();
+        updateCart();
+        updateOrderDate();
     } else {
         if (orderSectionWrapper) orderSectionWrapper.classList.remove('show');
         if (mainContent) mainContent.classList.remove('has-order-section');
@@ -14430,16 +15010,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Setup search functionality for Menu Items list - Real-time search
     setupMenuItemsSearch();
 
-    // Close modal when clicking outside
-    const modal = document.getElementById('saleModal');
-    if (modal) {
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                closeSaleModal();
-            }
-        });
-    }
+    // Setup clear buttons (✕) for all search inputs
+    setupSearchClearButtons();
 
+    // Close modal when clicking outside
     // Employee filters
     const employeeSearch = document.getElementById('employeeSearch');
 
@@ -14457,25 +15031,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (expenseCategoryFilter) {
         expenseCategoryFilter.addEventListener('change', loadExpenses);
-    }
-    if (expenseDateFilter) {
-        expenseDateFilter.addEventListener('change', (e) => {
-            const value = e.target.value;
-            if (expenseCustomDateRange) {
-                if (value === 'custom') {
-                    expenseCustomDateRange.style.display = 'flex';
-                } else {
-                    expenseCustomDateRange.style.display = 'none';
-                }
-            }
-            loadExpenses();
-        });
-    }
-    if (expenseStartDate) {
-        expenseStartDate.addEventListener('change', loadExpenses);
-    }
-    if (expenseEndDate) {
-        expenseEndDate.addEventListener('change', loadExpenses);
     }
     if (expenseSortFilter) {
         expenseSortFilter.addEventListener('change', loadExpenses);
@@ -14499,36 +15054,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadExpenseCategories();
     updateExpenseCategoryDropdown();
 
-    // Close expense modal when clicking outside
-    const expenseModal = document.getElementById('addExpenseModal');
-    if (expenseModal) {
-        expenseModal.addEventListener('click', (e) => {
-            if (e.target === expenseModal) {
-                closeAddExpenseModal();
-            }
-        });
-    }
-
-    // Close expense category modal when clicking outside
-    const expenseCategoryModal = document.getElementById('expenseCategoryModal');
-    if (expenseCategoryModal) {
-        expenseCategoryModal.addEventListener('click', (e) => {
-            if (e.target === expenseCategoryModal) {
-                closeExpenseCategoryModal();
-            }
-        });
-    }
-
-    // Close add menu item modal when clicking outside
-    const addMenuItemModal = document.getElementById('addMenuItemModal');
-    if (addMenuItemModal) {
-        addMenuItemModal.addEventListener('click', (e) => {
-            if (e.target === addMenuItemModal) {
-                closeAddMenuItemModal();
-            }
-        });
-    }
-
     // Add event listeners to form fields to check "Add Next Item" button state
     const addMenuItemCategory = document.getElementById('addMenuItemCategory');
     const addMenuItemName = document.getElementById('addMenuItemName');
@@ -14545,75 +15070,38 @@ document.addEventListener('DOMContentLoaded', () => {
         addMenuItemPrice.addEventListener('input', checkAddNextItemButton);
     }
 
-    // Close add category modal when clicking outside
-    const addCategoryModal = document.getElementById('addCategoryModal');
-    if (addCategoryModal) {
-        addCategoryModal.addEventListener('click', (e) => {
-            if (e.target === addCategoryModal) {
-                closeAddCategoryModal();
-            }
-        });
-    }
+    // Global handler: Pressing ESC closes the currently open modal/window
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' || e.keyCode === 27) {
+            const allModals = Array.from(document.querySelectorAll('.modal, #customMessageBoxModal'));
+            for (let i = allModals.length - 1; i >= 0; i--) {
+                const m = allModals[i];
+                const isVisible = m.style.display !== 'none' && m.style.display !== '' && window.getComputedStyle(m).display !== 'none';
+                if (isVisible) {
+                    e.preventDefault();
+                    e.stopPropagation();
 
-    // Close add table modal when clicking outside
-    const addTableModal = document.getElementById('addTableModal');
-    if (addTableModal) {
-        addTableModal.addEventListener('click', (e) => {
-            if (e.target === addTableModal) {
-                closeAddTableModal();
-            }
-        });
-    }
+                    // If it's custom message box
+                    if (m.id === 'customMessageBoxModal') {
+                        const cancelBtn = m.querySelector('#customMsgBoxCancelBtn') || m.querySelector('#customMsgBoxOkBtn');
+                        if (cancelBtn) {
+                            cancelBtn.click();
+                            return;
+                        }
+                    }
 
-    // Close book table modal when clicking outside
-    const bookTableModal = document.getElementById('bookTableModal');
-    if (bookTableModal) {
-        bookTableModal.addEventListener('click', (e) => {
-            if (e.target === bookTableModal) {
-                closeBookTableModal();
+                    // Look for close button or inline close handler
+                    const closeBtn = m.querySelector('.modal-close, button.close, [onclick*="close"], [onclick*="Close"]');
+                    if (closeBtn) {
+                        closeBtn.click();
+                    } else {
+                        m.style.display = 'none';
+                    }
+                    return;
+                }
             }
-        });
-    }
-
-    // Close add employee modal when clicking outside
-    const addEmployeeModal = document.getElementById('addEmployeeModal');
-    if (addEmployeeModal) {
-        addEmployeeModal.addEventListener('click', (e) => {
-            if (e.target === addEmployeeModal) {
-                closeAddEmployeeModal();
-            }
-        });
-    }
-
-    // Close add payout modal when clicking outside
-    const addPayoutModal = document.getElementById('addPayoutModal');
-    if (addPayoutModal) {
-        addPayoutModal.addEventListener('click', (e) => {
-            if (e.target === addPayoutModal) {
-                closeAddPayoutModal();
-            }
-        });
-    }
-
-    // Close attendance modal when clicking outside
-    const attendanceModal = document.getElementById('attendanceModal');
-    if (attendanceModal) {
-        attendanceModal.addEventListener('click', (e) => {
-            if (e.target === attendanceModal) {
-                closeAttendanceModal();
-            }
-        });
-    }
-
-    // Close discount modal when clicking outside
-    const discountModal = document.getElementById('discountModal');
-    if (discountModal) {
-        discountModal.addEventListener('click', (e) => {
-            if (e.target === discountModal) {
-                discountModal.style.display = 'none';
-            }
-        });
-    }
+        }
+    });
 
     // Global handler is installed above (once). Keep DOMContentLoaded clean.
 
@@ -14743,10 +15231,45 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+// Safe Date Parser that handles YYYY-MM-DD, ISO-8601, and timestamps without timezone shifting
+function parseDateSafe(dateVal) {
+    if (!dateVal) return null;
+    if (dateVal instanceof Date) {
+        return isNaN(dateVal.getTime()) ? null : dateVal;
+    }
+    if (typeof dateVal === 'string') {
+        const trimmed = dateVal.trim();
+        // Match pure YYYY-MM-DD
+        if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+            const parts = trimmed.split('-').map(Number);
+            return new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
+        }
+        // Match ISO date string with date part
+        if (trimmed.includes('T')) {
+            const d = new Date(trimmed);
+            if (!isNaN(d.getTime())) return d;
+        }
+        const d = new Date(trimmed);
+        if (!isNaN(d.getTime())) return d;
+    }
+    const d = new Date(dateVal);
+    return isNaN(d.getTime()) ? null : d;
+}
+
+// Master helper function for report print windows with anti-blank preview safeguards
+function openReportPrintWindow(reportHTML, title) {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.open();
+    printWindow.document.write(reportHTML);
+    printWindow.document.close();
+}
+
 // Reports Functions
-function generateReportHTML(title, filterText, startDate, endDate, transactionList = null, dailyBreakdown = null, breakdownTitle = 'Daily Breakdown', breakdownLabel = 'Date') {
+function generateReportHTML(title, filterText, startDate, endDate, transactionList = null, dailyBreakdown = null, breakdownTitle = 'Daily Breakdown', breakdownLabel = 'Date', isViewOnly = false) {
     const sales = Storage.get('sales') || [];
-    const expenses = Storage.get('expenses') || [];
+    const expenses = getCombinedExpenses();
 
     // Group sales logic (handling legacy data)
     const orderMap = {};
@@ -14763,7 +15286,7 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
 
     const groupedByTime = {};
     ungroupedSales.forEach(sale => {
-        const saleDate = new Date(sale.date);
+        const saleDate = parseDateSafe(sale.date || sale.timestamp) || new Date();
         const timeKey = Math.floor(saleDate.getTime() / 5000) * 5000;
         const groupKey = `${timeKey}-${(sale.paymentMethod || 'cash')}`;
 
@@ -14794,8 +15317,8 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
     // Filter by Date
     orders = orders.filter(order => {
         if (!order.date) return false;
-        const d = new Date(order.date);
-        return d >= startDate && d <= endDate;
+        const d = parseDateSafe(order.date);
+        return d && d >= startDate && d <= endDate;
     });
 
     // Calculate Metrics
@@ -14834,15 +15357,49 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
         }
     });
 
-    // Expenses
+    // Expenses calculation (including payouts and raw expenses)
     const periodExpenses = expenses.filter(e => {
-        if (!e.date) return false;
-        const d = new Date(e.date);
+        const d = parseDateSafe(e.date || e.createdAt);
+        if (!d) return false;
         return d >= startDate && d <= endDate;
     });
     const cashOut = periodExpenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
     const cashInHand = netSale - cashOut;
     const averageSale = transactions > 0 ? (netSale / transactions) : 0;
+
+    // Expense categories breakdown
+    const expCategoryMap = {};
+    periodExpenses.forEach(e => {
+        const catName = e.category ? (e.category.charAt(0).toUpperCase() + e.category.slice(1)) : 'General';
+        if (!expCategoryMap[catName]) expCategoryMap[catName] = 0;
+        expCategoryMap[catName] += (parseFloat(e.amount) || 0);
+    });
+
+    // Sold Items Breakdown aggregation
+    const soldItemsMap = {};
+    let totalSoldQty = 0;
+    let totalSoldAmount = 0;
+
+    orders.forEach(o => {
+        if (Array.isArray(o.items)) {
+            o.items.forEach(item => {
+                const name = item.name || item.itemName || item.title || 'Item';
+                const qty = parseFloat(item.quantity || item.qty) || 1;
+                const price = parseFloat(item.price) || 0;
+                const itemTot = (item.total !== undefined && item.total !== null) ? (parseFloat(item.total) || 0) : (price * qty);
+
+                if (!soldItemsMap[name]) {
+                    soldItemsMap[name] = { name, quantity: 0, total: 0 };
+                }
+                soldItemsMap[name].quantity += qty;
+                soldItemsMap[name].total += itemTot;
+                totalSoldQty += qty;
+                totalSoldAmount += itemTot;
+            });
+        }
+    });
+
+    const soldItemsList = Object.values(soldItemsMap).sort((a, b) => b.quantity - a.quantity || a.name.localeCompare(b.name));
 
     // Current Date Formatted
     const now = new Date();
@@ -14850,136 +15407,388 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
     const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 
     let html = `
+        <!DOCTYPE html>
         <html>
         <head>
-            <title>${title}</title>
+            <meta charset="UTF-8">
+            <title>${escapeHtml(title)}</title>
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
             <style>
+                *, *::before, *::after {
+                    box-sizing: border-box;
+                    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+                }
                 body { 
-                    font-family: 'Inter', 'Segoe UI', Arial, sans-serif; 
-                    font-size: 13px; 
-                    width: 300px; /* Thermal printer width */
+                    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important; 
+                    font-size: 11px; 
+                    width: 80mm; 
+                    max-width: 80mm;
                     margin: 0 auto; 
-                    padding: 10px;
-                    color: black;
+                    padding: 8px;
+                    color: #000;
+                    background: #fff;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
                 }
                 .text-center { text-align: center; }
                 .text-right { text-align: right; }
-                .bold { font-weight: bold; }
-                .header { margin-bottom: 5px; }
-                .header h1 { font-size: 18px; margin: 0; font-weight: 900; }
-                .header p { margin: 2px 0; font-size: 12px; }
-                .divider { border-bottom: 1px dashed black; margin: 5px 0; }
-                .solid-divider { border-bottom: 1px solid black; margin: 5px 0; }
-                .report-title { font-size: 16px; font-weight: bold; text-decoration: underline; margin: 5px 0; text-transform: uppercase;}
-                .meta-info { font-size: 12px; margin-bottom: 5px; }
+                .text-left { text-align: left; }
+                .bold { font-weight: 600; }
+                .header { margin-bottom: 5px; text-align: center; }
+                .header h1 { font-size: 16.5px; margin: 0 0 2px 0; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; }
+                .header p { margin: 1px 0; font-size: 11px; font-weight: 400; color: #222; }
+                .divider { border-bottom: 1px dashed #777; margin: 5px 0; }
+                .report-title-badge { 
+                    display: inline-block; 
+                    border: 1.5px solid #000; 
+                    padding: 2px 14px; 
+                    font-size: 11px; 
+                    font-weight: 600; 
+                    text-transform: uppercase; 
+                    letter-spacing: 0.5px; 
+                    margin: 4px 0 2px 0; 
+                }
+                .meta-info { 
+                    font-size: 10.5px; 
+                    line-height: 1.4;
+                    margin-bottom: 4px; 
+                    text-align: center;
+                }
+                .section-title { 
+                    font-size: 11.5px; 
+                    font-weight: 600; 
+                    margin: 6px 0 3px 0; 
+                    text-align: center; 
+                    text-transform: uppercase; 
+                    letter-spacing: 0.3px; 
+                }
                 
-                .summary-table { width: 100%; border-collapse: collapse; margin-bottom: 5px; }
-                .summary-table td { padding: 2px 0; }
-                .summary-table .label { text-align: left; }
-                .summary-table .value { text-align: right; font-weight: bold; }
-                
-                .section-title { font-size: 14px; font-weight: bold; margin: 10px 0 5px 0; }
-                
-                .details-table { width: 100%; border-collapse: collapse; }
-                .details-table th { text-align: left; border-bottom: 1px solid black; padding: 2px 0; font-size: 12px; }
-                .details-table td { padding: 2px 0; font-size: 12px; }
-                .details-table .totals-row td { border-top: 1px solid black; font-weight: bold; padding-top: 4px; }
+                .report-table { 
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    margin: 4px 0 6px 0; 
+                    border: 1.5px solid #000; 
+                    background: #fff;
+                }
+                .report-table th { 
+                    text-align: left; 
+                    border-bottom: 1.5px solid #000; 
+                    padding: 4px 5px; 
+                    font-size: 10.5px; 
+                    font-weight: 600; 
+                    text-transform: uppercase;
+                    letter-spacing: 0.3px;
+                    background: #fff;
+                    color: #000;
+                }
+                .report-table td { 
+                    padding: 3.5px 5px; 
+                    font-size: 11px; 
+                    font-weight: 400;
+                    border-bottom: 1px solid #000;
+                    color: #000;
+                }
+                .report-table tr:last-child td {
+                    border-bottom: none;
+                }
+                .report-table .totals-row td { 
+                    border-top: 1.5px solid #000; 
+                    font-weight: 600; 
+                    padding-top: 4px; 
+                }
+
+                .compact-items-table { 
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    margin: 4px 0 6px 0; 
+                    border: 1.5px solid #000; 
+                    background: #fff;
+                }
+                .compact-items-table th { 
+                    text-align: left; 
+                    border-bottom: 1.5px solid #000; 
+                    padding: 2.5px 4px !important; 
+                    font-size: 9.5px !important; 
+                    font-weight: 700; 
+                    text-transform: uppercase;
+                    letter-spacing: 0.2px;
+                    background: #fff;
+                    color: #000;
+                }
+                .compact-items-table td { 
+                    padding: 1.5px 4px !important; 
+                    font-size: 9.5px !important; 
+                    font-weight: 500;
+                    border-bottom: 1px solid #e0e0e0;
+                    color: #000;
+                    line-height: 1.15 !important;
+                }
+                .compact-items-table tr:last-child td {
+                    border-bottom: none;
+                }
+                .compact-items-table .totals-row td { 
+                    border-top: 1.5px solid #000 !important; 
+                    font-weight: 700; 
+                    padding: 3px 4px !important; 
+                    font-size: 10px !important;
+                }
+
+                .cash-in-hand-box {
+                    border: 1.5px solid #000;
+                    padding: 5px 8px;
+                    margin: 5px 0 6px 0;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    font-size: 12px;
+                    font-weight: 700;
+                    background: #fff;
+                }
+
+                .view-receipt-toolbar {
+                    position: sticky;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    background: #1e293b;
+                    color: #fff;
+                    padding: 8px 12px;
+                    margin: -8px -8px 10px -8px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    border-radius: 6px 6px 0 0;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+                    z-index: 1000;
+                }
+                .tb-title {
+                    font-size: 12px;
+                    font-weight: 700;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    color: #f8fafc;
+                }
+                .tb-btn-group {
+                    display: flex;
+                    gap: 6px;
+                }
+                .tb-btn {
+                    border: none;
+                    border-radius: 6px;
+                    padding: 5px 12px;
+                    font-size: 11px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 4px;
+                    transition: all 0.15s ease;
+                }
+                .tb-btn-print {
+                    background: #3b82f6;
+                    color: #ffffff;
+                }
+                .tb-btn-print:hover {
+                    background: #2563eb;
+                }
+                .tb-btn-close {
+                    background: #475569;
+                    color: #ffffff;
+                }
+                .tb-btn-close:hover {
+                    background: #ef4444;
+                }
                 
                 @media print {
-                    body { width: 100%; margin: 0; padding: 0; }
-                    .page-break { page-break-before: always; }
+                    * {
+                        margin: 0;
+                        padding: 0;
+                        box-sizing: border-box;
+                    }
+                    body { 
+                        width: 100%; 
+                        max-width: 100%; 
+                        margin: 0; 
+                        padding: 3mm 0; 
+                    }
+                    @page {
+                        size: 80mm auto;
+                        margin: 3mm;
+                    }
+                    .view-receipt-toolbar {
+                        display: none !important;
+                    }
                 }
             </style>
         </head>
         <body>
-            <div class="header text-center">
-                <h1>Khyber Charsi Tikka Karahi & Restaurant</h1>
-                <p>Contact: 0319-9922922</p>
-                <p>Main Bazar, Nathia Gali</p>
+            ${isViewOnly ? `
+            <div class="view-receipt-toolbar">
+                <div class="tb-title">
+                    <span>👁️</span>
+                    <span>Receipt Preview</span>
+                </div>
+                <div class="tb-btn-group">
+                    <button class="tb-btn tb-btn-print" onclick="window.print()">
+                        <span>🖨️</span> Print
+                    </button>
+                    <button class="tb-btn tb-btn-close" onclick="window.close()">
+                        <span>✕</span> Close
+                    </button>
+                </div>
             </div>
-            
-            <div class="divider"></div>
-            
-            <div class="text-center">
-                <div class="report-title">SALES REPORT</div>
+            ` : ''}
+            <div class="header">
+                <h1>Hangout Lounge & Co.</h1>
+                <p>Contact: 0300-9509536</p>
+                <p>Wah Cantt</p>
+                <div><span class="report-title-badge">${escapeHtml(title)}</span></div>
+                <div class="divider"></div>
                 <div class="meta-info">
-                    Date: ${dateStr} ${timeStr}<br>
-                    Filter: ${filterText}
+                    <div><strong>Date:</strong> ${dateStr} ${timeStr}</div>
+                    <div><strong>Filter:</strong> ${escapeHtml(filterText)}</div>
                 </div>
             </div>
             
             <div class="divider"></div>
             
-            <table class="summary-table">
-                <tr>
-                    <td class="label">Transactions:</td>
-                    <td class="value">${transactions}</td>
-                </tr>
-                <tr>
-                    <td class="label">Cash:</td>
-                    <td class="value">Rs.${formatNumber(cash)}</td>
-                </tr>
-                <tr>
-                    <td class="label">Service Charges:</td>
-                    <td class="value">Rs.${formatNumber(serviceCharges)}</td>
-                </tr>
-                <tr>
-                    <td class="label">Discount:</td>
-                    <td class="value">Rs.${formatNumber(discount)}</td>
-                </tr>
-                <tr>
-                    <td class="label">Net Sale:</td>
-                    <td class="value">Rs.${formatNumber(netSale)}</td>
-                </tr>
-                <tr>
-                    <td class="label">Average Sale:</td>
-                    <td class="value">Rs.${formatNumber(averageSale)}</td>
-                </tr>
-                <tr>
-                    <td class="label">Expenses:</td>
-                    <td class="value">Rs.${formatNumber(cashOut)}</td>
-                </tr>
-            </table>
-            
-            <div class="solid-divider"></div>
-            
-            <table class="summary-table">
-                <tr>
-                    <td class="label" style="font-size: 14px;">Cash In Hand:</td>
-                    <td class="value" style="font-size: 14px;">Rs.${formatNumber(cashInHand)}</td>
-                </tr>
-            </table>
-            
-            <div class="divider"></div>
-            
-            <div class="section-title">Order Type Wise</div>
-            <table class="details-table">
+            <div class="section-title">Performance Summary</div>
+            <table class="report-table">
                 <thead>
-                    <tr>
-                        <th style="width: 30%">Location</th>
-                        <th style="width: 20%; text-align: center;">Bills</th>
-                        <th style="width: 30%; text-align: right;">Total</th>
-                        <th style="width: 20%; text-align: right;">Avg</th>
+                    <tr style="border-bottom: 1.5px solid #000;">
+                        <th style="width: 58%; border-right: 1px solid #000;">METRIC</th>
+                        <th style="width: 42%; text-align: right;">AMOUNT / VALUE</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td>Gents</td>
-                        <td class="text-center">${locationStats['Gents'].bills}</td>
-                        <td class="text-right">Rs.${formatNumber(locationStats['Gents'].total)}</td>
-                        <td class="text-right">Rs.${formatNumber(locationStats['Gents'].bills > 0 ? locationStats['Gents'].total / locationStats['Gents'].bills : 0)}</td>
+                        <td style="border-right: 1px solid #000;">Total Transactions</td>
+                        <td class="text-right bold">${transactions}</td>
                     </tr>
                     <tr>
-                        <td>Family</td>
-                        <td class="text-center">${locationStats['Family'].bills}</td>
-                        <td class="text-right">Rs.${formatNumber(locationStats['Family'].total)}</td>
-                        <td class="text-right">Rs.${formatNumber(locationStats['Family'].bills > 0 ? locationStats['Family'].total / locationStats['Family'].bills : 0)}</td>
+                        <td style="border-right: 1px solid #000;">Gross Sales (Cash)</td>
+                        <td class="text-right bold">Rs. ${formatNumber(cash)}</td>
                     </tr>
                     <tr>
-                        <td>Parcel</td>
-                        <td class="text-center">${locationStats['Parcel'].bills}</td>
-                        <td class="text-right">Rs.${formatNumber(locationStats['Parcel'].total)}</td>
-                        <td class="text-right">Rs.${formatNumber(locationStats['Parcel'].bills > 0 ? locationStats['Parcel'].total / locationStats['Parcel'].bills : 0)}</td>
+                        <td style="border-right: 1px solid #000;">Taxes & Service</td>
+                        <td class="text-right bold">Rs. ${formatNumber(serviceCharges)}</td>
+                    </tr>
+                    <tr>
+                        <td style="border-right: 1px solid #000;">Discount</td>
+                        <td class="text-right bold">Rs. ${formatNumber(discount)}</td>
+                    </tr>
+                    <tr style="border-top: 1.5px solid #000; background: #fff;">
+                        <td style="border-right: 1px solid #000; font-weight: 600;">Net Sales</td>
+                        <td class="text-right" style="font-weight: 600;">Rs. ${formatNumber(netSale)}</td>
+                    </tr>
+                    <tr>
+                        <td style="border-right: 1px solid #000;">Average Sale</td>
+                        <td class="text-right bold">Rs. ${formatNumber(Math.round(averageSale))}</td>
+                    </tr>
+                    <tr style="border-top: 1.5px solid #000; background: #fff;">
+                        <td style="border-right: 1px solid #000; font-weight: 600;">Total Expenses</td>
+                        <td class="text-right" style="font-weight: 600;">Rs. ${formatNumber(cashOut)}</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="cash-in-hand-box">
+                <span>CASH IN HAND (PROFIT):</span>
+                <span>Rs. ${formatNumber(cashInHand)}</span>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="section-title">Order Type Breakdown</div>
+            <table class="report-table">
+                <thead>
+                    <tr style="border-bottom: 1.5px solid #000;">
+                        <th style="width: 32%; border-right: 1px solid #000;">LOCATION</th>
+                        <th style="width: 18%; text-align: center; border-right: 1px solid #000;">BILLS</th>
+                        <th style="width: 28%; text-align: right; border-right: 1px solid #000;">TOTAL</th>
+                        <th style="width: 22%; text-align: right;">AVG</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="border-right: 1px solid #000;">Gents</td>
+                        <td class="text-center bold" style="border-right: 1px solid #000;">${locationStats['Gents'].bills}</td>
+                        <td class="text-right" style="border-right: 1px solid #000;">Rs. ${formatNumber(locationStats['Gents'].total)}</td>
+                        <td class="text-right">Rs. ${formatNumber(locationStats['Gents'].bills > 0 ? Math.round(locationStats['Gents'].total / locationStats['Gents'].bills) : 0)}</td>
+                    </tr>
+                    <tr>
+                        <td style="border-right: 1px solid #000;">Family</td>
+                        <td class="text-center bold" style="border-right: 1px solid #000;">${locationStats['Family'].bills}</td>
+                        <td class="text-right" style="border-right: 1px solid #000;">Rs. ${formatNumber(locationStats['Family'].total)}</td>
+                        <td class="text-right">Rs. ${formatNumber(locationStats['Family'].bills > 0 ? Math.round(locationStats['Family'].total / locationStats['Family'].bills) : 0)}</td>
+                    </tr>
+                    <tr>
+                        <td style="border-right: 1px solid #000;">Parcel</td>
+                        <td class="text-center bold" style="border-right: 1px solid #000;">${locationStats['Parcel'].bills}</td>
+                        <td class="text-right" style="border-right: 1px solid #000;">Rs. ${formatNumber(locationStats['Parcel'].total)}</td>
+                        <td class="text-right">Rs. ${formatNumber(locationStats['Parcel'].bills > 0 ? Math.round(locationStats['Parcel'].total / locationStats['Parcel'].bills) : 0)}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="divider"></div>
+            
+            <div class="section-title">Expenses Breakdown</div>
+            <table class="report-table">
+                <thead>
+                    <tr style="border-bottom: 1.5px solid #000;">
+                        <th style="width: 60%; border-right: 1px solid #000;">CATEGORY</th>
+                        <th style="width: 40%; text-align: right;">AMOUNT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${Object.keys(expCategoryMap).length > 0 ? Object.keys(expCategoryMap).map(cat => `
+                        <tr>
+                            <td style="border-right: 1px solid #000;">${escapeHtml(cat)}</td>
+                            <td class="text-right bold">Rs. ${formatNumber(expCategoryMap[cat])}</td>
+                        </tr>
+                    `).join('') : `
+                        <tr>
+                            <td colspan="2" class="text-center" style="color: #666; font-style: italic;">No expenses in this period</td>
+                        </tr>
+                    `}
+                    <tr style="border-top: 1.5px solid #000;">
+                        <td style="border-right: 1px solid #000; font-weight: 600;">TOTAL EXPENSES</td>
+                        <td class="text-right" style="font-weight: 600;">Rs. ${formatNumber(cashOut)}</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="divider"></div>
+            
+            <div class="section-title">Sold Items (${soldItemsList.length} Items, Qty: ${totalSoldQty})</div>
+            <table class="compact-items-table">
+                <thead>
+                    <tr style="border-bottom: 1.5px solid #000;">
+                        <th style="width: 54%; border-right: 1px solid #000;">ITEM</th>
+                        <th style="width: 18%; text-align: center; border-right: 1px solid #000;">QTY</th>
+                        <th style="width: 28%; text-align: right;">AMOUNT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${soldItemsList.length > 0 ? soldItemsList.map(item => `
+                        <tr>
+                            <td style="border-right: 1px solid #000;">${escapeHtml(item.name)}</td>
+                            <td class="text-center bold" style="border-right: 1px solid #000;">${item.quantity}</td>
+                            <td class="text-right">Rs. ${formatNumber(item.total)}</td>
+                        </tr>
+                    `).join('') : `
+                        <tr>
+                            <td colspan="3" class="text-center" style="color: #666; font-style: italic; padding: 4px;">No sold items in this period</td>
+                        </tr>
+                    `}
+                    <tr class="totals-row" style="border-top: 1.5px solid #000; background: #fff;">
+                        <td style="border-right: 1px solid #000; font-weight: 700;">TOTAL ITEMS</td>
+                        <td class="text-center bold" style="border-right: 1px solid #000;">${totalSoldQty}</td>
+                        <td class="text-right bold">Rs. ${formatNumber(totalSoldAmount)}</td>
                     </tr>
                 </tbody>
             </table>
@@ -14991,12 +15800,12 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
     if (transactionList && transactionList.length > 0) {
         html += `
             <div class="section-title">Details</div>
-            <table class="details-table">
+            <table class="report-table">
                 <thead>
-                    <tr>
-                        <th>Time</th>
-                        <th>Order</th>
-                        <th class="text-right">Total</th>
+                    <tr style="border-bottom: 1.5px solid #000;">
+                        <th style="width: 35%; border-right: 1px solid #000;">TIME</th>
+                        <th style="width: 35%; border-right: 1px solid #000;">ORDER</th>
+                        <th style="width: 30%; text-align: right;">TOTAL</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -15004,9 +15813,9 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
         transactionList.forEach(item => {
             html += `
                 <tr>
-                    <td>${item.time}</td>
-                    <td>${item.id}</td>
-                    <td class="text-right">Rs.${formatNumber(item.total)}</td>
+                    <td style="border-right: 1px solid #000;">${escapeHtml(item.time || '')}</td>
+                    <td style="border-right: 1px solid #000;">${escapeHtml(item.id || '')}</td>
+                    <td class="text-right bold">Rs. ${formatNumber(item.total)}</td>
                 </tr>
              `;
         });
@@ -15017,12 +15826,12 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
         `;
     } else if (dailyBreakdown && dailyBreakdown.length > 0) {
         html += `
-            <div class="section-title">${breakdownTitle}</div>
-            <table class="details-table">
+            <div class="section-title">${escapeHtml(breakdownTitle)}</div>
+            <table class="report-table">
                 <thead>
-                    <tr>
-                        <th>${breakdownLabel}</th>
-                        <th class="text-right">Sales</th>
+                    <tr style="border-bottom: 1.5px solid #000;">
+                        <th style="width: 60%; border-right: 1px solid #000;">${escapeHtml(breakdownLabel)}</th>
+                        <th style="width: 40%; text-align: right;">SALES</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -15030,8 +15839,8 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
         dailyBreakdown.forEach(item => {
             html += `
                 <tr>
-                    <td>${item.date}</td>
-                    <td class="text-right">Rs.${formatNumber(item.total)}</td>
+                    <td style="border-right: 1px solid #000;">${escapeHtml(item.date)}</td>
+                    <td class="text-right bold">Rs. ${formatNumber(item.total)}</td>
                 </tr>
              `;
         });
@@ -15043,28 +15852,98 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
     }
 
     html += `
-            <div class="text-center" style="margin-top: 10px; font-size: 11px;">
-                Report Generated Successfully
+            <div class="text-center" style="margin-top: 8px; font-size: 10.5px; font-weight: 600; color: #444;">
+                ${isViewOnly ? 'Receipt Preview Mode' : 'Report Generated Successfully'}
             </div>
+    `;
+
+    if (isViewOnly) {
+        html += `
+            <script>
+                window.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        try { window.close(); } catch(err) {}
+                    }
+                });
+            </script>
         </body>
         </html>
-    `;
+        `;
+    } else {
+        html += `
+            <script>
+                var hasPrinted = false;
+                function triggerPrint() {
+                    if (hasPrinted) return;
+                    hasPrinted = true;
+                    try {
+                        window.focus();
+                        window.print();
+                    } catch(e) {
+                        console.error(e);
+                    }
+                }
+                window.addEventListener('afterprint', function() {
+                    setTimeout(function() {
+                        try { window.close(); } catch(e) {}
+                    }, 150);
+                });
+                function schedulePrint() {
+                    if (document.fonts && document.fonts.ready) {
+                        document.fonts.ready.then(function() {
+                            if (window.requestAnimationFrame) {
+                                window.requestAnimationFrame(function() {
+                                    window.requestAnimationFrame(function() {
+                                        setTimeout(triggerPrint, 250);
+                                    });
+                                });
+                            } else {
+                                setTimeout(triggerPrint, 250);
+                            }
+                        }).catch(function() {
+                            setTimeout(triggerPrint, 250);
+                        });
+                    } else {
+                        if (window.requestAnimationFrame) {
+                            window.requestAnimationFrame(function() {
+                                window.requestAnimationFrame(function() {
+                                    setTimeout(triggerPrint, 250);
+                                });
+                            });
+                        } else {
+                            setTimeout(triggerPrint, 250);
+                        }
+                    }
+                }
+                if (document.readyState === 'complete') {
+                    schedulePrint();
+                } else {
+                    window.addEventListener('load', schedulePrint, { once: true });
+                    setTimeout(schedulePrint, 500);
+                }
+            </script>
+        </body>
+        </html>
+        `;
+    }
 
     return html;
 }
 
-window.printDailyReport = () => {
+window.viewDailyReport = () => {
     const dateInput = document.getElementById('reportDailyDate');
     if (!dateInput || !dateInput.value) {
-        alert('Please select a date first.');
+        if (typeof showCustomAlert === 'function') {
+            showCustomAlert('Please select a date first.');
+        } else {
+            alert('Please select a date first.');
+        }
         return;
     }
 
-    const selectedDate = new Date(dateInput.value);
-    const startOfDay = new Date(selectedDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(selectedDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    const [y, m, d] = dateInput.value.split('-').map(Number);
+    const startOfDay = new Date(y, m - 1, d, 0, 0, 0, 0);
+    const endOfDay = new Date(y, m - 1, d, 23, 59, 59, 999);
 
     const html = generateReportHTML(
         'Daily Report',
@@ -15072,44 +15951,76 @@ window.printDailyReport = () => {
         startOfDay,
         endOfDay,
         null,
-        null
+        null,
+        'Daily Breakdown',
+        'Date',
+        true
     );
 
-    const printWindow = window.open('', '', 'height=600,width=400');
-    printWindow.document.write(html);
-    printWindow.document.close();
-    setTimeout(() => {
-        printWindow.focus();
-        printWindow.print();
-        printWindow.close();
-    }, 250);
+    openReportPrintWindow(html, 'Daily Report Preview');
 };
 
-window.printMonthlyReport = () => {
-    const monthInput = document.getElementById('reportMonthlyMonth');
-    if (!monthInput || !monthInput.value) {
-        alert('Please select a month first.');
+window.printDailyReport = () => {
+    const dateInput = document.getElementById('reportDailyDate');
+    if (!dateInput || !dateInput.value) {
+        if (typeof showCustomAlert === 'function') {
+            showCustomAlert('Please select a date first.');
+        } else {
+            alert('Please select a date first.');
+        }
         return;
     }
 
-    const [year, month] = monthInput.value.split('-');
-    const startDate = new Date(year, month - 1, 1);
+    const [y, m, d] = dateInput.value.split('-').map(Number);
+    const startOfDay = new Date(y, m - 1, d, 0, 0, 0, 0);
+    const endOfDay = new Date(y, m - 1, d, 23, 59, 59, 999);
+
+    const html = generateReportHTML(
+        'Daily Report',
+        `Daily | ${dateInput.value}`,
+        startOfDay,
+        endOfDay,
+        null,
+        null,
+        'Daily Breakdown',
+        'Date',
+        false
+    );
+
+    openReportPrintWindow(html, 'Daily Report');
+};
+
+window.viewMonthlyReport = () => {
+    const monthInput = document.getElementById('reportMonthlyMonth');
+    if (!monthInput || !monthInput.value) {
+        if (typeof showCustomAlert === 'function') {
+            showCustomAlert('Please select a month first.');
+        } else {
+            alert('Please select a month first.');
+        }
+        return;
+    }
+
+    const [year, month] = monthInput.value.split('-').map(Number);
+    const startDate = new Date(year, month - 1, 1, 0, 0, 0, 0);
     const endDate = new Date(year, month, 0, 23, 59, 59, 999);
 
     // Fetch for details (Daily Breakdown)
     const sales = Storage.get('sales') || [];
     const filteredSales = sales.filter(s => {
         if (!s.date) return false;
-        const d = new Date(s.date);
-        return d >= startDate && d <= endDate;
+        const d = parseDateSafe(s.date);
+        return d && d >= startDate && d <= endDate;
     });
 
     const dailyMap = {};
     filteredSales.forEach(s => {
-        const d = new Date(s.date);
-        const day = d.getDate();
-        if (!dailyMap[day]) dailyMap[day] = 0;
-        dailyMap[day] += (parseFloat(s.total) || 0);
+        const d = parseDateSafe(s.date);
+        if (d) {
+            const day = d.getDate();
+            if (!dailyMap[day]) dailyMap[day] = 0;
+            dailyMap[day] += (parseFloat(s.total) || 0);
+        }
     });
 
     const dailyBreakdown = [];
@@ -15117,7 +16028,7 @@ window.printMonthlyReport = () => {
     for (let i = 1; i <= daysInMonth; i++) {
         if (dailyMap[i]) {
             dailyBreakdown.push({
-                date: `${year}-${month}-${String(i).padStart(2, '0')}`,
+                date: `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`,
                 total: dailyMap[i]
             });
         }
@@ -15129,29 +16040,86 @@ window.printMonthlyReport = () => {
         startDate,
         endDate,
         null,
-        dailyBreakdown
+        dailyBreakdown,
+        'Daily Breakdown',
+        'Date',
+        true
     );
 
-    const printWindow = window.open('', '', 'height=600,width=400');
-    printWindow.document.write(html);
-    printWindow.document.close();
-    setTimeout(() => {
-        printWindow.focus();
-        printWindow.print();
-        printWindow.close();
-    }, 250);
+    openReportPrintWindow(html, 'Monthly Report Preview');
 };
 
-window.printWeeklyReport = () => {
-    const weekInput = document.getElementById('reportWeeklyWeek');
-    if (!weekInput || !weekInput.value) {
-        alert('Please select a week first.');
+window.printMonthlyReport = () => {
+    const monthInput = document.getElementById('reportMonthlyMonth');
+    if (!monthInput || !monthInput.value) {
+        if (typeof showCustomAlert === 'function') {
+            showCustomAlert('Please select a month first.');
+        } else {
+            alert('Please select a month first.');
+        }
         return;
     }
 
-    const [year, week] = weekInput.value.split('-W');
-    // Calculate week start date (ISO 8601 week starts on Monday)
-    // Simple approximation: Jan 4th is always in week 1
+    const [year, month] = monthInput.value.split('-').map(Number);
+    const startDate = new Date(year, month - 1, 1, 0, 0, 0, 0);
+    const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+
+    // Fetch for details (Daily Breakdown)
+    const sales = Storage.get('sales') || [];
+    const filteredSales = sales.filter(s => {
+        if (!s.date) return false;
+        const d = parseDateSafe(s.date);
+        return d && d >= startDate && d <= endDate;
+    });
+
+    const dailyMap = {};
+    filteredSales.forEach(s => {
+        const d = parseDateSafe(s.date);
+        if (d) {
+            const day = d.getDate();
+            if (!dailyMap[day]) dailyMap[day] = 0;
+            dailyMap[day] += (parseFloat(s.total) || 0);
+        }
+    });
+
+    const dailyBreakdown = [];
+    const daysInMonth = endDate.getDate();
+    for (let i = 1; i <= daysInMonth; i++) {
+        if (dailyMap[i]) {
+            dailyBreakdown.push({
+                date: `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`,
+                total: dailyMap[i]
+            });
+        }
+    }
+
+    const html = generateReportHTML(
+        'Monthly Report',
+        `Monthly | ${new Date(year, month - 1).toLocaleString('default', { month: 'long', year: 'numeric' })}`,
+        startDate,
+        endDate,
+        null,
+        dailyBreakdown,
+        'Daily Breakdown',
+        'Date',
+        false
+    );
+
+    openReportPrintWindow(html, 'Monthly Report');
+};
+
+window.viewWeeklyReport = () => {
+    const weekInput = document.getElementById('reportWeeklyWeek');
+    if (!weekInput || !weekInput.value) {
+        if (typeof showCustomAlert === 'function') {
+            showCustomAlert('Please select a week first.');
+        } else {
+            alert('Please select a week first.');
+        }
+        return;
+    }
+
+    const [year, week] = weekInput.value.split('-W').map(Number);
     const simpleDate = new Date(year, 0, 4);
     const dayShift = simpleDate.getDay() || 7;
     const startOfWeekOne = new Date(year, 0, 4 - dayShift + 1);
@@ -15162,30 +16130,31 @@ window.printWeeklyReport = () => {
     endDate.setDate(startDate.getDate() + 6);
     endDate.setHours(23, 59, 59, 999);
 
-    // Filter Sales
     const sales = Storage.get('sales') || [];
     const filteredSales = sales.filter(s => {
         if (!s.date) return false;
-        const d = new Date(s.date);
-        return d >= startDate && d <= endDate;
+        const d = parseDateSafe(s.date);
+        return d && d >= startDate && d <= endDate;
     });
 
     const dailyMap = {};
     filteredSales.forEach(s => {
-        const d = new Date(s.date);
-        const dateKey = d.toLocaleDateString('en-CA'); // YYYY-MM-DD
-        if (!dailyMap[dateKey]) dailyMap[dateKey] = 0;
-        dailyMap[dateKey] += (parseFloat(s.total) || 0);
+        const d = parseDateSafe(s.date);
+        if (d) {
+            const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            if (!dailyMap[dateKey]) dailyMap[dateKey] = 0;
+            dailyMap[dateKey] += (parseFloat(s.total) || 0);
+        }
     });
 
     const dailyBreakdown = [];
     for (let i = 0; i < 7; i++) {
         const d = new Date(startDate);
         d.setDate(startDate.getDate() + i);
-        const dateKey = d.toLocaleDateString('en-CA');
+        const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
 
-        if (dailyMap[dateKey] || i < 7) { // Show all days of week
+        if (dailyMap[dateKey] !== undefined || i < 7) {
             dailyBreakdown.push({
                 date: `${dateKey} (${dayName})`,
                 total: dailyMap[dateKey] || 0
@@ -15201,43 +16170,112 @@ window.printWeeklyReport = () => {
         null,
         dailyBreakdown,
         'Daily Breakdown',
-        'Date'
+        'Date',
+        true
     );
 
-    const printWindow = window.open('', '', 'height=600,width=400');
-    printWindow.document.write(html);
-    printWindow.document.close();
-    setTimeout(() => {
-        printWindow.focus();
-        printWindow.print();
-        printWindow.close();
-    }, 250);
+    openReportPrintWindow(html, 'Weekly Report Preview');
 };
 
-window.printAnnualReport = () => {
+window.printWeeklyReport = () => {
+    const weekInput = document.getElementById('reportWeeklyWeek');
+    if (!weekInput || !weekInput.value) {
+        if (typeof showCustomAlert === 'function') {
+            showCustomAlert('Please select a week first.');
+        } else {
+            alert('Please select a week first.');
+        }
+        return;
+    }
+
+    const [year, week] = weekInput.value.split('-W').map(Number);
+    const simpleDate = new Date(year, 0, 4);
+    const dayShift = simpleDate.getDay() || 7;
+    const startOfWeekOne = new Date(year, 0, 4 - dayShift + 1);
+    const startDate = new Date(startOfWeekOne.getTime() + (week - 1) * 7 * 24 * 60 * 60 * 1000);
+    startDate.setHours(0, 0, 0, 0);
+
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + 6);
+    endDate.setHours(23, 59, 59, 999);
+
+    const sales = Storage.get('sales') || [];
+    const filteredSales = sales.filter(s => {
+        if (!s.date) return false;
+        const d = parseDateSafe(s.date);
+        return d && d >= startDate && d <= endDate;
+    });
+
+    const dailyMap = {};
+    filteredSales.forEach(s => {
+        const d = parseDateSafe(s.date);
+        if (d) {
+            const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            if (!dailyMap[dateKey]) dailyMap[dateKey] = 0;
+            dailyMap[dateKey] += (parseFloat(s.total) || 0);
+        }
+    });
+
+    const dailyBreakdown = [];
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(startDate);
+        d.setDate(startDate.getDate() + i);
+        const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+
+        if (dailyMap[dateKey] !== undefined || i < 7) {
+            dailyBreakdown.push({
+                date: `${dateKey} (${dayName})`,
+                total: dailyMap[dateKey] || 0
+            });
+        }
+    }
+
+    const html = generateReportHTML(
+        'Weekly Report',
+        `Week ${week}, ${year}`,
+        startDate,
+        endDate,
+        null,
+        dailyBreakdown,
+        'Daily Breakdown',
+        'Date',
+        false
+    );
+
+    openReportPrintWindow(html, 'Weekly Report');
+};
+
+window.viewAnnualReport = () => {
     const yearInput = document.getElementById('reportAnnualYear');
     if (!yearInput || !yearInput.value) {
-        alert('Please select a year first.');
+        if (typeof showCustomAlert === 'function') {
+            showCustomAlert('Please select a year first.');
+        } else {
+            alert('Please select a year first.');
+        }
         return;
     }
 
     const year = parseInt(yearInput.value);
-    const startDate = new Date(year, 0, 1);
+    const startDate = new Date(year, 0, 1, 0, 0, 0, 0);
     const endDate = new Date(year, 11, 31, 23, 59, 59, 999);
 
     const sales = Storage.get('sales') || [];
     const filteredSales = sales.filter(s => {
         if (!s.date) return false;
-        const d = new Date(s.date);
-        return d >= startDate && d <= endDate;
+        const d = parseDateSafe(s.date);
+        return d && d >= startDate && d <= endDate;
     });
 
     const monthlyMap = {};
     filteredSales.forEach(s => {
-        const d = new Date(s.date);
-        const m = d.getMonth();
-        if (!monthlyMap[m]) monthlyMap[m] = 0;
-        monthlyMap[m] += (parseFloat(s.total) || 0);
+        const d = parseDateSafe(s.date);
+        if (d) {
+            const m = d.getMonth();
+            if (!monthlyMap[m]) monthlyMap[m] = 0;
+            monthlyMap[m] += (parseFloat(s.total) || 0);
+        }
     });
 
     const monthlyBreakdown = [];
@@ -15258,21 +16296,72 @@ window.printAnnualReport = () => {
         null,
         monthlyBreakdown,
         'Monthly Breakdown',
-        'Month'
+        'Month',
+        true
     );
 
-    const printWindow = window.open('', '', 'height=600,width=400');
-    printWindow.document.write(html);
-    printWindow.document.close();
-    setTimeout(() => {
-        printWindow.focus();
-        printWindow.print();
-        printWindow.close();
-    }, 250);
+    openReportPrintWindow(html, 'Annual Report Preview');
+};
+
+window.printAnnualReport = () => {
+    const yearInput = document.getElementById('reportAnnualYear');
+    if (!yearInput || !yearInput.value) {
+        if (typeof showCustomAlert === 'function') {
+            showCustomAlert('Please select a year first.');
+        } else {
+            alert('Please select a year first.');
+        }
+        return;
+    }
+
+    const year = parseInt(yearInput.value);
+    const startDate = new Date(year, 0, 1, 0, 0, 0, 0);
+    const endDate = new Date(year, 11, 31, 23, 59, 59, 999);
+
+    const sales = Storage.get('sales') || [];
+    const filteredSales = sales.filter(s => {
+        if (!s.date) return false;
+        const d = parseDateSafe(s.date);
+        return d && d >= startDate && d <= endDate;
+    });
+
+    const monthlyMap = {};
+    filteredSales.forEach(s => {
+        const d = parseDateSafe(s.date);
+        if (d) {
+            const m = d.getMonth();
+            if (!monthlyMap[m]) monthlyMap[m] = 0;
+            monthlyMap[m] += (parseFloat(s.total) || 0);
+        }
+    });
+
+    const monthlyBreakdown = [];
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    for (let i = 0; i < 12; i++) {
+        monthlyBreakdown.push({
+            date: monthNames[i],
+            total: monthlyMap[i] || 0
+        });
+    }
+
+    const html = generateReportHTML(
+        'Annual Report',
+        `Year ${year}`,
+        startDate,
+        endDate,
+        null,
+        monthlyBreakdown,
+        'Monthly Breakdown',
+        'Month',
+        false
+    );
+
+    openReportPrintWindow(html, 'Annual Report');
 };
 
 window.printStockReport = () => {
-    const stockItems = Storage.get('stocks') || [];
+    const stockItems = syncAndGetStockItems();
 
     // Sort logic
     stockItems.sort((a, b) => (a.itemName || '').localeCompare(b.itemName || ''));
@@ -15282,62 +16371,126 @@ window.printStockReport = () => {
     const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 
     let html = `
+        <!DOCTYPE html>
         <html>
         <head>
+            <meta charset="UTF-8">
             <title>Stock Report</title>
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
             <style>
+                *, *::before, *::after {
+                    box-sizing: border-box;
+                    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+                }
                 body { 
-                    font-family: 'Inter', 'Segoe UI', Arial, sans-serif; 
+                    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important; 
                     font-size: 11px; 
-                    width: 300px; 
+                    width: 80mm; 
+                    max-width: 80mm;
                     margin: 0 auto; 
-                    padding: 5px;
-                    color: black;
+                    padding: 8px;
+                    color: #000;
+                    background: #fff;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
                 }
                 .text-center { text-align: center; }
                 .text-right { text-align: right; }
-                .bold { font-weight: bold; }
-                .header { margin-bottom: 5px; text-align: center;}
-                .header h1 { font-size: 18px; margin: 0; font-weight: 900; }
-                .header p { margin: 1px 0; font-size: 11px; }
-                .divider { border-bottom: 1px dashed black; margin: 3px 0; }
-                .report-title { font-size: 14px; font-weight: bold; text-decoration: underline; margin: 3px 0; text-transform: uppercase;}
-                .meta-info { font-size: 11px; margin-bottom: 3px; }
-                
-                .section-title { font-size: 13px; font-weight: bold; margin: 5px 0 2px 0; }
-                
-                table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-                th { text-align: left; border-bottom: 1px solid black; padding: 2px 0; font-size: 12px; }
-                td { padding: 2px 0; font-size: 11px; border-bottom: 1px dotted #ccc; }
-                .col-name { width: 60%; }
-                .col-qty { width: 40%; text-align: right; }
-
+                .bold { font-weight: 700; }
+                .header { margin-bottom: 5px; text-align: center; }
+                .header h1 { font-size: 18px; margin: 0 0 2px 0; font-weight: 900; letter-spacing: -0.2px; text-transform: uppercase; }
+                .header p { margin: 1px 0; font-size: 11px; font-weight: 500; }
+                .divider { border-bottom: 1.5px dashed #000; margin: 5px 0; }
+                .report-title-badge { 
+                    display: inline-block; 
+                    border: 1.5px solid #000; 
+                    padding: 2px 14px; 
+                    font-size: 11.5px; 
+                    font-weight: 800; 
+                    text-transform: uppercase; 
+                    letter-spacing: 0.5px; 
+                    margin: 4px 0 2px 0; 
+                }
+                .meta-info { 
+                    font-size: 10.5px; 
+                    line-height: 1.4;
+                    margin-bottom: 4px; 
+                    text-align: center;
+                }
+                .report-table { 
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    margin: 4px 0 6px 0; 
+                    border: 1.5px solid #000; 
+                    background: #fff;
+                }
+                .report-table th { 
+                    text-align: left; 
+                    border-bottom: 1.5px solid #000; 
+                    padding: 4px 5px; 
+                    font-size: 10.5px; 
+                    font-weight: 700; 
+                    text-transform: uppercase;
+                    background: #fff;
+                    color: #000;
+                }
+                .report-table td { 
+                    padding: 3.5px 5px; 
+                    font-size: 11px; 
+                    font-weight: 500;
+                    border-bottom: 1px solid #000;
+                    color: #000;
+                }
+                .report-table tr:last-child td {
+                    border-bottom: none;
+                }
                 @media print {
-                    body { width: 100%; margin: 0; padding: 0; }
+                    * {
+                        margin: 0;
+                        padding: 0;
+                        box-sizing: border-box;
+                    }
+                    body { 
+                        width: 100%; 
+                        max-width: 100%; 
+                        margin: 0; 
+                        padding: 3mm 0; 
+                    }
+                    @page {
+                        size: 80mm auto;
+                        margin: 3mm;
+                    }
                 }
             </style>
         </head>
         <body>
             <div class="header">
-                <h1>Khyber Charsi Tikka Karahi & Restaurant</h1>
-                <p>Stock Report</p>
-                <p>${dateStr} ${timeStr}</p>
+                <h1>Hangout Lounge & Co.</h1>
+                <p>Contact: 0300-9509536</p>
+                <p>Wah Cantt</p>
+                <div><span class="report-title-badge">STOCK REPORT</span></div>
+                <div class="divider"></div>
+                <div class="meta-info">
+                    <div><strong>Date:</strong> ${dateStr} ${timeStr}</div>
+                </div>
             </div>
             
             <div class="divider"></div>
             
-            <table>
+            <table class="report-table">
                 <thead>
-                    <tr>
-                        <th class="col-name">Item Name</th>
-                        <th class="col-qty">Stock Available</th>
+                    <tr style="border-bottom: 1.5px solid #000;">
+                        <th style="width: 60%; border-right: 1px solid #000;">ITEM NAME</th>
+                        <th style="width: 40%; text-align: right;">AVAILABLE STOCK</th>
                     </tr>
                 </thead>
                 <tbody>
     `;
 
     if (stockItems.length === 0) {
-        html += `<tr><td colspan="2" class="text-center">No stock items found.</td></tr>`;
+        html += `<tr><td colspan="2" class="text-center" style="color: #666; font-style: italic;">No stock items found.</td></tr>`;
     } else {
         stockItems.forEach(item => {
             const quantity = parseFloat(item.quantity) || 0;
@@ -15345,8 +16498,8 @@ window.printStockReport = () => {
 
             html += `
                 <tr>
-                    <td class="col-name">${item.itemName || 'Unknown Item'}</td>
-                    <td class="col-qty">${qtyDisplay} ${item.unit}</td>
+                    <td style="border-right: 1px solid #000;">${escapeHtml(item.itemName || 'Unknown Item')}</td>
+                    <td class="text-right bold">${qtyDisplay} ${escapeHtml(item.unit || '')}</td>
                 </tr>
             `;
         });
@@ -15357,20 +16510,1113 @@ window.printStockReport = () => {
             </table>
             
             <div class="divider"></div>
-            <div class="text-center" style="font-size: 10px; margin-top: 5px;">End of Report</div>
+            <div class="text-center" style="font-size: 10.5px; margin-top: 5px; font-weight: 600; color: #444;">End of Report</div>
+            <script>
+                var hasPrinted = false;
+                function triggerPrint() {
+                    if (hasPrinted) return;
+                    hasPrinted = true;
+                    try {
+                        window.focus();
+                        window.print();
+                    } catch(e) {
+                        console.error(e);
+                    }
+                }
+                window.addEventListener('afterprint', function() {
+                    setTimeout(function() {
+                        try { window.close(); } catch(e) {}
+                    }, 150);
+                });
+                function schedulePrint() {
+                    if (document.fonts && document.fonts.ready) {
+                        document.fonts.ready.then(function() {
+                            if (window.requestAnimationFrame) {
+                                window.requestAnimationFrame(function() {
+                                    window.requestAnimationFrame(function() {
+                                        setTimeout(triggerPrint, 250);
+                                    });
+                                });
+                            } else {
+                                setTimeout(triggerPrint, 250);
+                            }
+                        }).catch(function() {
+                            setTimeout(triggerPrint, 250);
+                        });
+                    } else {
+                        if (window.requestAnimationFrame) {
+                            window.requestAnimationFrame(function() {
+                                window.requestAnimationFrame(function() {
+                                    setTimeout(triggerPrint, 250);
+                                });
+                            });
+                        } else {
+                            setTimeout(triggerPrint, 250);
+                        }
+                    }
+                }
+                if (document.readyState === 'complete') {
+                    schedulePrint();
+                } else {
+                    window.addEventListener('load', schedulePrint, { once: true });
+                    setTimeout(schedulePrint, 500);
+                }
+            </script>
         </body>
         </html>
     `;
 
-    const printWindow = window.open('', '', 'height=600,width=400');
-    printWindow.document.write(html);
-    printWindow.document.close();
-
-    // Auto print
-    printWindow.onload = function () {
-        setTimeout(function () {
-            printWindow.print();
-            printWindow.close();
-        }, 500);
-    };
+    openReportPrintWindow(html, 'Stock Report');
 };
+
+// ==========================================
+// ITEM PROFIT & RECIPE COSTING SYSTEM
+// ==========================================
+
+const DEFAULT_MENU_RECIPES = {
+    'loaded fries': [
+        { itemName: 'Potatoes', qty: 250, unit: 'g' },
+        { itemName: 'Chicken', qty: 100, unit: 'g' },
+        { itemName: 'Mayonnaise', qty: 40, unit: 'g' },
+        { itemName: 'Special Masala', qty: 15, unit: 'g' },
+        { itemName: 'Cheese Slices', qty: 1, unit: 'pcs' },
+        { itemName: 'Cooking Oil', qty: 40, unit: 'mL' }
+    ],
+    'french fries': [
+        { itemName: 'Potatoes', qty: 200, unit: 'g' },
+        { itemName: 'Cooking Oil', qty: 40, unit: 'mL' },
+        { itemName: 'Special Masala', qty: 10, unit: 'g' }
+    ],
+    'fries': [
+        { itemName: 'Potatoes', qty: 200, unit: 'g' },
+        { itemName: 'Cooking Oil', qty: 40, unit: 'mL' },
+        { itemName: 'Special Masala', qty: 10, unit: 'g' }
+    ],
+    'burger': [
+        { itemName: 'Burger Buns', qty: 1, unit: 'pcs' },
+        { itemName: 'Chicken', qty: 120, unit: 'g' },
+        { itemName: 'Mayonnaise', qty: 25, unit: 'g' },
+        { itemName: 'Cheese Slices', qty: 1, unit: 'pcs' },
+        { itemName: 'Cooking Oil', qty: 30, unit: 'mL' }
+    ],
+    'zinger': [
+        { itemName: 'Burger Buns', qty: 1, unit: 'pcs' },
+        { itemName: 'Chicken', qty: 140, unit: 'g' },
+        { itemName: 'Mayonnaise', qty: 30, unit: 'g' },
+        { itemName: 'Cheese Slices', qty: 1, unit: 'pcs' },
+        { itemName: 'Cooking Oil', qty: 40, unit: 'mL' }
+    ],
+    'sandwich': [
+        { itemName: 'Sandwich Bread', qty: 2, unit: 'pcs' },
+        { itemName: 'Chicken', qty: 90, unit: 'g' },
+        { itemName: 'Mayonnaise', qty: 30, unit: 'g' },
+        { itemName: 'Cheese Slices', qty: 1, unit: 'pcs' },
+        { itemName: 'Eggs', qty: 1, unit: 'pcs' }
+    ],
+    'pizza': [
+        { itemName: 'Flour (Atta)', qty: 180, unit: 'g' },
+        { itemName: 'Chicken', qty: 120, unit: 'g' },
+        { itemName: 'Cheese Slices', qty: 2, unit: 'pcs' },
+        { itemName: 'Tomato Ketchup', qty: 35, unit: 'g' },
+        { itemName: 'Special Masala', qty: 10, unit: 'g' }
+    ],
+    'shawarma': [
+        { itemName: 'Sandwich Bread', qty: 1, unit: 'pcs' },
+        { itemName: 'Chicken', qty: 100, unit: 'g' },
+        { itemName: 'Mayonnaise', qty: 35, unit: 'g' },
+        { itemName: 'Garlic Sauce', qty: 20, unit: 'g' }
+    ],
+    'wings': [
+        { itemName: 'Chicken Wings', qty: 6, unit: 'pcs' },
+        { itemName: 'Cooking Oil', qty: 50, unit: 'mL' },
+        { itemName: 'Garlic Sauce', qty: 30, unit: 'g' }
+    ],
+    'tea': [
+        { itemName: 'Milk (Packed)', qty: 150, unit: 'mL' },
+        { itemName: 'Tea Leaves', qty: 8, unit: 'g' },
+        { itemName: 'Sugar', qty: 15, unit: 'g' }
+    ],
+    'chai': [
+        { itemName: 'Milk (Packed)', qty: 150, unit: 'mL' },
+        { itemName: 'Tea Leaves', qty: 8, unit: 'g' },
+        { itemName: 'Sugar', qty: 15, unit: 'g' }
+    ],
+    'coffee': [
+        { itemName: 'Milk (Packed)', qty: 180, unit: 'mL' },
+        { itemName: 'Coffee Beans', qty: 12, unit: 'g' },
+        { itemName: 'Sugar', qty: 15, unit: 'g' }
+    ]
+};
+
+function calculateIngredientCost(stockItem, qty, recipeUnit) {
+    if (!stockItem) return 0;
+    const unitPrice = parseFloat(stockItem.unitPrice) || 0;
+    const q = parseFloat(qty) || 0;
+    if (q <= 0 || unitPrice <= 0) return 0;
+
+    const stockUnit = (stockItem.unit || 'kg').toLowerCase().trim();
+    const targetUnit = (recipeUnit || stockUnit).toLowerCase().trim();
+
+    // Weight conversions (kg <-> g)
+    if (stockUnit === 'kg') {
+        if (targetUnit === 'g' || targetUnit === 'gram' || targetUnit === 'grams') {
+            return (q / 1000) * unitPrice;
+        }
+        if (targetUnit === 'kg') {
+            return q * unitPrice;
+        }
+        if (targetUnit === 'tbsp') {
+            return (q * 15 / 1000) * unitPrice;
+        }
+        if (targetUnit === 'tsp') {
+            return (q * 5 / 1000) * unitPrice;
+        }
+    } else if (stockUnit === 'g') {
+        if (targetUnit === 'g') return q * unitPrice;
+        if (targetUnit === 'kg') return q * 1000 * unitPrice;
+    }
+
+    // Volume conversions (L / liter <-> mL / ml)
+    if (stockUnit === 'l' || stockUnit === 'liter' || stockUnit === 'liters') {
+        if (targetUnit === 'ml' || targetUnit === 'ml' || targetUnit === 'milliliters') {
+            return (q / 1000) * unitPrice;
+        }
+        if (targetUnit === 'l' || targetUnit === 'liter') {
+            return q * unitPrice;
+        }
+        if (targetUnit === 'tbsp') {
+            return (q * 15 / 1000) * unitPrice;
+        }
+        if (targetUnit === 'tsp') {
+            return (q * 5 / 1000) * unitPrice;
+        }
+    } else if (stockUnit === 'ml' || stockUnit === 'ml') {
+        if (targetUnit === 'ml') return q * unitPrice;
+        if (targetUnit === 'l' || targetUnit === 'liter') return q * 1000 * unitPrice;
+    }
+
+    // Direct unit match (pcs, pack, box, portion, etc.)
+    return q * unitPrice;
+}
+
+function getItemRecipesMap() {
+    let recipes = Storage.get('itemRecipes');
+    if (!recipes || typeof recipes !== 'object' || Array.isArray(recipes)) {
+        recipes = {};
+    }
+    return recipes;
+}
+
+function saveItemRecipesMap(recipes) {
+    Storage.set('itemRecipes', recipes);
+}
+
+function getAllItemsProfitData() {
+    const menuItems = Storage.get('menuItems') || [];
+    const categories = Storage.get('menuCategories') || [];
+    const stocks = syncAndGetStockItems();
+    const recipesMap = getItemRecipesMap();
+
+    const stockById = {};
+    const stockByName = {};
+    stocks.forEach(s => {
+        if (s.id) stockById[s.id] = s;
+        if (s.itemName) stockByName[s.itemName.toLowerCase().trim()] = s;
+    });
+
+    const categoryMap = {};
+    categories.forEach(c => {
+        categoryMap[c.id] = c.name;
+    });
+
+    return menuItems.map(item => {
+        const itemId = String(item.id);
+        let recipe = recipesMap[itemId];
+
+        // If no recipe explicitly saved, check template match
+        if (!recipe) {
+            const nameLower = (item.name || '').toLowerCase();
+            for (const [key, tpl] of Object.entries(DEFAULT_MENU_RECIPES)) {
+                if (nameLower.includes(key)) {
+                    const ingredients = tpl.map(t => {
+                        const matchingStock = stockByName[t.itemName.toLowerCase()] || 
+                            stocks.find(s => s.itemName.toLowerCase().includes(t.itemName.toLowerCase()));
+                        return {
+                            stockId: matchingStock ? matchingStock.id : '',
+                            itemName: matchingStock ? matchingStock.itemName : t.itemName,
+                            qty: t.qty,
+                            unit: t.unit
+                        };
+                    });
+                    recipe = {
+                        menuItemId: itemId,
+                        ingredients: ingredients,
+                        isAutoTemplate: true
+                    };
+                    break;
+                }
+            }
+        }
+
+        const ingredientsDetailed = [];
+        let totalCost = 0;
+
+        if (recipe && Array.isArray(recipe.ingredients)) {
+            recipe.ingredients.forEach(ing => {
+                const stock = stockById[ing.stockId] || 
+                    (ing.itemName ? stockByName[ing.itemName.toLowerCase().trim()] : null) ||
+                    (ing.itemName ? stocks.find(s => s.itemName.toLowerCase().includes(ing.itemName.toLowerCase().trim())) : null);
+                
+                const cost = calculateIngredientCost(stock, ing.qty, ing.unit);
+                totalCost += cost;
+                ingredientsDetailed.push({
+                    stockId: stock ? stock.id : (ing.stockId || ''),
+                    itemName: ing.itemName || (stock ? stock.itemName : 'Ingredient'),
+                    qty: ing.qty,
+                    unit: ing.unit,
+                    stockUnitPrice: stock ? parseFloat(stock.unitPrice) || 0 : 0,
+                    stockUnit: stock ? stock.unit : ing.unit,
+                    cost: cost,
+                    stockFound: !!stock
+                });
+            });
+        }
+
+        const sellPrice = parseFloat(item.price) || 0;
+        const netProfit = sellPrice - totalCost;
+        const marginPercent = sellPrice > 0 ? (netProfit / sellPrice) * 100 : 0;
+        const foodCostPercent = sellPrice > 0 ? (totalCost / sellPrice) * 100 : 0;
+        const hasRecipe = ingredientsDetailed.length > 0;
+
+        return {
+            item,
+            id: item.id,
+            name: item.name || 'Unnamed Item',
+            categoryId: item.categoryId,
+            categoryName: categoryMap[item.categoryId] || 'General',
+            image: item.image,
+            sellPrice,
+            totalCost,
+            netProfit,
+            marginPercent,
+            foodCostPercent,
+            hasRecipe,
+            recipe,
+            ingredientsDetailed
+        };
+    });
+}
+
+window.loadItemProfitSection = function loadItemProfitSection() {
+    // Populate Categories Filter
+    const catSelect = document.getElementById('profitCategoryFilter');
+    if (catSelect) {
+        const categories = Storage.get('menuCategories') || [];
+        const currentVal = catSelect.value || 'all';
+        catSelect.innerHTML = '<option value="all">All Categories</option>' + 
+            categories.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+        catSelect.value = currentVal;
+    }
+
+    loadItemProfitTable();
+};
+
+window.loadItemProfitTable = function loadItemProfitTable() {
+    const allData = getAllItemsProfitData();
+    const tbody = document.getElementById('profitTableBody');
+    if (!tbody) return;
+
+    // Filters
+    const catFilter = document.getElementById('profitCategoryFilter')?.value || 'all';
+    const statusFilter = document.getElementById('profitStatusFilter')?.value || 'all';
+    const searchQuery = (document.getElementById('profitSearch')?.value || '').toLowerCase().trim();
+    const sortFilter = document.getElementById('profitSortFilter')?.value || 'margin-desc';
+
+    let filtered = allData.filter(d => {
+        if (catFilter !== 'all' && String(d.categoryId) !== String(catFilter)) {
+            return false;
+        }
+        if (statusFilter === 'configured' && !d.hasRecipe) {
+            return false;
+        }
+        if (statusFilter === 'missing' && d.hasRecipe) {
+            return false;
+        }
+        if (searchQuery) {
+            const matchName = d.name.toLowerCase().includes(searchQuery);
+            const matchCat = d.categoryName.toLowerCase().includes(searchQuery);
+            const matchIng = d.ingredientsDetailed.some(i => i.itemName.toLowerCase().includes(searchQuery));
+            if (!matchName && !matchCat && !matchIng) return false;
+        }
+        return true;
+    });
+
+    // Sorting
+    filtered.sort((a, b) => {
+        switch (sortFilter) {
+            case 'margin-desc': return b.marginPercent - a.marginPercent;
+            case 'margin-asc': return a.marginPercent - b.marginPercent;
+            case 'profit-desc': return b.netProfit - a.netProfit;
+            case 'profit-asc': return a.netProfit - b.netProfit;
+            case 'price-desc': return b.sellPrice - a.sellPrice;
+            case 'cost-desc': return b.totalCost - a.totalCost;
+            case 'name-asc': return a.name.localeCompare(b.name);
+            default: return b.marginPercent - a.marginPercent;
+        }
+    });
+
+    // Compute Executive Stats
+    let totalItems = allData.length;
+    let configuredCount = allData.filter(d => d.hasRecipe).length;
+    let sumMargin = 0;
+    let sumProfit = 0;
+    let topMarginItem = null;
+
+    allData.forEach(d => {
+        sumMargin += d.marginPercent;
+        sumProfit += d.netProfit;
+        if (!topMarginItem || (d.hasRecipe && d.marginPercent > topMarginItem.marginPercent)) {
+            if (d.hasRecipe) topMarginItem = d;
+        }
+    });
+
+    const avgMargin = totalItems > 0 ? (sumMargin / totalItems) : 0;
+    const avgProfit = totalItems > 0 ? (sumProfit / totalItems) : 0;
+
+    const avgMarginEl = document.getElementById('profitStatAvgMargin');
+    if (avgMarginEl) avgMarginEl.textContent = avgMargin.toFixed(1) + '%';
+
+    const avgProfitEl = document.getElementById('profitStatAvgProfit');
+    if (avgProfitEl) avgProfitEl.textContent = 'Rs. ' + formatNumber(Math.round(avgProfit));
+
+    const coverageEl = document.getElementById('profitStatRecipeCoverage');
+    if (coverageEl) coverageEl.textContent = `${configuredCount} / ${totalItems}`;
+
+    const topItemEl = document.getElementById('profitStatTopItem');
+    const topItemSubEl = document.getElementById('profitStatTopItemSub');
+    if (topItemEl) {
+        if (topMarginItem) {
+            topItemEl.textContent = topMarginItem.name;
+            if (topItemSubEl) topItemSubEl.textContent = `${topMarginItem.marginPercent.toFixed(1)}% margin (Rs. ${formatNumber(Math.round(topMarginItem.netProfit))} profit)`;
+        } else {
+            topItemEl.textContent = 'None set';
+            if (topItemSubEl) topItemSubEl.textContent = 'Configure recipes below';
+        }
+    }
+
+    const countEl = document.getElementById('profitItemsCount');
+    if (countEl) {
+        countEl.textContent = `Showing ${filtered.length} of ${totalItems} menu items`;
+    }
+
+    // Render Table Rows
+    tbody.innerHTML = '';
+    if (filtered.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 36px 20px; color: #64748b; font-size: 14.5px;">
+                    <div style="font-size: 32px; margin-bottom: 8px;">🔍</div>
+                    No menu items match your search / filter criteria.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    filtered.forEach((row, idx) => {
+        const tr = document.createElement('tr');
+        tr.style.cssText = 'border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;';
+        tr.onmouseover = () => { tr.style.background = '#f8fafc'; };
+        tr.onmouseout = () => { tr.style.background = 'transparent'; };
+
+        let marginBadgeClass = 'neutral';
+        if (row.hasRecipe) {
+            if (row.marginPercent >= 50) marginBadgeClass = 'high';
+            else if (row.marginPercent >= 30) marginBadgeClass = 'medium';
+            else marginBadgeClass = 'low';
+        }
+
+        // Ingredients summary chips
+        let ingredientsHTML = '';
+        if (row.hasRecipe && row.ingredientsDetailed.length > 0) {
+            const chips = row.ingredientsDetailed.map(i => `
+                <span class="recipe-ingredient-chip" title="${escapeHtml(i.itemName)}: ${i.qty} ${i.unit} @ Rs. ${formatNumber(i.stockUnitPrice)}/${i.stockUnit}">
+                    ${escapeHtml(i.itemName)} <strong>${i.qty}${i.unit}</strong>
+                    <span class="recipe-ingredient-chip-cost">(Rs. ${formatNumber(Math.round(i.cost))})</span>
+                </span>
+            `).join('');
+            ingredientsHTML = `<div style="display: flex; flex-wrap: wrap; gap: 4px; max-width: 320px;">${chips}</div>`;
+        } else {
+            ingredientsHTML = `
+                <span style="display: inline-flex; align-items: center; gap: 5px; color: #94a3b8; font-size: 12.5px; font-style: italic;">
+                    ⚠️ No recipe ingredients defined
+                </span>
+            `;
+        }
+
+        tr.innerHTML = `
+            <td style="padding: 12px 14px; text-align: center; font-weight: 700; color: #64748b; font-size: 13.5px;">
+                ${idx + 1}
+            </td>
+            <td style="padding: 12px 16px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; border-radius: 8px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 20px; overflow: hidden; border: 1px solid #e2e8f0; flex-shrink: 0;">
+                        ${row.image ? `<img src="${row.image}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.outerHTML='🍲'">` : '🍲'}
+                    </div>
+                    <div>
+                        <div style="font-weight: 700; color: #1e293b; font-size: 14.5px;">${escapeHtml(row.name)}</div>
+                        <div style="font-size: 12px; color: #0284c7; font-weight: 600; margin-top: 1px;">${escapeHtml(row.categoryName)}</div>
+                    </div>
+                </div>
+            </td>
+            <td style="padding: 12px 14px; text-align: right; font-weight: 700; color: #0f172a; font-size: 14.5px;">
+                Rs. ${formatNumber(row.sellPrice)}
+            </td>
+            <td style="padding: 12px 14px; text-align: right; font-weight: 700; color: #dc2626; font-size: 14.5px;">
+                ${row.hasRecipe ? `Rs. ${formatNumber(row.totalCost.toFixed(1))}` : '<span style="color: #94a3b8; font-weight: 500;">-</span>'}
+            </td>
+            <td style="padding: 12px 14px; text-align: right; font-weight: 800; color: ${row.netProfit >= 0 ? '#059669' : '#dc2626'}; font-size: 14.5px;">
+                ${row.hasRecipe ? `Rs. ${formatNumber(Math.round(row.netProfit))}` : '<span style="color: #94a3b8; font-weight: 500;">-</span>'}
+            </td>
+            <td style="padding: 12px 14px; text-align: center;">
+                ${row.hasRecipe ? `
+                    <span class="profit-margin-badge ${marginBadgeClass}">
+                        ${row.marginPercent.toFixed(1)}%
+                    </span>
+                ` : `
+                    <span class="profit-margin-badge neutral">
+                        Not Set
+                    </span>
+                `}
+            </td>
+            <td style="padding: 12px 16px;">
+                ${ingredientsHTML}
+            </td>
+            <td style="padding: 12px 14px; text-align: center;">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <button type="button" onclick="openRecipeCostModal('${row.id}')"
+                        title="Set or Edit Recipe Ingredients"
+                        style="background: #eff6ff; border: 1px solid #bfdbfe; color: #2563eb; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 12.5px; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s ease;">
+                        <span>🥗</span> ${row.hasRecipe ? 'Edit Recipe' : 'Set Recipe'}
+                    </button>
+                    ${row.hasRecipe ? `
+                    <button type="button" onclick="openCostSlipModal('${row.id}')"
+                        title="View Detailed Cost Breakdown Slip"
+                        style="background: #f8fafc; border: 1px solid #cbd5e1; color: #475569; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12.5px; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s ease;">
+                        <span>🧾</span> Slip
+                    </button>
+                    ` : ''}
+                </div>
+            </td>
+        `;
+
+        tbody.appendChild(tr);
+    });
+};
+
+// ==========================================
+// RECIPE CONFIGURATION MODAL CONTROLLER
+// ==========================================
+
+let activeRecipeItemId = null;
+
+window.openRecipeCostModalForNewOrSelect = function openRecipeCostModalForNewOrSelect() {
+    const allData = getAllItemsProfitData();
+    if (allData.length === 0) {
+        showCustomAlert('Please add menu items in Menu Management first.');
+        return;
+    }
+    // Open for first missing or first item
+    const missing = allData.find(d => !d.hasRecipe) || allData[0];
+    openRecipeCostModal(missing.id);
+};
+
+window.openRecipeCostModal = function openRecipeCostModal(itemId) {
+    activeRecipeItemId = String(itemId);
+    const allData = getAllItemsProfitData();
+    const itemData = allData.find(d => String(d.id) === String(itemId));
+    if (!itemData) return;
+
+    const modal = document.getElementById('recipeCostModal');
+    if (!modal) return;
+
+    modal.style.display = 'flex';
+
+    // Populate Item Info
+    const nameEl = document.getElementById('recipeModalItemName');
+    if (nameEl) nameEl.textContent = itemData.name;
+
+    const catEl = document.getElementById('recipeModalItemCategory');
+    if (catEl) catEl.textContent = itemData.categoryName;
+
+    const imgEl = document.getElementById('recipeModalItemImage');
+    if (imgEl) {
+        imgEl.innerHTML = itemData.image ? 
+            `<img src="${itemData.image}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.outerHTML='🍲'">` : '🍲';
+    }
+
+    const priceInput = document.getElementById('recipeModalSellPrice');
+    if (priceInput) {
+        priceInput.value = itemData.sellPrice;
+    }
+
+    // Populate Quick Add Stock Chips
+    const stocks = syncAndGetStockItems();
+    const chipsContainer = document.getElementById('recipeQuickAddChips');
+    if (chipsContainer) {
+        chipsContainer.innerHTML = stocks.slice(0, 15).map(s => `
+            <span class="recipe-quick-chip" onclick="quickAddStockToRecipe('${s.id}')" title="Stock: ${s.quantity} ${s.unit} @ Rs. ${formatNumber(s.unitPrice)}/${s.unit}">
+                ➕ ${escapeHtml(s.itemName)} <span style="color: #64748b; font-size: 11px;">(${s.unit})</span>
+            </span>
+        `).join('');
+    }
+
+    // Populate Ingredients Table
+    const tbody = document.getElementById('recipeIngredientsTableBody');
+    if (tbody) {
+        tbody.innerHTML = '';
+        if (itemData.ingredientsDetailed.length > 0) {
+            itemData.ingredientsDetailed.forEach(ing => {
+                addRecipeIngredientRow(ing);
+            });
+        } else {
+            // Add initial empty row
+            addRecipeIngredientRow();
+        }
+    }
+
+    recalculateRecipeLiveSummary();
+};
+
+window.closeRecipeCostModal = function closeRecipeCostModal() {
+    const modal = document.getElementById('recipeCostModal');
+    if (modal) modal.style.display = 'none';
+    activeRecipeItemId = null;
+};
+
+window.addRecipeIngredientRow = function addRecipeIngredientRow(data = null) {
+    const tbody = document.getElementById('recipeIngredientsTableBody');
+    if (!tbody) return;
+
+    const stocks = syncAndGetStockItems();
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #e2e8f0';
+
+    const selectedStockId = data ? data.stockId : '';
+    const selectedQty = data ? data.qty : '';
+    const selectedUnit = data ? data.unit : 'g';
+
+    const stockOptions = stocks.map(s => {
+        const isSelected = (selectedStockId && String(s.id) === String(selectedStockId)) || 
+            (!selectedStockId && data && data.itemName && s.itemName.toLowerCase() === data.itemName.toLowerCase());
+        return `<option value="${s.id}" data-unit="${escapeHtml(s.unit)}" data-price="${s.unitPrice}" ${isSelected ? 'selected' : ''}>
+            ${escapeHtml(s.itemName)} (${s.unit} @ Rs. ${formatNumber(s.unitPrice)})
+        </option>`;
+    }).join('');
+
+    tr.innerHTML = `
+        <td style="padding: 8px 10px;">
+            <select class="recipe-row-input recipe-ing-stock-select" onchange="onRecipeIngredientStockChange(this)">
+                <option value="">-- Select Stock Item --</option>
+                ${stockOptions}
+            </select>
+        </td>
+        <td style="padding: 8px 6px;">
+            <input type="number" class="recipe-row-input recipe-ing-qty-input" value="${selectedQty}" placeholder="0" min="0" step="any" oninput="recalculateRecipeLiveSummary()" style="text-align: center;">
+        </td>
+        <td style="padding: 8px 6px;">
+            <select class="recipe-row-input recipe-ing-unit-select" onchange="recalculateRecipeLiveSummary()">
+                <option value="g" ${selectedUnit === 'g' ? 'selected' : ''}>g (grams)</option>
+                <option value="kg" ${selectedUnit === 'kg' ? 'selected' : ''}>kg</option>
+                <option value="mL" ${selectedUnit === 'mL' || selectedUnit === 'ml' ? 'selected' : ''}>mL</option>
+                <option value="L" ${selectedUnit === 'L' || selectedUnit === 'liter' ? 'selected' : ''}>L (liters)</option>
+                <option value="pcs" ${selectedUnit === 'pcs' ? 'selected' : ''}>pcs</option>
+                <option value="pack" ${selectedUnit === 'pack' ? 'selected' : ''}>pack</option>
+                <option value="portion" ${selectedUnit === 'portion' ? 'selected' : ''}>portion</option>
+                <option value="tbsp" ${selectedUnit === 'tbsp' ? 'selected' : ''}>tbsp (15g)</option>
+                <option value="tsp" ${selectedUnit === 'tsp' ? 'selected' : ''}>tsp (5g)</option>
+            </select>
+        </td>
+        <td style="padding: 8px 10px; text-align: right; color: #475569; font-weight: 600; font-size: 13px;">
+            <span class="recipe-ing-rate-label">Rs. 0</span>
+        </td>
+        <td style="padding: 8px 10px; text-align: right; color: #dc2626; font-weight: 700; font-size: 13.5px;">
+            <span class="recipe-ing-cost-label">Rs. 0.00</span>
+        </td>
+        <td style="padding: 8px 6px; text-align: center;">
+            <button type="button" class="recipe-row-delete-btn" onclick="removeRecipeIngredientRow(this)" title="Remove Ingredient">
+                ✕
+            </button>
+        </td>
+    `;
+
+    tbody.appendChild(tr);
+
+    // Trigger initial rate label update
+    const select = tr.querySelector('.recipe-ing-stock-select');
+    if (select) onRecipeIngredientStockChange(select, false);
+
+    recalculateRecipeLiveSummary();
+};
+
+window.removeRecipeIngredientRow = function removeRecipeIngredientRow(btn) {
+    const tr = btn.closest('tr');
+    if (tr) {
+        tr.remove();
+        recalculateRecipeLiveSummary();
+    }
+};
+
+window.onRecipeIngredientStockChange = function onRecipeIngredientStockChange(selectEl, autoSetUnit = true) {
+    const tr = selectEl.closest('tr');
+    if (!tr) return;
+
+    const opt = selectEl.options[selectEl.selectedIndex];
+    const unit = opt ? opt.getAttribute('data-unit') : '';
+    const price = opt ? parseFloat(opt.getAttribute('data-price')) || 0 : 0;
+
+    const rateLabel = tr.querySelector('.recipe-ing-rate-label');
+    if (rateLabel) {
+        rateLabel.textContent = opt && opt.value ? `@ Rs. ${formatNumber(price)}/${unit}` : '-';
+    }
+
+    if (autoSetUnit && unit) {
+        const unitSelect = tr.querySelector('.recipe-ing-unit-select');
+        if (unitSelect) {
+            const u = unit.toLowerCase();
+            if (u === 'kg') unitSelect.value = 'g';
+            else if (u === 'l' || u === 'liter') unitSelect.value = 'mL';
+            else if (u === 'pcs') unitSelect.value = 'pcs';
+            else if (u === 'pack') unitSelect.value = 'pack';
+            else unitSelect.value = unit;
+        }
+    }
+
+    recalculateRecipeLiveSummary();
+};
+
+window.quickAddStockToRecipe = function quickAddStockToRecipe(stockId) {
+    const stocks = syncAndGetStockItems();
+    const stock = stocks.find(s => String(s.id) === String(stockId));
+    if (!stock) return;
+
+    let defaultQty = 1;
+    let defaultUnit = stock.unit;
+
+    if (stock.unit === 'kg') {
+        defaultQty = 100;
+        defaultUnit = 'g';
+    } else if (stock.unit === 'L' || stock.unit === 'liter') {
+        defaultQty = 50;
+        defaultUnit = 'mL';
+    }
+
+    addRecipeIngredientRow({
+        stockId: stock.id,
+        itemName: stock.itemName,
+        qty: defaultQty,
+        unit: defaultUnit
+    });
+};
+
+window.clearRecipeIngredients = function clearRecipeIngredients() {
+    const tbody = document.getElementById('recipeIngredientsTableBody');
+    if (tbody) tbody.innerHTML = '';
+    recalculateRecipeLiveSummary();
+};
+
+window.recalculateRecipeLiveSummary = function recalculateRecipeLiveSummary() {
+    const tbody = document.getElementById('recipeIngredientsTableBody');
+    if (!tbody) return;
+
+    const stocks = syncAndGetStockItems();
+    const stockById = {};
+    stocks.forEach(s => { stockById[String(s.id)] = s; });
+
+    let totalCost = 0;
+    const rows = tbody.querySelectorAll('tr');
+
+    rows.forEach(tr => {
+        const select = tr.querySelector('.recipe-ing-stock-select');
+        const qtyInput = tr.querySelector('.recipe-ing-qty-input');
+        const unitSelect = tr.querySelector('.recipe-ing-unit-select');
+        const costLabel = tr.querySelector('.recipe-ing-cost-label');
+
+        const stockId = select ? select.value : '';
+        const qty = qtyInput ? parseFloat(qtyInput.value) || 0 : 0;
+        const unit = unitSelect ? unitSelect.value : 'g';
+        const stock = stockById[stockId];
+
+        const cost = calculateIngredientCost(stock, qty, unit);
+        totalCost += cost;
+
+        if (costLabel) {
+            costLabel.textContent = `Rs. ${cost.toFixed(2)}`;
+        }
+    });
+
+    const sellPriceInput = document.getElementById('recipeModalSellPrice');
+    const sellPrice = sellPriceInput ? parseFloat(sellPriceInput.value) || 0 : 0;
+    const netProfit = sellPrice - totalCost;
+    const margin = sellPrice > 0 ? (netProfit / sellPrice) * 100 : 0;
+
+    const liveCostEl = document.getElementById('recipeLiveCost');
+    if (liveCostEl) liveCostEl.textContent = `Rs. ${totalCost.toFixed(2)}`;
+
+    const liveProfitEl = document.getElementById('recipeLiveProfit');
+    if (liveProfitEl) {
+        liveProfitEl.textContent = `Rs. ${netProfit.toFixed(2)}`;
+        liveProfitEl.style.color = netProfit >= 0 ? '#059669' : '#dc2626';
+    }
+
+    const liveMarginEl = document.getElementById('recipeLiveMargin');
+    if (liveMarginEl) {
+        liveMarginEl.textContent = `${margin.toFixed(1)}%`;
+        liveMarginEl.style.color = margin >= 50 ? '#059669' : margin >= 30 ? '#d97706' : '#dc2626';
+    }
+};
+
+window.saveRecipeCosting = function saveRecipeCosting() {
+    if (!activeRecipeItemId) return;
+
+    const tbody = document.getElementById('recipeIngredientsTableBody');
+    if (!tbody) return;
+
+    const stocks = syncAndGetStockItems();
+    const stockById = {};
+    stocks.forEach(s => { stockById[String(s.id)] = s; });
+
+    const ingredients = [];
+    const rows = tbody.querySelectorAll('tr');
+
+    rows.forEach(tr => {
+        const select = tr.querySelector('.recipe-ing-stock-select');
+        const qtyInput = tr.querySelector('.recipe-ing-qty-input');
+        const unitSelect = tr.querySelector('.recipe-ing-unit-select');
+
+        const stockId = select ? select.value : '';
+        const qty = qtyInput ? parseFloat(qtyInput.value) || 0 : 0;
+        const unit = unitSelect ? unitSelect.value : 'g';
+        const stock = stockById[stockId];
+
+        if (stockId && qty > 0) {
+            ingredients.push({
+                stockId: stockId,
+                itemName: stock ? stock.itemName : '',
+                qty: qty,
+                unit: unit
+            });
+        }
+    });
+
+    const recipesMap = getItemRecipesMap();
+    recipesMap[activeRecipeItemId] = {
+        menuItemId: activeRecipeItemId,
+        ingredients: ingredients,
+        updatedAt: new Date().toISOString()
+    };
+    saveItemRecipesMap(recipesMap);
+
+    // Update selling price on menu item if edited
+    const sellPriceInput = document.getElementById('recipeModalSellPrice');
+    const newPrice = sellPriceInput ? parseFloat(sellPriceInput.value) : null;
+    if (newPrice !== null && !isNaN(newPrice) && newPrice >= 0) {
+        const menuItems = Storage.get('menuItems') || [];
+        const item = menuItems.find(m => String(m.id) === String(activeRecipeItemId));
+        if (item && item.price !== newPrice) {
+            item.price = newPrice;
+            Storage.set('menuItems', menuItems);
+        }
+    }
+
+    closeRecipeCostModal();
+    loadItemProfitTable();
+
+    if (typeof showCustomAlert === 'function') {
+        showCustomAlert('Recipe and item costing saved successfully! ✅');
+    }
+};
+
+// ==========================================
+// COST BREAKDOWN SLIP & PRINTING
+// ==========================================
+
+let activeSlipItemId = null;
+
+window.openCostSlipModal = function openCostSlipModal(itemId) {
+    activeSlipItemId = String(itemId);
+    const allData = getAllItemsProfitData();
+    const itemData = allData.find(d => String(d.id) === String(itemId));
+    if (!itemData) return;
+
+    const modal = document.getElementById('costSlipModal');
+    const content = document.getElementById('costSlipContent');
+    if (!modal || !content) return;
+
+    let ingredientsRows = '';
+    itemData.ingredientsDetailed.forEach(i => {
+        ingredientsRows += `
+            <tr>
+                <td style="padding: 4px 6px; border-bottom: 1px solid #e2e8f0; font-weight: 500;">${escapeHtml(i.itemName)}</td>
+                <td style="padding: 4px 6px; border-bottom: 1px solid #e2e8f0; text-align: center; font-weight: 600;">${i.qty} ${i.unit}</td>
+                <td style="padding: 4px 6px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 700;">Rs. ${i.cost.toFixed(1)}</td>
+            </tr>
+        `;
+    });
+
+    content.innerHTML = `
+        <div style="text-align: center; border-bottom: 1.5px dashed #cbd5e1; padding-bottom: 12px; margin-bottom: 12px;">
+            <div style="font-weight: 800; font-size: 16px; color: #1e293b; text-transform: uppercase;">Hangout Lounge & Co.</div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Item Recipe & Cost Breakdown</div>
+            <div style="font-weight: 800; font-size: 17px; color: #0284c7; margin-top: 6px;">${escapeHtml(itemData.name)}</div>
+            <div style="font-size: 11.5px; color: #64748b;">Category: ${escapeHtml(itemData.categoryName)}</div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; margin-bottom: 14px;">
+            <thead>
+                <tr style="background: #f1f5f9; color: #334155;">
+                    <th style="padding: 5px 6px; text-align: left; font-weight: 700;">Ingredient</th>
+                    <th style="padding: 5px 6px; text-align: center; font-weight: 700;">Portion</th>
+                    <th style="padding: 5px 6px; text-align: right; font-weight: 700;">Cost</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${ingredientsRows}
+            </tbody>
+        </table>
+
+        <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 12px; font-size: 13.5px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                <span style="color: #64748b; font-weight: 600;">Selling Price:</span>
+                <span style="font-weight: 700; color: #1e293b;">Rs. ${formatNumber(itemData.sellPrice)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                <span style="color: #64748b; font-weight: 600;">Total Ingredient Cost:</span>
+                <span style="font-weight: 700; color: #dc2626;">Rs. ${itemData.totalCost.toFixed(2)}</span>
+            </div>
+            <div style="border-top: 1px dashed #cbd5e1; margin: 6px 0; padding-top: 6px; display: flex; justify-content: space-between;">
+                <span style="color: #059669; font-weight: 800;">Net Profit / Serving:</span>
+                <span style="font-weight: 800; color: #059669;">Rs. ${itemData.netProfit.toFixed(2)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+                <span style="color: #0284c7; font-weight: 700;">Profit Margin:</span>
+                <span style="font-weight: 800; color: #0284c7;">${itemData.marginPercent.toFixed(1)}%</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 2px;">
+                <span style="color: #64748b; font-size: 11.5px;">Food Cost %:</span>
+                <span style="font-weight: 600; color: #64748b; font-size: 11.5px;">${itemData.foodCostPercent.toFixed(1)}%</span>
+            </div>
+        </div>
+    `;
+
+    modal.style.display = 'flex';
+};
+
+window.closeCostSlipModal = function closeCostSlipModal() {
+    const modal = document.getElementById('costSlipModal');
+    if (modal) modal.style.display = 'none';
+    activeSlipItemId = null;
+};
+
+window.printSingleItemCostSlip = function printSingleItemCostSlip() {
+    if (!activeSlipItemId) return;
+    const allData = getAllItemsProfitData();
+    const itemData = allData.find(d => String(d.id) === String(activeSlipItemId));
+    if (!itemData) return;
+
+    let ingredientsRows = '';
+    itemData.ingredientsDetailed.forEach(i => {
+        ingredientsRows += `
+            <tr>
+                <td style="padding: 2.5px 4px; border: 1px solid #000;">${escapeHtml(i.itemName)}</td>
+                <td style="padding: 2.5px 4px; border: 1px solid #000; text-align: center; font-weight: 600;">${i.qty} ${i.unit}</td>
+                <td style="padding: 2.5px 4px; border: 1px solid #000; text-align: right; font-weight: 700;">Rs. ${i.cost.toFixed(1)}</td>
+            </tr>
+        `;
+    });
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Cost Slip - ${escapeHtml(itemData.name)}</title>
+            <style>
+                body {
+                    font-family: 'Poppins', -apple-system, sans-serif !important;
+                    font-size: 11px;
+                    width: 80mm;
+                    max-width: 80mm;
+                    margin: 0 auto;
+                    padding: 8px;
+                    color: #000;
+                    background: #fff;
+                }
+                .text-center { text-align: center; }
+                .text-right { text-align: right; }
+                .bold { font-weight: 700; }
+                .divider { border-bottom: 1px dashed #000; margin: 6px 0; }
+                table { width: 100%; border-collapse: collapse; margin: 6px 0; border: 1px solid #000; font-size: 10.5px; }
+                th { background: #f2f2f2; border: 1px solid #000; padding: 3px 4px; font-weight: 700; }
+                @media print {
+                    @page { size: 80mm auto; margin: 0; }
+                    body { width: 100%; max-width: 100%; padding: 4px; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="text-center">
+                <div class="bold" style="font-size: 15px;">HANGOUT LOUNGE & CO.</div>
+                <div style="font-size: 10px;">Item Recipe & Cost Breakdown</div>
+                <div class="bold" style="font-size: 13px; margin-top: 4px;">${escapeHtml(itemData.name)}</div>
+                <div style="font-size: 10px;">Category: ${escapeHtml(itemData.categoryName)}</div>
+                <div style="font-size: 9.5px; color: #555;">${dateStr} ${timeStr}</div>
+            </div>
+            <div class="divider"></div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="text-align: left;">Ingredient</th>
+                        <th style="text-align: center;">Portion</th>
+                        <th style="text-align: right;">Cost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${ingredientsRows}
+                </tbody>
+            </table>
+
+            <table style="margin-top: 6px;">
+                <tr>
+                    <td style="padding: 3px 6px; border: 1px solid #000;">Selling Price</td>
+                    <td class="text-right bold" style="padding: 3px 6px; border: 1px solid #000;">Rs. ${formatNumber(itemData.sellPrice)}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 3px 6px; border: 1px solid #000;">Total Ingredient Cost</td>
+                    <td class="text-right bold" style="padding: 3px 6px; border: 1px solid #000;">Rs. ${itemData.totalCost.toFixed(2)}</td>
+                </tr>
+                <tr style="background: #f2f2f2;">
+                    <td class="bold" style="padding: 4px 6px; border: 1px solid #000; font-size: 11.5px;">Net Profit / Serving</td>
+                    <td class="text-right bold" style="padding: 4px 6px; border: 1px solid #000; font-size: 11.5px;">Rs. ${itemData.netProfit.toFixed(2)}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 3px 6px; border: 1px solid #000;">Profit Margin %</td>
+                    <td class="text-right bold" style="padding: 3px 6px; border: 1px solid #000;">${itemData.marginPercent.toFixed(1)}%</td>
+                </tr>
+            </table>
+
+            <div class="text-center" style="margin-top: 10px; font-size: 9.5px; color: #444;">
+                Printed for Internal Costing Reference
+            </div>
+
+            <script>
+                window.addEventListener('load', function() {
+                    window.print();
+                    setTimeout(function() { window.close(); }, 200);
+                });
+            </script>
+        </body>
+        </html>
+    `;
+
+    openReportPrintWindow(html, `Cost Slip - ${itemData.name}`);
+};
+
+window.printProfitCostReport = function printProfitCostReport() {
+    const allData = getAllItemsProfitData();
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+    let rowsHTML = '';
+    allData.forEach((row, idx) => {
+        rowsHTML += `
+            <tr>
+                <td style="text-align: center; border: 1px solid #000; padding: 3px 4px;">${idx + 1}</td>
+                <td style="border: 1px solid #000; padding: 3px 5px; font-weight: 600;">${escapeHtml(row.name)}</td>
+                <td style="border: 1px solid #000; padding: 3px 4px; font-size: 9.5px;">${escapeHtml(row.categoryName)}</td>
+                <td style="text-align: right; border: 1px solid #000; padding: 3px 5px; font-weight: 700;">Rs. ${formatNumber(row.sellPrice)}</td>
+                <td style="text-align: right; border: 1px solid #000; padding: 3px 5px; font-weight: 700;">${row.hasRecipe ? 'Rs. ' + row.totalCost.toFixed(1) : '-'}</td>
+                <td style="text-align: right; border: 1px solid #000; padding: 3px 5px; font-weight: 700;">${row.hasRecipe ? 'Rs. ' + Math.round(row.netProfit) : '-'}</td>
+                <td style="text-align: center; border: 1px solid #000; padding: 3px 4px; font-weight: 700;">${row.hasRecipe ? row.marginPercent.toFixed(1) + '%' : '-'}</td>
+            </tr>
+        `;
+    });
+
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Item Cost & Profit Analysis Report</title>
+            <style>
+                body {
+                    font-family: 'Poppins', -apple-system, sans-serif !important;
+                    font-size: 11px;
+                    width: 80mm;
+                    max-width: 80mm;
+                    margin: 0 auto;
+                    padding: 8px;
+                    color: #000;
+                    background: #fff;
+                }
+                .text-center { text-align: center; }
+                .text-right { text-align: right; }
+                .bold { font-weight: 700; }
+                .divider { border-bottom: 1px dashed #000; margin: 6px 0; }
+                table { width: 100%; border-collapse: collapse; margin: 6px 0; border: 1px solid #000; font-size: 10px; }
+                th { background: #f2f2f2; border: 1px solid #000; padding: 3px 4px; font-weight: 700; }
+                @media print {
+                    @page { size: 80mm auto; margin: 0; }
+                    body { width: 100%; max-width: 100%; padding: 4px; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="text-center">
+                <div class="bold" style="font-size: 15px;">HANGOUT LOUNGE & CO.</div>
+                <div class="bold" style="font-size: 12px; margin-top: 2px;">ITEM PROFIT & COST REPORT</div>
+                <div style="font-size: 9.5px; color: #555;">Generated: ${dateStr} ${timeStr}</div>
+            </div>
+            <div class="divider"></div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 25px; text-align: center;">#</th>
+                        <th style="text-align: left;">Item</th>
+                        <th style="text-align: left;">Cat</th>
+                        <th style="text-align: right;">Sell</th>
+                        <th style="text-align: right;">Cost</th>
+                        <th style="text-align: right;">Profit</th>
+                        <th style="text-align: center;">Margin</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rowsHTML}
+                </tbody>
+            </table>
+
+            <div class="divider"></div>
+            <div class="text-center" style="font-size: 9.5px; color: #444;">
+                Total Menu Items: ${allData.length} | Configured: ${allData.filter(d => d.hasRecipe).length}
+            </div>
+
+            <script>
+                window.addEventListener('load', function() {
+                    window.print();
+                    setTimeout(function() { window.close(); }, 200);
+                });
+            </script>
+        </body>
+        </html>
+    `;
+
+    openReportPrintWindow(html, 'Item Cost & Profit Analysis Report');
+};
+

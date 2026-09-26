@@ -16,9 +16,12 @@ function createWindow() {
   });
 
   mainWindow.maximize();
-  mainWindow.show();
 
-  mainWindow.loadFile('login.html');
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+  });
+
+  mainWindow.loadFile('index.html');
 
   // Open DevTools in development
   if (process.argv.includes('--dev')) {

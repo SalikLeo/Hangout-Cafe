@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2874a6"/>
+      <stop offset="100%" stop-color="#1b4f72"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  
+  <!-- Background Card -->
+  <rect width="240" height="240" rx="28" fill="url(#bgGrad)"/>
+  
+  <!-- Decorative Background Circles -->
+  <circle cx="210" cy="30" r="60" fill="#ffffff" opacity="0.08"/>
+  <circle cx="20" cy="220" r="50" fill="#000000" opacity="0.08"/>
+  
+  <!-- Center Visual Icon / Illustration -->
+  <g filter="url(#shadow)" transform="translate(120, 100)">
+    
+            <!-- Cut Triangle Sandwich -->
+            <polygon points="-45,25 0,-35 45,25" fill="#f8c471"/>
+            <!-- Fillings visible on cut side -->
+            <line x1="-35" y1="12" x2="35" y2="12" stroke="#27ae60" stroke-width="4"/>
+            <line x1="-28" y1="2" x2="28" y2="2" stroke="#e74c3c" stroke-width="4"/>
+            <line x1="-20" y1="-8" x2="20" y2="-8" stroke="#f4d03f" stroke-width="4"/>
+            <line x1="-12" y1="-18" x2="12" y2="-18" stroke="#ba4a00" stroke-width="5"/>
+            <!-- Toothpick with olive -->
+            <line x1="0" y1="-35" x2="0" y2="-55" stroke="#bdc3c7" stroke-width="3"/>
+            <circle cx="0" cy="-56" r="5" fill="#e74c3c"/>
+        
+  </g>
+  
+  <!-- Bottom Plate / Pill Header -->
+  <g transform="translate(120, 195)">
+    <rect x="-95" y="-18" width="190" height="34" rx="17" fill="rgba(0,0,0,0.35)" backdrop-filter="blur(4px)"/>
+    <text x="0" y="4" font-family="'Segoe UI', Roboto, 'Helvetica Neue', sans-serif" font-size="13" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="0.3">Classic Club Sandwich</text>
+  </g>
+</svg>

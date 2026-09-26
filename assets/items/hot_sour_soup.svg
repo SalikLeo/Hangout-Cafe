@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#78281f"/>
+      <stop offset="100%" stop-color="#4a154b"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  
+  <!-- Background Card -->
+  <rect width="240" height="240" rx="28" fill="url(#bgGrad)"/>
+  
+  <!-- Decorative Background Circles -->
+  <circle cx="210" cy="30" r="60" fill="#ffffff" opacity="0.08"/>
+  <circle cx="20" cy="220" r="50" fill="#000000" opacity="0.08"/>
+  
+  <!-- Center Visual Icon / Illustration -->
+  <g filter="url(#shadow)" transform="translate(120, 100)">
+    
+            <!-- Soup Bowl -->
+            <path d="M-45,-5 C-45,28 45,28 45,-5 Z" fill="#b03a2e"/>
+            <ellipse cx="0" cy="-5" rx="45" ry="14" fill="#641e16"/>
+            <!-- Spicy Dark Broth -->
+            <ellipse cx="0" cy="-5" rx="40" ry="11" fill="#78281f"/>
+            <!-- Egg drops, mushroom & chicken shreds -->
+            <path d="M-22,-7 Q-10,-2 -2,-7 Q8,-2 20,-7" stroke="#f4d03f" stroke-width="2.5" fill="none"/>
+            <circle cx="-12" cy="-4" r="2.5" fill="#1b2631"/>
+            <circle cx="14" cy="-5" r="2.5" fill="#27ae60"/>
+            <!-- Soup Spoon -->
+            <path d="M15,-5 L36,-28 C42,-34 46,-28 42,-22 L24,-1 Z" fill="#bdc3c7"/>
+            <!-- Steam -->
+            <path d="M-10,-24 Q-5,-38 -12,-50" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
+        
+  </g>
+  
+  <!-- Bottom Plate / Pill Header -->
+  <g transform="translate(120, 195)">
+    <rect x="-95" y="-18" width="190" height="34" rx="17" fill="rgba(0,0,0,0.35)" backdrop-filter="blur(4px)"/>
+    <text x="0" y="4" font-family="'Segoe UI', Roboto, 'Helvetica Neue', sans-serif" font-size="13" font-weight="700" fill="#f9e79f" text-anchor="middle" letter-spacing="0.3">Hot &amp; Sour Soup</text>
+  </g>
+</svg>

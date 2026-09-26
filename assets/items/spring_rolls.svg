@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#b9770e"/>
+      <stop offset="100%" stop-color="#784212"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  
+  <!-- Background Card -->
+  <rect width="240" height="240" rx="28" fill="url(#bgGrad)"/>
+  
+  <!-- Decorative Background Circles -->
+  <circle cx="210" cy="30" r="60" fill="#ffffff" opacity="0.08"/>
+  <circle cx="20" cy="220" r="50" fill="#000000" opacity="0.08"/>
+  
+  <!-- Center Visual Icon / Illustration -->
+  <g filter="url(#shadow)" transform="translate(120, 100)">
+    
+            <!-- Golden crispy rolls -->
+            <rect x="-38" y="-14" width="76" height="15" rx="7.5" transform="rotate(-25)" fill="#f39c12"/>
+            <rect x="-38" y="4" width="76" height="15" rx="7.5" transform="rotate(-25)" fill="#d68910"/>
+            <line x1="-20" y1="-12" x2="-14" y2="2" stroke="#b9770e" stroke-width="2.5"/>
+            <line x1="10" y1="2" x2="16" y2="16" stroke="#935116" stroke-width="2.5"/>
+            <!-- Sweet chili dip -->
+            <circle cx="32" cy="18" r="10" fill="#c0392b"/>
+        
+  </g>
+  
+  <!-- Bottom Plate / Pill Header -->
+  <g transform="translate(120, 195)">
+    <rect x="-95" y="-18" width="190" height="34" rx="17" fill="rgba(0,0,0,0.35)" backdrop-filter="blur(4px)"/>
+    <text x="0" y="4" font-family="'Segoe UI', Roboto, 'Helvetica Neue', sans-serif" font-size="13" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="0.3">Veg Spring Rolls (4 pcs)</text>
+  </g>
+</svg>
