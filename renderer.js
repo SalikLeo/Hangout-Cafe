@@ -6008,40 +6008,6 @@ window.printSales = () => {
                 </div>
 
                 <div class="separator"></div>
-                <div class="section-title">Order Type Wise</div>
-
-                <table style="width: 100%; border-collapse: collapse; margin: 4px 0 6px 0; border: 1.5px solid #000; background: #fff;">
-                    <thead>
-                        <tr style="border-bottom: 1.5px solid #000;">
-                            <th style="text-align: left; padding: 4px 5px; font-size: 11px; font-weight: 600; border-right: 1px solid #000; width: 30%; color: #000;">Location</th>
-                            <th style="text-align: center; padding: 4px 3px; font-size: 11px; font-weight: 600; border-right: 1px solid #000; width: 20%; color: #000;">Bills</th>
-                            <th style="text-align: right; padding: 4px 5px; font-size: 11px; font-weight: 600; border-right: 1px solid #000; width: 28%; color: #000;">Total</th>
-                            <th style="text-align: right; padding: 4px 5px; font-size: 11px; font-weight: 600; width: 22%; color: #000;">Avg</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr style="border-bottom: 1px solid #000;">
-                            <td style="text-align: left; padding: 4px 5px; font-size: 11.5px; font-weight: 500; border-right: 1px solid #000; color: #000;">Gents</td>
-                            <td style="text-align: center; padding: 4px 3px; font-size: 12px; font-weight: 600; border-right: 1px solid #000; color: #000;">${gents.count}</td>
-                            <td style="text-align: right; padding: 4px 5px; font-size: 11.5px; font-weight: 500; border-right: 1px solid #000; color: #000;">Rs. ${formatNumber(gents.total)}</td>
-                            <td style="text-align: right; padding: 4px 5px; font-size: 11.5px; font-weight: 500; color: #000;">Rs. ${formatNumber(Math.round(gents.avg))}</td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid #000;">
-                            <td style="text-align: left; padding: 4px 5px; font-size: 11.5px; font-weight: 500; border-right: 1px solid #000; color: #000;">Family</td>
-                            <td style="text-align: center; padding: 4px 3px; font-size: 12px; font-weight: 600; border-right: 1px solid #000; color: #000;">${family.count}</td>
-                            <td style="text-align: right; padding: 4px 5px; font-size: 11.5px; font-weight: 500; border-right: 1px solid #000; color: #000;">Rs. ${formatNumber(family.total)}</td>
-                            <td style="text-align: right; padding: 4px 5px; font-size: 11.5px; font-weight: 500; color: #000;">Rs. ${formatNumber(Math.round(family.avg))}</td>
-                        </tr>
-                        <tr>
-                            <td style="text-align: left; padding: 4px 5px; font-size: 11.5px; font-weight: 500; border-right: 1px solid #000; color: #000;">Parcel</td>
-                            <td style="text-align: center; padding: 4px 3px; font-size: 12px; font-weight: 600; border-right: 1px solid #000; color: #000;">${parcel.count}</td>
-                            <td style="text-align: right; padding: 4px 5px; font-size: 11.5px; font-weight: 500; border-right: 1px solid #000; color: #000;">Rs. ${formatNumber(parcel.total)}</td>
-                            <td style="text-align: right; padding: 4px 5px; font-size: 11.5px; font-weight: 500; color: #000;">Rs. ${formatNumber(Math.round(parcel.avg))}</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <div class="separator"></div>
                 <div style="text-align: center; font-size: 10.5px; font-weight: 500; color: #555; margin-top: 4px;">
                     Report Generated Successfully
                 </div>
@@ -16281,40 +16247,6 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
                 <span>Rs. ${formatNumber(cashInHand)}</span>
             </div>
             
-            <div class="divider"></div>
-            
-            <div class="section-title">Order Type Breakdown</div>
-            <table class="report-table">
-                <thead>
-                    <tr style="border-bottom: 1.5px solid #000;">
-                        <th style="width: 32%; border-right: 1px solid #000;">LOCATION</th>
-                        <th style="width: 18%; text-align: center; border-right: 1px solid #000;">BILLS</th>
-                        <th style="width: 28%; text-align: right; border-right: 1px solid #000;">TOTAL</th>
-                        <th style="width: 22%; text-align: right;">AVG</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td style="border-right: 1px solid #000;">Gents</td>
-                        <td class="text-center bold" style="border-right: 1px solid #000;">${locationStats['Gents'].bills}</td>
-                        <td class="text-right" style="border-right: 1px solid #000;">Rs. ${formatNumber(locationStats['Gents'].total)}</td>
-                        <td class="text-right">Rs. ${formatNumber(locationStats['Gents'].bills > 0 ? Math.round(locationStats['Gents'].total / locationStats['Gents'].bills) : 0)}</td>
-                    </tr>
-                    <tr>
-                        <td style="border-right: 1px solid #000;">Family</td>
-                        <td class="text-center bold" style="border-right: 1px solid #000;">${locationStats['Family'].bills}</td>
-                        <td class="text-right" style="border-right: 1px solid #000;">Rs. ${formatNumber(locationStats['Family'].total)}</td>
-                        <td class="text-right">Rs. ${formatNumber(locationStats['Family'].bills > 0 ? Math.round(locationStats['Family'].total / locationStats['Family'].bills) : 0)}</td>
-                    </tr>
-                    <tr>
-                        <td style="border-right: 1px solid #000;">Parcel</td>
-                        <td class="text-center bold" style="border-right: 1px solid #000;">${locationStats['Parcel'].bills}</td>
-                        <td class="text-right" style="border-right: 1px solid #000;">Rs. ${formatNumber(locationStats['Parcel'].total)}</td>
-                        <td class="text-right">Rs. ${formatNumber(locationStats['Parcel'].bills > 0 ? Math.round(locationStats['Parcel'].total / locationStats['Parcel'].bills) : 0)}</td>
-                    </tr>
-                </tbody>
-            </table>
-
             <div class="divider"></div>
             
             <div class="section-title">Expenses Breakdown</div>
