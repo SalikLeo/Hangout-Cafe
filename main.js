@@ -1,13 +1,16 @@
 const { app, BrowserWindow, dialog } = require('electron');
 const path = require('path');
 
+// Disable GPU hardware acceleration to avoid Windows AMD DirectComposition driver warning logs
+app.disableHardwareAcceleration();
+
 let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    show: false,
+    show: true,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -16,10 +19,6 @@ function createWindow() {
   });
 
   mainWindow.maximize();
-
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-  });
 
   mainWindow.loadFile('index.html');
 
