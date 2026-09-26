@@ -8044,29 +8044,19 @@ window.filterConsumptionDropdown = function filterConsumptionDropdown() {
         return;
     }
 
-    highlightedDropdownIndex = 0;
+    highlightedDropdownIndex = -1;
     menu.innerHTML = filtered.map((stock, idx) => `
-        <div class="cons-dropdown-item ${idx === 0 ? 'active' : ''}" data-id="${stock.id}" data-idx="${idx}"
-            onclick="selectConsumptionDropdownItem('${stock.id}')"
-            onmouseenter="setDropdownItemHover(${idx})"
-            style="padding: 10px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; font-size: 13.5px; transition: background 0.1s; background: ${idx === 0 ? '#f0fdf4' : 'transparent'};">
+        <div class="cons-dropdown-item" data-id="${stock.id}" data-idx="${idx}"
+            onclick="selectConsumptionDropdownItem('${stock.id}')">
             <span style="font-weight: 700; color: #0f172a;">${escapeHtml(stock.itemName)}</span>
             <span style="font-size: 12px; font-weight: 600; color: #059669; background: #ecfdf5; padding: 2px 8px; border-radius: 6px; border: 1px solid #d1fae5;">Available: ${formatQuantity(stock.quantity)} ${stock.unit}</span>
         </div>
     `).join('');
 };
 
-window.setDropdownItemHover = function setDropdownItemHover(idx) {
-    highlightedDropdownIndex = idx;
-    const items = document.querySelectorAll('.cons-dropdown-item');
-    items.forEach((item, i) => {
-        item.style.background = i === idx ? '#f0fdf4' : 'transparent';
-    });
-};
-
 window.handleConsumptionSearchKeydown = function handleConsumptionSearchKeydown(event) {
     const menu = document.getElementById('consumptionDropdownMenu');
-    const items = document.querySelectorAll('.cons-dropdown-item');
+    const items = menu ? menu.querySelectorAll('.cons-dropdown-item') : [];
 
     if (event.key === 'ArrowDown') {
         event.preventDefault();
@@ -8075,15 +8065,21 @@ window.handleConsumptionSearchKeydown = function handleConsumptionSearchKeydown(
             return;
         }
         if (items.length > 0) {
+            if (highlightedDropdownIndex >= 0 && items[highlightedDropdownIndex]) {
+                items[highlightedDropdownIndex].classList.remove('active');
+            }
             highlightedDropdownIndex = (highlightedDropdownIndex + 1) % items.length;
-            setDropdownItemHover(highlightedDropdownIndex);
+            items[highlightedDropdownIndex].classList.add('active');
             items[highlightedDropdownIndex].scrollIntoView({ block: 'nearest' });
         }
     } else if (event.key === 'ArrowUp') {
         event.preventDefault();
         if (items.length > 0) {
+            if (highlightedDropdownIndex >= 0 && items[highlightedDropdownIndex]) {
+                items[highlightedDropdownIndex].classList.remove('active');
+            }
             highlightedDropdownIndex = (highlightedDropdownIndex - 1 + items.length) % items.length;
-            setDropdownItemHover(highlightedDropdownIndex);
+            items[highlightedDropdownIndex].classList.add('active');
             items[highlightedDropdownIndex].scrollIntoView({ block: 'nearest' });
         }
     } else if (event.key === 'Enter') {
@@ -8106,6 +8102,7 @@ window.handleConsumptionSearchKeydown = function handleConsumptionSearchKeydown(
         closeConsumptionDropdown();
     }
 };
+
 
 window.selectConsumptionDropdownItem = function selectConsumptionDropdownItem(stockId) {
     if (!stockId) return;

@@ -3117,3 +3117,47 @@ input[type="text"].pos-search-input::placeholder {
     color: #2563eb;
     border-color: #93c5fd;
 }
+
+/* Smooth Hardware-Accelerated Consumption Search Dropdown */
+#consumptionDropdownMenu {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f8fafc;
+    -webkit-overflow-scrolling: touch;
+    transform: translateZ(0);
+    will-change: scroll-position;
+    contain: layout paint;
+}
+
+#consumptionDropdownMenu::-webkit-scrollbar {
+    width: 6px;
+}
+
+#consumptionDropdownMenu::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+#consumptionDropdownMenu::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.cons-dropdown-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 13.5px;
+    background-color: #ffffff;
+    user-select: none;
+}
+
+.cons-dropdown-item:hover,
+.cons-dropdown-item.active {
+    background-color: #f0fdf4 !important;
+}
+
+.cons-dropdown-item:last-child {
+    border-bottom: none;
+}
