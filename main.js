@@ -63,14 +63,12 @@ function createWindow() {
     }
 
     if (holdCount > 0) {
-      await dialog.showMessageBox(mainWindow, {
-        type: 'warning',
-        buttons: ['OK'],
-        defaultId: 0,
-        title: 'Hold Orders Pending',
-        message: 'Please complete Hold Orders before closing the application.',
-        detail: `You have ${holdCount} order(s) still in Hold Orders.`
-      });
+      await mainWindow.webContents.executeJavaScript(
+        `if (typeof showCustomAlert === 'function') {
+          showCustomAlert('Please complete Hold Orders before closing the application.\\n\\nYou have ${holdCount} order(s) still in Hold Orders.', 'Hold Orders Pending');
+        }`,
+        true
+      );
       mainWindow.__closeCheckInProgress = false;
       return;
     }

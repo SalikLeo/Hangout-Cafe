@@ -264,9 +264,25 @@ window.showCustomConfirm = function(msg, onConfirm, onCancel = null, options = {
     if (confirmBtn) confirmBtn.onclick = () => finish(true);
 };
 
-// Global alert override
+// Global overrides for native browser dialogs to always use the app-designed modal box
 window.alert = function(msg) {
-    showCustomAlert(msg);
+    if (typeof showCustomAlert === 'function') {
+        showCustomAlert(msg);
+    }
+};
+
+window.confirm = function(msg) {
+    if (typeof showCustomConfirm === 'function') {
+        showCustomConfirm(msg, () => {});
+    }
+    return true;
+};
+
+window.prompt = function(msg, defaultVal) {
+    if (typeof showCustomAlert === 'function') {
+        showCustomAlert(msg || 'Action Required');
+    }
+    return defaultVal || '';
 };
 
 // Generic delete confirmation with tick/cross buttons
@@ -7841,73 +7857,88 @@ window.submitQuickAdjust = function submitQuickAdjust() {
     const currentQty = parseFloat(item.quantity) || 0;
     const oldPrice = parseFloat(item.unitPrice || 0);
 
+    const performQuickAdjust = () => {
+        let newPrice = oldPrice;
+        if (currentQuickAdjustType === 'add') {
+            const enteredPrice = parseFloat(document.getElementById('quickAdjustUnitPrice')?.value);
+            if (!isNaN(enteredPrice) && enteredPrice >= 0) {
+                newPrice = enteredPrice;
+                item.unitPrice = newPrice;
+            }
+        }
+
+        const newQty = currentQuickAdjustType === 'add' ? currentQty + qty : Math.max(0, currentQty - qty);
+        item.quantity = newQty;
+        item.updatedAt = new Date().toISOString();
+
+        Storage.set('stocks', stocks);
+
+        // Record in Stock Ledger
+        const priceNote = (currentQuickAdjustType === 'add' && newPrice !== oldPrice && oldPrice > 0)
+            ? ` (Rate updated: Rs. ${oldPrice} -> Rs. ${newPrice}/${item.unit})`
+            : ` (@ Rs. ${newPrice}/${item.unit})`;
+
+        recordStockLedgerEntry({
+            stockId: item.id,
+            itemName: item.itemName,
+            type: currentQuickAdjustType === 'add' ? 'adjustment_add' : 'adjustment_sub',
+            typeLabel: currentQuickAdjustType === 'add' ? 'Quick Stock Added (+)' : 'Quick Stock Deducted (-)',
+            changeQty: currentQuickAdjustType === 'add' ? qty : -qty,
+            previousQty: currentQty,
+            resultingQty: newQty,
+            unit: item.unit,
+            unitPrice: newPrice,
+            note: (note ? `${note}` : (currentQuickAdjustType === 'add' ? 'Manual stock addition (+)' : 'Manual stock subtraction (-)')) + priceNote,
+            date: getLocalISODate(),
+            timestamp: new Date().toISOString()
+        });
+
+        // Also log in consumption history if it was a subtraction
+        if (currentQuickAdjustType === 'subtract') {
+            const consumptions = Storage.get('stockConsumptions') || [];
+            consumptions.unshift({
+                id: 'cons_' + Date.now(),
+                date: new Date().toISOString().slice(0, 10),
+                timestamp: new Date().toISOString(),
+                note: note || 'Quick stock subtraction',
+                items: [
+                    {
+                        stockId: item.id,
+                        itemName: item.itemName,
+                        deductedQty: qty,
+                        unit: item.unit,
+                        note: note
+                    }
+                ]
+            });
+            Storage.set('stockConsumptions', consumptions);
+        }
+
+        closeQuickAdjustModal();
+        loadStock();
+        if (typeof showCustomAlert === 'function') {
+            showCustomAlert(`Stock updated: ${item.itemName} is now ${formatQuantity(newQty)} ${item.unit}.`, 'Success');
+        }
+    };
+
     if (currentQuickAdjustType === 'subtract' && qty > currentQty) {
-        if (!confirm(`Warning: Deducting ${qty} ${item.unit} will result in negative stock (${(currentQty - qty).toFixed(2)} ${item.unit}). Do you want to proceed?`)) {
+        if (typeof showCustomConfirm === 'function') {
+            showCustomConfirm(
+                `Warning: Deducting ${qty} ${item.unit} will result in negative stock (${(currentQty - qty).toFixed(2)} ${item.unit}). Do you want to proceed?`,
+                performQuickAdjust,
+                null,
+                {
+                    title: 'Negative Stock Warning',
+                    confirmText: 'Proceed Anyway',
+                    type: 'danger',
+                    icon: '⚠️'
+                }
+            );
             return;
         }
     }
 
-    let newPrice = oldPrice;
-    if (currentQuickAdjustType === 'add') {
-        const enteredPrice = parseFloat(document.getElementById('quickAdjustUnitPrice')?.value);
-        if (!isNaN(enteredPrice) && enteredPrice >= 0) {
-            newPrice = enteredPrice;
-            item.unitPrice = newPrice;
-        }
-    }
-
-    const newQty = currentQuickAdjustType === 'add' ? currentQty + qty : Math.max(0, currentQty - qty);
-    item.quantity = newQty;
-    item.updatedAt = new Date().toISOString();
-
-    Storage.set('stocks', stocks);
-
-    // Record in Stock Ledger
-    const priceNote = (currentQuickAdjustType === 'add' && newPrice !== oldPrice && oldPrice > 0)
-        ? ` (Rate updated: Rs. ${oldPrice} -> Rs. ${newPrice}/${item.unit})`
-        : ` (@ Rs. ${newPrice}/${item.unit})`;
-
-    recordStockLedgerEntry({
-        stockId: item.id,
-        itemName: item.itemName,
-        type: currentQuickAdjustType === 'add' ? 'adjustment_add' : 'adjustment_sub',
-        typeLabel: currentQuickAdjustType === 'add' ? 'Quick Stock Added (+)' : 'Quick Stock Deducted (-)',
-        changeQty: currentQuickAdjustType === 'add' ? qty : -qty,
-        previousQty: currentQty,
-        resultingQty: newQty,
-        unit: item.unit,
-        unitPrice: newPrice,
-        note: (note ? `${note}` : (currentQuickAdjustType === 'add' ? 'Manual stock addition (+)' : 'Manual stock subtraction (-)')) + priceNote,
-        date: getLocalISODate(),
-        timestamp: new Date().toISOString()
-    });
-
-    // Also log in consumption history if it was a subtraction
-    if (currentQuickAdjustType === 'subtract') {
-        const consumptions = Storage.get('stockConsumptions') || [];
-        consumptions.unshift({
-            id: 'cons_' + Date.now(),
-            date: new Date().toISOString().slice(0, 10),
-            timestamp: new Date().toISOString(),
-            note: note || 'Quick stock subtraction',
-            items: [
-                {
-                    stockId: item.id,
-                    itemName: item.itemName,
-                    deductedQty: qty,
-                    unit: item.unit,
-                    note: note
-                }
-            ]
-        });
-        Storage.set('stockConsumptions', consumptions);
-    }
-
-    closeQuickAdjustModal();
-    loadStock();
-    if (typeof showCustomAlert === 'function') {
-        showCustomAlert(`Stock updated: ${item.itemName} is now ${formatQuantity(newQty)} ${item.unit}.`, 'Success');
-    }
+    performQuickAdjust();
 };
 
 // ==========================================
@@ -14975,40 +15006,24 @@ function seedHangoutWmcMenu(forceReplace = false) {
 }
 
 window.promptReloadWmcMenu = function promptReloadWmcMenu() {
-    if (typeof showCustomConfirm === 'function') {
-        showCustomConfirm(
-            'Do you want to load the Hangout Cafe menu (Menu WMC)? This will populate all official categories and menu items.',
-            () => {
-                seedHangoutWmcMenu(false);
-                if (typeof loadMenuItemsList === 'function') loadMenuItemsList();
-                if (typeof loadMenuCategories === 'function') loadMenuCategories();
-                if (typeof updateCategoryDropdowns === 'function') updateCategoryDropdowns();
-                if (typeof loadCategories === 'function') loadCategories();
-                if (typeof loadMenuItems === 'function') loadMenuItems();
-                if (typeof showCustomAlert === 'function') {
-                    showCustomAlert('Hangout Cafe menu items and categories loaded successfully!', 'Success');
-                } else {
-                    alert('Hangout Cafe menu items and categories loaded successfully!');
-                }
-            },
-            null,
-            {
-                title: 'Load Hangout Cafe Menu',
-                confirmText: 'Load Menu',
-                type: 'info'
-            }
-        );
-    } else {
-        if (confirm('Load the Hangout Cafe menu (Menu WMC)?')) {
+    showCustomConfirm(
+        'Do you want to load the Hangout Cafe menu (Menu WMC)? This will populate all official categories and menu items.',
+        () => {
             seedHangoutWmcMenu(false);
             if (typeof loadMenuItemsList === 'function') loadMenuItemsList();
             if (typeof loadMenuCategories === 'function') loadMenuCategories();
             if (typeof updateCategoryDropdowns === 'function') updateCategoryDropdowns();
             if (typeof loadCategories === 'function') loadCategories();
             if (typeof loadMenuItems === 'function') loadMenuItems();
-            alert('Hangout Cafe menu items and categories loaded successfully!');
+            showCustomAlert('Hangout Cafe menu items and categories loaded successfully!', 'Success');
+        },
+        null,
+        {
+            title: 'Load Hangout Cafe Menu',
+            confirmText: 'Load Menu',
+            type: 'info'
         }
-    }
+    );
 };
 
 // Initialize menu structure
