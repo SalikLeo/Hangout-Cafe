@@ -1970,34 +1970,11 @@
                             <form id="stockForm" style="display: flex; flex-direction: column; width: 100%; gap: 16px;">
                                 <div class="modal-form-group" style="margin-bottom: 0;">
                                     <label style="font-weight: 600; font-size: 14px; color: #1e293b; display: block; margin-bottom: 6px;">Item / Ingredient Name *</label>
-                                    <input type="text" id="stockItemName" list="stockCommonIngredients"
+                                    <input type="text" id="stockItemName"
                                         placeholder="e.g. Tomatoes, Potatoes, Chicken, Eggs..." required
+                                        autocomplete="off"
                                         oninput="checkExistingStockItemOnInput()" onchange="checkExistingStockItemOnInput()"
                                         style="width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; height: 44px; line-height: normal;">
-                                    <datalist id="stockCommonIngredients">
-                                        <option value="Tomatoes"></option>
-                                        <option value="Potatoes"></option>
-                                        <option value="Chicken"></option>
-                                        <option value="Mayonnaise"></option>
-                                        <option value="Special Masala"></option>
-                                        <option value="Cooking Oil"></option>
-                                        <option value="Cheese Slices"></option>
-                                        <option value="Burger Buns"></option>
-                                        <option value="Sandwich Bread"></option>
-                                        <option value="Eggs"></option>
-                                        <option value="Milk (Packed)"></option>
-                                        <option value="Tea Leaves"></option>
-                                        <option value="Coffee Beans"></option>
-                                        <option value="Flour (Atta)"></option>
-                                        <option value="Sugar"></option>
-                                        <option value="Tomato Ketchup"></option>
-                                        <option value="Garlic Sauce"></option>
-                                        <option value="Fish Fillet"></option>
-                                        <option value="Chicken Wings"></option>
-                                        <option value="Rice (Basmati)"></option>
-                                        <option value="Daal"></option>
-                                        <option value="Nutella"></option>
-                                    </datalist>
 
                                     <!-- Dynamic Existing Item & Previous Price Info Banner -->
                                     <div id="stockExistingItemHint" class="stock-hint-banner" style="display: none; margin-top: 8px;">
