@@ -9255,6 +9255,8 @@ window.renderConsumptionHistoryList = function renderConsumptionHistoryList() {
     const valEl = document.getElementById('totalConsumptionValueDeducted');
     if (valEl) valEl.textContent = `Rs. ${formatNumber(totalEstimatedValue)}`;
 
+    const tfoot = document.getElementById('consumptionHistoryTableFoot');
+    if (tfoot) tfoot.innerHTML = '';
     tbody.innerHTML = '';
 
     if (filtered.length === 0) {
@@ -9302,6 +9304,23 @@ window.renderConsumptionHistoryList = function renderConsumptionHistoryList() {
             tbody.appendChild(tr);
         });
     });
+
+    if (tfoot) {
+        tfoot.innerHTML = `
+            <tr style="background: #f8fafc; border-top: 2px solid #cbd5e1; font-weight: 800;">
+                <td colspan="2" style="padding: 12px 14px; text-align: left; color: #0f172a; font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.5px;">
+                    TOTAL STOCK USED (${totalItemsDeductedCount} item${totalItemsDeductedCount === 1 ? '' : 's'})
+                </td>
+                <td style="padding: 12px 14px; text-align: right; color: #64748b; font-size: 13px;">-</td>
+                <td style="padding: 12px 14px; text-align: right; color: #0f766e; font-size: 14.5px; font-weight: 900; white-space: nowrap;">
+                    Rs. ${formatNumber(totalEstimatedValue)}
+                </td>
+                <td colspan="2" style="padding: 12px 14px; color: #64748b; font-size: 12px; font-weight: 600;">
+                    Total worth of stock consumed for selected period
+                </td>
+            </tr>
+        `;
+    }
 };
 
 window.printConsumptionLogsReport = function printConsumptionLogsReport() {
@@ -17012,17 +17031,33 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
     stocks.forEach(s => { stockMap[String(s.id)] = s; stockMap[(s.itemName || '').toLowerCase()] = s; });
 
     let periodIngredientCost = 0;
+    const consumedIngredientsMap = {};
+    let totalConsumedQty = 0;
+
     consumptions.forEach(log => {
         const d = parseDateSafe(log.timestamp || log.date);
         if (d && d >= startDate && d <= endDate) {
             (log.items || []).forEach(item => {
+                const name = item.itemName || 'Ingredient';
                 const qty = parseFloat(item.finalDeductQty || item.enteredQty || item.deductedQty) || 0;
                 const stock = stockMap[String(item.stockId)] || stockMap[(item.itemName || '').toLowerCase()];
                 const price = stock ? (parseFloat(stock.unitPrice) || 0) : 0;
-                periodIngredientCost += (qty * price);
+                const itemVal = qty * price;
+                const unit = item.enteredUnit || item.stockUnit || item.unit || (stock ? stock.unit : '');
+
+                periodIngredientCost += itemVal;
+
+                if (!consumedIngredientsMap[name]) {
+                    consumedIngredientsMap[name] = { name, quantity: 0, unit, totalValue: 0 };
+                }
+                consumedIngredientsMap[name].quantity += qty;
+                consumedIngredientsMap[name].totalValue += itemVal;
+                totalConsumedQty += qty;
             });
         }
     });
+
+    const consumedIngredientsList = Object.values(consumedIngredientsMap).sort((a, b) => b.totalValue - a.totalValue || a.name.localeCompare(b.name));
 
     const netActualProfit = netSale - periodIngredientCost - cashOut;
 
@@ -17274,7 +17309,7 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
                         <td class="text-right bold">Rs. ${formatNumber(periodIngredientCost)}</td>
                     </tr>
                     <tr>
-                        <td style="border-right: 1px solid #000;">Total Expenses</td>
+                        <td style="border-right: 1px solid #000;">Operating Expenses</td>
                         <td class="text-right bold">Rs. ${formatNumber(cashOut)}</td>
                     </tr>
                     <tr>
@@ -17317,6 +17352,36 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
                     <tr style="border-top: 1.5px solid #000;">
                         <td style="border-right: 1px solid #000; font-weight: 600;">TOTAL EXPENSES</td>
                         <td class="text-right" style="font-weight: 600;">Rs. ${formatNumber(cashOut)}</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="divider"></div>
+            
+            <div class="section-title">Ingredients Used (${consumedIngredientsList.length} Items)</div>
+            <table class="compact-items-table">
+                <thead>
+                    <tr style="border-bottom: 1.5px solid #000;">
+                        <th style="width: 50%; border-right: 1px solid #000;">INGREDIENT</th>
+                        <th style="width: 22%; text-align: center; border-right: 1px solid #000;">QTY</th>
+                        <th style="width: 28%; text-align: right;">EST. COST</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${consumedIngredientsList.length > 0 ? consumedIngredientsList.map(item => `
+                        <tr>
+                            <td style="border-right: 1px solid #000;">${escapeHtml(item.name)}</td>
+                            <td class="text-center bold" style="border-right: 1px solid #000;">${formatQuantity(item.quantity)} ${escapeHtml(item.unit)}</td>
+                            <td class="text-right">Rs. ${formatNumber(item.totalValue)}</td>
+                        </tr>
+                    `).join('') : `
+                        <tr>
+                            <td colspan="3" class="text-center" style="color: #666; font-style: italic; padding: 4px;">No ingredients deducted in this period</td>
+                        </tr>
+                    `}
+                    <tr class="totals-row" style="border-top: 1.5px solid #000; background: #fff;">
+                        <td colspan="2" style="border-right: 1px solid #000; font-weight: 700;">TOTAL INGREDIENT COST</td>
+                        <td class="text-right bold">Rs. ${formatNumber(periodIngredientCost)}</td>
                     </tr>
                 </tbody>
             </table>
