@@ -4768,13 +4768,8 @@ window.switchSalesView = (view) => {
 
     // Reset all buttons
     [salesHistoryBtn, itemsSalesBtn].forEach(btn => {
-        btn.style.background = 'transparent';
-        btn.style.color = '#666';
-        btn.style.border = '1px solid transparent';
-        btn.style.padding = '10px 18px';
-        btn.style.fontSize = '16px';
-        btn.style.fontWeight = '500';
-        btn.style.boxShadow = 'none';
+        btn.classList.remove('active');
+        btn.removeAttribute('style');
     });
 
     // Hide all sections
@@ -4783,18 +4778,10 @@ window.switchSalesView = (view) => {
 
     if (view === 'history') {
         salesHistorySection.style.display = 'block';
-        salesHistoryBtn.style.background = '#4a90e2';
-        salesHistoryBtn.style.color = '#ffffff';
-        salesHistoryBtn.style.border = '1px solid rgba(255, 255, 255, 0.2)';
-        salesHistoryBtn.style.fontWeight = '600';
-        salesHistoryBtn.style.boxShadow = '0 2px 4px rgba(74, 144, 226, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
+        salesHistoryBtn.classList.add('active');
     } else if (view === 'items') {
         itemsSalesSection.style.display = 'block';
-        itemsSalesBtn.style.background = '#4a90e2';
-        itemsSalesBtn.style.color = '#ffffff';
-        itemsSalesBtn.style.border = '1px solid rgba(255, 255, 255, 0.2)';
-        itemsSalesBtn.style.fontWeight = '600';
-        itemsSalesBtn.style.boxShadow = '0 2px 4px rgba(74, 144, 226, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
+        itemsSalesBtn.classList.add('active');
         loadItemsSales(); // Load data when switching to items view
     }
 };
@@ -9279,18 +9266,11 @@ window.switchStockView = function switchStockView(view) {
 
     const setActiveBtn = (btns, isActive) => {
         btns.forEach(btn => {
+            btn.removeAttribute('style');
             if (isActive) {
-                btn.style.background = '#4a90e2';
-                btn.style.color = '#ffffff';
-                btn.style.border = '1px solid rgba(255, 255, 255, 0.2)';
-                btn.style.fontWeight = '600';
-                btn.style.boxShadow = '0 2px 4px rgba(74, 144, 226, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
+                btn.classList.add('active');
             } else {
-                btn.style.background = 'transparent';
-                btn.style.color = '#666';
-                btn.style.border = '1px solid transparent';
-                btn.style.fontWeight = '500';
-                btn.style.boxShadow = 'none';
+                btn.classList.remove('active');
             }
         });
     };
@@ -10935,60 +10915,19 @@ window.filterTables = (filter) => {
     const bookedBtn = document.getElementById('tablesFilterBooked');
     const availableBtn = document.getElementById('tablesFilterAvailable');
 
-    // Reset all buttons to inactive state
-    if (allBtn) {
-        allBtn.style.background = 'transparent';
-        allBtn.style.color = '#666';
-        allBtn.style.border = '1px solid transparent';
-        allBtn.style.padding = '10px 18px';
-        allBtn.style.fontSize = '16px';
-        allBtn.style.boxShadow = 'none';
-        allBtn.style.fontWeight = '500';
-    }
-    if (bookedBtn) {
-        bookedBtn.style.background = 'transparent';
-        bookedBtn.style.color = '#666';
-        bookedBtn.style.border = '1px solid transparent';
-        bookedBtn.style.padding = '10px 18px';
-        bookedBtn.style.fontSize = '16px';
-        bookedBtn.style.boxShadow = 'none';
-        bookedBtn.style.fontWeight = '500';
-    }
-    if (availableBtn) {
-        availableBtn.style.background = 'transparent';
-        availableBtn.style.color = '#666';
-        availableBtn.style.border = '1px solid transparent';
-        availableBtn.style.padding = '10px 18px';
-        availableBtn.style.fontSize = '16px';
-        availableBtn.style.boxShadow = 'none';
-        availableBtn.style.fontWeight = '500';
-    }
+    [allBtn, bookedBtn, availableBtn].forEach(btn => {
+        if (btn) {
+            btn.classList.remove('active');
+            btn.removeAttribute('style');
+        }
+    });
 
-    // Set active button with modern styling
     if (filter === 'all' && allBtn) {
-        allBtn.style.background = '#4a90e2';
-        allBtn.style.color = '#ffffff';
-        allBtn.style.border = '1px solid rgba(255, 255, 255, 0.2)';
-        allBtn.style.padding = '10px 18px';
-        allBtn.style.fontSize = '16px';
-        allBtn.style.boxShadow = '0 2px 4px rgba(74, 144, 226, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
-        allBtn.style.fontWeight = '600';
+        allBtn.classList.add('active');
     } else if (filter === 'booked' && bookedBtn) {
-        bookedBtn.style.background = '#4a90e2';
-        bookedBtn.style.color = '#ffffff';
-        bookedBtn.style.border = '1px solid rgba(255, 255, 255, 0.2)';
-        bookedBtn.style.padding = '10px 18px';
-        bookedBtn.style.fontSize = '16px';
-        bookedBtn.style.boxShadow = '0 2px 4px rgba(74, 144, 226, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
-        bookedBtn.style.fontWeight = '600';
+        bookedBtn.classList.add('active');
     } else if (filter === 'available' && availableBtn) {
-        availableBtn.style.background = '#4a90e2';
-        availableBtn.style.color = '#ffffff';
-        availableBtn.style.border = '1px solid rgba(255, 255, 255, 0.2)';
-        availableBtn.style.padding = '10px 18px';
-        availableBtn.style.fontSize = '16px';
-        availableBtn.style.boxShadow = '0 2px 4px rgba(74, 144, 226, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
-        availableBtn.style.fontWeight = '600';
+        availableBtn.classList.add('active');
     }
 
     loadTables();
@@ -12193,147 +12132,55 @@ function updateProfitChart() {
 window.changeSalesChartView = (view) => {
     currentSalesChartView = view;
 
-    const dailyBtn = document.getElementById('salesChartViewDaily');
-    const weeklyBtn = document.getElementById('salesChartViewWeekly');
-    const monthlyBtn = document.getElementById('salesChartViewMonthly');
-    const annualBtn = document.getElementById('salesChartViewAnnual');
-    const yearlyBtn = document.getElementById('salesChartViewYearly');
+    const btns = {
+        'daily': document.getElementById('salesChartViewDaily'),
+        'weekly': document.getElementById('salesChartViewWeekly'),
+        'monthly': document.getElementById('salesChartViewMonthly'),
+        'annual': document.getElementById('salesChartViewAnnual'),
+        'yearly': document.getElementById('salesChartViewYearly')
+    };
 
-    if (dailyBtn) {
-        if (view === 'daily') {
-            dailyBtn.style.background = '#4a90e2';
-            dailyBtn.style.color = '#ffffff';
-            dailyBtn.style.fontWeight = '600';
-        } else {
-            dailyBtn.style.background = 'rgba(74, 144, 226, 0.1)';
-            dailyBtn.style.color = '#4a90e2';
-            dailyBtn.style.fontWeight = '500';
+    Object.keys(btns).forEach(key => {
+        const btn = btns[key];
+        if (btn) {
+            btn.removeAttribute('style');
+            if (key === view) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
         }
-    }
-
-    if (weeklyBtn) {
-        if (view === 'weekly') {
-            weeklyBtn.style.background = '#4a90e2';
-            weeklyBtn.style.color = '#ffffff';
-            weeklyBtn.style.fontWeight = '600';
-        } else {
-            weeklyBtn.style.background = 'rgba(74, 144, 226, 0.1)';
-            weeklyBtn.style.color = '#4a90e2';
-            weeklyBtn.style.fontWeight = '500';
-        }
-    }
-
-    if (monthlyBtn) {
-        if (view === 'monthly') {
-            monthlyBtn.style.background = '#4a90e2';
-            monthlyBtn.style.color = '#ffffff';
-            monthlyBtn.style.fontWeight = '600';
-        } else {
-            monthlyBtn.style.background = 'rgba(74, 144, 226, 0.1)';
-            monthlyBtn.style.color = '#4a90e2';
-            monthlyBtn.style.fontWeight = '500';
-        }
-    }
-
-    if (annualBtn) {
-        if (view === 'annual') {
-            annualBtn.style.background = '#4a90e2';
-            annualBtn.style.color = '#ffffff';
-            annualBtn.style.fontWeight = '600';
-        } else {
-            annualBtn.style.background = 'rgba(74, 144, 226, 0.1)';
-            annualBtn.style.color = '#4a90e2';
-            annualBtn.style.fontWeight = '500';
-        }
-    }
-
-    if (yearlyBtn) {
-        if (view === 'yearly') {
-            yearlyBtn.style.background = '#4a90e2';
-            yearlyBtn.style.color = '#ffffff';
-            yearlyBtn.style.fontWeight = '600';
-        } else {
-            yearlyBtn.style.background = 'rgba(74, 144, 226, 0.1)';
-            yearlyBtn.style.color = '#4a90e2';
-            yearlyBtn.style.fontWeight = '500';
-        }
-    }
+    });
 
     updateSalesChart();
-}
+};
 
 // Change profit chart view
 window.changeProfitChartView = (view) => {
     currentProfitChartView = view;
 
-    const dailyBtn = document.getElementById('profitChartViewDaily');
-    const weeklyBtn = document.getElementById('profitChartViewWeekly');
-    const monthlyBtn = document.getElementById('profitChartViewMonthly');
-    const annualBtn = document.getElementById('profitChartViewAnnual');
-    const yearlyBtn = document.getElementById('profitChartViewYearly');
+    const btns = {
+        'daily': document.getElementById('profitChartViewDaily'),
+        'weekly': document.getElementById('profitChartViewWeekly'),
+        'monthly': document.getElementById('profitChartViewMonthly'),
+        'annual': document.getElementById('profitChartViewAnnual'),
+        'yearly': document.getElementById('profitChartViewYearly')
+    };
 
-    if (dailyBtn) {
-        if (view === 'daily') {
-            dailyBtn.style.background = '#4a90e2';
-            dailyBtn.style.color = '#ffffff';
-            dailyBtn.style.fontWeight = '600';
-        } else {
-            dailyBtn.style.background = 'rgba(74, 144, 226, 0.1)';
-            dailyBtn.style.color = '#4a90e2';
-            dailyBtn.style.fontWeight = '500';
+    Object.keys(btns).forEach(key => {
+        const btn = btns[key];
+        if (btn) {
+            btn.removeAttribute('style');
+            if (key === view) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
         }
-    }
-
-    if (weeklyBtn) {
-        if (view === 'weekly') {
-            weeklyBtn.style.background = '#4a90e2';
-            weeklyBtn.style.color = '#ffffff';
-            weeklyBtn.style.fontWeight = '600';
-        } else {
-            weeklyBtn.style.background = 'rgba(74, 144, 226, 0.1)';
-            weeklyBtn.style.color = '#4a90e2';
-            weeklyBtn.style.fontWeight = '500';
-        }
-    }
-
-    if (monthlyBtn) {
-        if (view === 'monthly') {
-            monthlyBtn.style.background = '#4a90e2';
-            monthlyBtn.style.color = '#ffffff';
-            monthlyBtn.style.fontWeight = '600';
-        } else {
-            monthlyBtn.style.background = 'rgba(74, 144, 226, 0.1)';
-            monthlyBtn.style.color = '#4a90e2';
-            monthlyBtn.style.fontWeight = '500';
-        }
-    }
-
-    if (annualBtn) {
-        if (view === 'annual') {
-            annualBtn.style.background = '#4a90e2';
-            annualBtn.style.color = '#ffffff';
-            annualBtn.style.fontWeight = '600';
-        } else {
-            annualBtn.style.background = 'rgba(74, 144, 226, 0.1)';
-            annualBtn.style.color = '#4a90e2';
-            annualBtn.style.fontWeight = '500';
-        }
-    }
-
-    if (yearlyBtn) {
-        if (view === 'yearly') {
-            yearlyBtn.style.background = '#4a90e2';
-            yearlyBtn.style.color = '#ffffff';
-            yearlyBtn.style.fontWeight = '600';
-        } else {
-            yearlyBtn.style.background = 'rgba(74, 144, 226, 0.1)';
-            yearlyBtn.style.color = '#4a90e2';
-            yearlyBtn.style.fontWeight = '500';
-        }
-    }
+    });
 
     updateProfitChart();
-}
+};
 
 // Update customer chart based on current customer chart view
 function updateCustomerChart() {
@@ -12645,67 +12492,25 @@ window.changeCustomerChartView = (view) => {
     const weeklyBtn = document.getElementById('customerChartViewWeekly');
     const monthlyBtn = document.getElementById('customerChartViewMonthly');
     const annualBtn = document.getElementById('customerChartViewAnnual');
-    const yearlyBtn = document.getElementById('customerChartViewYearly');
+    const btns = {
+        'daily': document.getElementById('customerChartViewDaily'),
+        'weekly': document.getElementById('customerChartViewWeekly'),
+        'monthly': document.getElementById('customerChartViewMonthly'),
+        'annual': document.getElementById('customerChartViewAnnual'),
+        'yearly': document.getElementById('customerChartViewYearly')
+    };
 
-    if (dailyBtn) {
-        if (view === 'daily') {
-            dailyBtn.style.background = '#4a90e2';
-            dailyBtn.style.color = '#ffffff';
-            dailyBtn.style.fontWeight = '600';
-        } else {
-            dailyBtn.style.background = 'rgba(74, 144, 226, 0.1)';
-            dailyBtn.style.color = '#4a90e2';
-            dailyBtn.style.fontWeight = '500';
+    Object.keys(btns).forEach(key => {
+        const btn = btns[key];
+        if (btn) {
+            btn.removeAttribute('style');
+            if (key === view) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
         }
-    }
-
-    if (weeklyBtn) {
-        if (view === 'weekly') {
-            weeklyBtn.style.background = '#4a90e2';
-            weeklyBtn.style.color = '#ffffff';
-            weeklyBtn.style.fontWeight = '600';
-        } else {
-            weeklyBtn.style.background = 'rgba(74, 144, 226, 0.1)';
-            weeklyBtn.style.color = '#4a90e2';
-            weeklyBtn.style.fontWeight = '500';
-        }
-    }
-
-    if (monthlyBtn) {
-        if (view === 'monthly') {
-            monthlyBtn.style.background = '#4a90e2';
-            monthlyBtn.style.color = '#ffffff';
-            monthlyBtn.style.fontWeight = '600';
-        } else {
-            monthlyBtn.style.background = 'rgba(74, 144, 226, 0.1)';
-            monthlyBtn.style.color = '#4a90e2';
-            monthlyBtn.style.fontWeight = '500';
-        }
-    }
-
-    if (annualBtn) {
-        if (view === 'annual') {
-            annualBtn.style.background = '#4a90e2';
-            annualBtn.style.color = '#ffffff';
-            annualBtn.style.fontWeight = '600';
-        } else {
-            annualBtn.style.background = 'rgba(74, 144, 226, 0.1)';
-            annualBtn.style.color = '#4a90e2';
-            annualBtn.style.fontWeight = '500';
-        }
-    }
-
-    if (yearlyBtn) {
-        if (view === 'yearly') {
-            yearlyBtn.style.background = '#4a90e2';
-            yearlyBtn.style.color = '#ffffff';
-            yearlyBtn.style.fontWeight = '600';
-        } else {
-            yearlyBtn.style.background = 'rgba(74, 144, 226, 0.1)';
-            yearlyBtn.style.color = '#4a90e2';
-            yearlyBtn.style.fontWeight = '500';
-        }
-    }
+    });
 
     updateCustomerChart();
     updateCustomerCountComparison();

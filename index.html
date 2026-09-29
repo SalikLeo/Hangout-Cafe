@@ -477,22 +477,12 @@
                             <div
                                 style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                                 <h4 style="margin: 0; font-size: 16px; color: #1e3a5f; font-weight: 600;">Sales</h4>
-                                <div style="display: flex; gap: 8px;">
-                                    <button id="salesChartViewDaily" onclick="changeSalesChartView('daily')"
-                                        style="background: #4a90e2; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 14px; box-shadow: 0 2px 4px rgba(74, 144, 226, 0.3);">Daily
-                                        (Hours)</button>
-                                    <button id="salesChartViewWeekly" onclick="changeSalesChartView('weekly')"
-                                        style="background: rgba(74, 144, 226, 0.1); border: 1px solid rgba(74, 144, 226, 0.2); color: #4a90e2; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 14px;">Weekly
-                                        (Days)</button>
-                                    <button id="salesChartViewMonthly" onclick="changeSalesChartView('monthly')"
-                                        style="background: rgba(74, 144, 226, 0.1); border: 1px solid rgba(74, 144, 226, 0.2); color: #4a90e2; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 14px;">Monthly
-                                        (Weeks)</button>
-                                    <button id="salesChartViewAnnual" onclick="changeSalesChartView('annual')"
-                                        style="background: rgba(74, 144, 226, 0.1); border: 1px solid rgba(74, 144, 226, 0.2); color: #4a90e2; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 14px;">Annual
-                                        (Months)</button>
-                                    <button id="salesChartViewYearly" onclick="changeSalesChartView('yearly')"
-                                        style="background: rgba(74, 144, 226, 0.1); border: 1px solid rgba(74, 144, 226, 0.2); color: #4a90e2; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 14px;">Yearly
-                                        (Years)</button>
+                                <div class="top-segmented-group">
+                                    <button id="salesChartViewDaily" onclick="changeSalesChartView('daily')" class="top-segmented-btn active">Daily (Hours)</button>
+                                    <button id="salesChartViewWeekly" onclick="changeSalesChartView('weekly')" class="top-segmented-btn">Weekly (Days)</button>
+                                    <button id="salesChartViewMonthly" onclick="changeSalesChartView('monthly')" class="top-segmented-btn">Monthly (Weeks)</button>
+                                    <button id="salesChartViewAnnual" onclick="changeSalesChartView('annual')" class="top-segmented-btn">Annual (Months)</button>
+                                    <button id="salesChartViewYearly" onclick="changeSalesChartView('yearly')" class="top-segmented-btn">Yearly (Years)</button>
                                 </div>
                             </div>
                             <canvas id="salesChart" style="max-height: 300px;"></canvas>
@@ -501,22 +491,12 @@
                             <div
                                 style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                                 <h4 style="margin: 0; font-size: 16px; color: #1e3a5f; font-weight: 600;">Profit</h4>
-                                <div style="display: flex; gap: 8px;">
-                                    <button id="profitChartViewDaily" onclick="changeProfitChartView('daily')"
-                                        style="background: #4a90e2; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 14px; box-shadow: 0 2px 4px rgba(74, 144, 226, 0.3);">Daily
-                                        (Hours)</button>
-                                    <button id="profitChartViewWeekly" onclick="changeProfitChartView('weekly')"
-                                        style="background: rgba(74, 144, 226, 0.1); border: 1px solid rgba(74, 144, 226, 0.2); color: #4a90e2; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 14px;">Weekly
-                                        (Days)</button>
-                                    <button id="profitChartViewMonthly" onclick="changeProfitChartView('monthly')"
-                                        style="background: rgba(74, 144, 226, 0.1); border: 1px solid rgba(74, 144, 226, 0.2); color: #4a90e2; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 14px;">Monthly
-                                        (Weeks)</button>
-                                    <button id="profitChartViewAnnual" onclick="changeProfitChartView('annual')"
-                                        style="background: rgba(74, 144, 226, 0.1); border: 1px solid rgba(74, 144, 226, 0.2); color: #4a90e2; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 14px;">Annual
-                                        (Months)</button>
-                                    <button id="profitChartViewYearly" onclick="changeProfitChartView('yearly')"
-                                        style="background: rgba(74, 144, 226, 0.1); border: 1px solid rgba(74, 144, 226, 0.2); color: #4a90e2; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 14px;">Yearly
-                                        (Years)</button>
+                                <div class="top-segmented-group">
+                                    <button id="profitChartViewDaily" onclick="changeProfitChartView('daily')" class="top-segmented-btn active">Daily (Hours)</button>
+                                    <button id="profitChartViewWeekly" onclick="changeProfitChartView('weekly')" class="top-segmented-btn">Weekly (Days)</button>
+                                    <button id="profitChartViewMonthly" onclick="changeProfitChartView('monthly')" class="top-segmented-btn">Monthly (Weeks)</button>
+                                    <button id="profitChartViewAnnual" onclick="changeProfitChartView('annual')" class="top-segmented-btn">Annual (Months)</button>
+                                    <button id="profitChartViewYearly" onclick="changeProfitChartView('yearly')" class="top-segmented-btn">Yearly (Years)</button>
                                 </div>
                             </div>
                             <canvas id="profitChart" style="max-height: 300px;"></canvas>
@@ -531,22 +511,12 @@
                                 <div id="customerCountComparison"
                                     style="font-size: 12px; color: #666; margin-top: 4px;"></div>
                             </div>
-                            <div style="display: flex; gap: 8px;">
-                                <button id="customerChartViewDaily" onclick="changeCustomerChartView('daily')"
-                                    style="background: #4a90e2; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 14px; box-shadow: 0 2px 4px rgba(74, 144, 226, 0.3);">Daily
-                                    (Hours)</button>
-                                <button id="customerChartViewWeekly" onclick="changeCustomerChartView('weekly')"
-                                    style="background: rgba(74, 144, 226, 0.1); border: 1px solid rgba(74, 144, 226, 0.2); color: #4a90e2; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 14px;">Weekly
-                                    (Days)</button>
-                                <button id="customerChartViewMonthly" onclick="changeCustomerChartView('monthly')"
-                                    style="background: rgba(74, 144, 226, 0.1); border: 1px solid rgba(74, 144, 226, 0.2); color: #4a90e2; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 14px;">Monthly
-                                    (Weeks)</button>
-                                <button id="customerChartViewAnnual" onclick="changeCustomerChartView('annual')"
-                                    style="background: rgba(74, 144, 226, 0.1); border: 1px solid rgba(74, 144, 226, 0.2); color: #4a90e2; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 14px;">Annual
-                                    (Months)</button>
-                                <button id="customerChartViewYearly" onclick="changeCustomerChartView('yearly')"
-                                    style="background: rgba(74, 144, 226, 0.1); border: 1px solid rgba(74, 144, 226, 0.2); color: #4a90e2; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 14px;">Yearly
-                                    (Years)</button>
+                            <div class="top-segmented-group">
+                                <button id="customerChartViewDaily" onclick="changeCustomerChartView('daily')" class="top-segmented-btn active">Daily (Hours)</button>
+                                <button id="customerChartViewWeekly" onclick="changeCustomerChartView('weekly')" class="top-segmented-btn">Weekly (Days)</button>
+                                <button id="customerChartViewMonthly" onclick="changeCustomerChartView('monthly')" class="top-segmented-btn">Monthly (Weeks)</button>
+                                <button id="customerChartViewAnnual" onclick="changeCustomerChartView('annual')" class="top-segmented-btn">Annual (Months)</button>
+                                <button id="customerChartViewYearly" onclick="changeCustomerChartView('yearly')" class="top-segmented-btn">Yearly (Years)</button>
                             </div>
                         </div>
                         <canvas id="customerChart" style="max-height: 300px;"></canvas>
@@ -617,15 +587,10 @@
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                         <h3 style="margin: 0;">Menu Items</h3>
-                        <div style="display: flex; gap: 12px; align-items: center;">
-                            <button onclick="openAddMenuItemModal()"
-                                style="background: #4a90e2; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 10px 18px; border-radius: 12px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">+
-                                Add Item</button>
-                            <button onclick="openAddCategoryModal()"
-                                style="background: rgba(74, 144, 226, 0.1); border: 1px solid rgba(74, 144, 226, 0.2); color: #4a90e2; padding: 10px 18px; border-radius: 12px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 16px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">Categories</button>
-                            <button id="manageFavouritesBtn" onclick="toggleManageFavourites()"
-                                style="background: #f39c12; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 10px 18px; border-radius: 12px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(243, 156, 18, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">⭐
-                                Favourites</button>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <button class="top-action-btn btn-primary" onclick="openAddMenuItemModal()">+ Add Item</button>
+                            <button class="top-action-btn btn-secondary" onclick="openAddCategoryModal()">Categories</button>
+                            <button class="top-action-btn btn-amber" id="manageFavouritesBtn" onclick="toggleManageFavourites()">⭐ Favourites</button>
                         </div>
                     </div>
                     <div class="filter-section"
@@ -820,14 +785,9 @@
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                         <h3 style="margin: 0;">Sales History</h3>
-                        <div
-                            style="display: flex; gap: 4px; background: #e8e8e8; border-radius: 12px; padding: 4px; box-shadow: inset 2px 2px 4px rgba(0,0,0,0.1), inset -2px -2px 4px rgba(255,255,255,0.8);">
-                            <button id="salesHistoryBtn" onclick="switchSalesView('history')"
-                                style="background: #4a90e2; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 16px; box-shadow: 0 2px 4px rgba(74, 144, 226, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2); margin: 0; display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">Sales
-                                History</button>
-                            <button id="itemsSalesBtn" onclick="switchSalesView('items')"
-                                style="background: transparent; border: 1px solid transparent; color: #666; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 16px; margin: 0; display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">Items
-                                Sales</button>
+                        <div class="top-segmented-group">
+                            <button id="salesHistoryBtn" onclick="switchSalesView('history')" class="top-segmented-btn active">Sales History</button>
+                            <button id="itemsSalesBtn" onclick="switchSalesView('items')" class="top-segmented-btn">Items Sales</button>
                         </div>
                     </div>
                     <div id="salesHistorySection">
@@ -1052,16 +1012,10 @@
             <div class="tab-content" id="employees">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2 id="employeeCountTitle" style="margin: 0; font-weight: 800;">Employee Management</h2>
-                    <div style="display: flex; gap: 12px; align-items: center;">
-                        <button onclick="printEmployees()"
-                            style="background: rgba(74, 144, 226, 0.1); border: 1px solid rgba(74, 144, 226, 0.2); color: #4a90e2; padding: 10px 18px; border-radius: 12px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 16px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); display: flex; align-items: center; justify-content: center; gap: 8px; letter-spacing: 0.1px;">🖨️
-                            Save Report</button>
-                        <button onclick="openAddEmployeeModal()"
-                            style="background: #4a90e2; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 10px 18px; border-radius: 12px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">+
-                            Add Employee</button>
-                        <button onclick="openAddWaiterModal()"
-                            style="background: #16a085; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 10px 18px; border-radius: 12px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(22, 160, 133, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">👤
-                            Waiters</button>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="top-action-btn btn-secondary" onclick="printEmployees()">🖨️ Save Report</button>
+                        <button class="top-action-btn btn-primary" onclick="openAddEmployeeModal()">+ Add Employee</button>
+                        <button class="top-action-btn btn-teal" onclick="openAddWaiterModal()">👤 Waiters</button>
                     </div>
                 </div>
 
@@ -1364,15 +1318,10 @@
             <div class="tab-content" id="expenses">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2 style="margin: 0; font-weight: 800;">Expenses Management</h2>
-                    <div style="display: flex; gap: 12px; align-items: center;">
-                        <button onclick="printExpenses()"
-                            style="background: rgba(74, 144, 226, 0.1); border: 1px solid rgba(74, 144, 226, 0.2); color: #4a90e2; padding: 10px 18px; border-radius: 12px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 16px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); display: flex; align-items: center; justify-content: center; gap: 8px; letter-spacing: 0.1px;">🖨️
-                            Save Report</button>
-                        <button onclick="toggleExpenseCategories()"
-                            style="background: rgba(74, 144, 226, 0.1); border: 1px solid rgba(74, 144, 226, 0.2); color: #4a90e2; padding: 10px 18px; border-radius: 12px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 15px; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12); display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">Categories</button>
-                        <button onclick="openAddExpenseModal()"
-                            style="background: #4a90e2; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 700; font-size: 15px; box-shadow: 0 5px 14px rgba(74, 144, 226, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">+
-                            Add Expense</button>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="top-action-btn btn-secondary" onclick="printExpenses()">🖨️ Save Report</button>
+                        <button class="top-action-btn btn-secondary" onclick="toggleExpenseCategories()">Categories</button>
+                        <button class="top-action-btn btn-primary" onclick="openAddExpenseModal()">+ Add Expense</button>
                     </div>
                 </div>
 
@@ -1544,24 +1493,18 @@
                 <div id="stockInventorySection">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
                         <h2 style="margin: 0; font-weight: 800;">Stock & Ingredients Management</h2>
-                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                            <!-- View Switcher (Like Sales Tab) -->
-                            <div class="stock-view-switcher" style="display: flex; gap: 4px; background: #e8e8e8; border-radius: 12px; padding: 4px; box-shadow: inset 2px 2px 4px rgba(0,0,0,0.1), inset -2px -2px 4px rgba(255,255,255,0.8);">
-                                <button class="stock-inventory-btn" onclick="switchStockView('inventory')"
-                                    style="background: #4a90e2; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 15px; box-shadow: 0 2px 4px rgba(74, 144, 226, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2); margin: 0; display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <!-- View Switcher -->
+                            <div class="top-segmented-group stock-view-switcher">
+                                <button class="top-segmented-btn stock-inventory-btn active" onclick="switchStockView('inventory')">
                                     📦 Stock Inventory
                                 </button>
-                                <button class="stock-deduct-btn" onclick="switchStockView('deduct')"
-                                    style="background: transparent; border: 1px solid transparent; color: #666; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 15px; margin: 0; display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">
+                                <button class="top-segmented-btn stock-deduct-btn" onclick="switchStockView('deduct')">
                                     📉 Deduct Stock Used
                                 </button>
                             </div>
-                            <button onclick="openAddStockModal()"
-                                style="background: #4a90e2; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 10px 18px; border-radius: 12px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 15px; box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; gap: 6px;">
-                                + Add Stock Item</button>
-                            <button onclick="printStockReport()"
-                                style="background: #e67e22; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 10px 18px; border-radius: 12px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 700; font-size: 15px; box-shadow: 0 4px 12px rgba(230, 126, 34, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; gap: 6px;">
-                                🖨️ Print Report</button>
+                            <button class="top-action-btn btn-primary" onclick="openAddStockModal()">+ Add Stock Item</button>
+                            <button class="top-action-btn btn-orange" onclick="printStockReport()">🖨️ Print Report</button>
                         </div>
                     </div>
 
@@ -2127,19 +2070,13 @@
             <div class="tab-content" id="tables">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2 style="margin: 0; font-weight: 800;">Tables Management</h2>
-                    <div style="display: flex; gap: 15px; align-items: center; height: 44px;">
-                        <div
-                            style="display: flex; gap: 4px; background: #e8e8e8; border-radius: 12px; padding: 4px; box-shadow: inset 2px 2px 4px rgba(0,0,0,0.1), inset -2px -2px 4px rgba(255,255,255,0.8);">
-                            <button id="tablesFilterAll" onclick="filterTables('all')"
-                                style="background: #4a90e2; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 16px; box-shadow: 0 2px 4px rgba(74, 144, 226, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2); margin: 0; display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">All</button>
-                            <button id="tablesFilterBooked" onclick="filterTables('booked')"
-                                style="background: transparent; border: 1px solid transparent; color: #666; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 16px; margin: 0; display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">Booked</button>
-                            <button id="tablesFilterAvailable" onclick="filterTables('available')"
-                                style="background: transparent; border: 1px solid transparent; color: #666; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 16px; margin: 0; display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">Available</button>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <div class="top-segmented-group">
+                            <button id="tablesFilterAll" onclick="filterTables('all')" class="top-segmented-btn active">All</button>
+                            <button id="tablesFilterBooked" onclick="filterTables('booked')" class="top-segmented-btn">Booked</button>
+                            <button id="tablesFilterAvailable" onclick="filterTables('available')" class="top-segmented-btn">Available</button>
                         </div>
-                        <button onclick="openAddTableModal()"
-                            style="background: #4a90e2; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 10px 18px; border-radius: 12px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">+
-                            Add Table</button>
+                        <button class="top-action-btn btn-primary" onclick="openAddTableModal()">+ Add Table</button>
                     </div>
                 </div>
 
