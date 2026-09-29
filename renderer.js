@@ -3775,7 +3775,8 @@ function triggerModernTimeFilterCallback(prefix) {
         state.onChange();
         return;
     }
-    if (prefix === 'sales' && window.loadSales) window.loadSales();
+    if (prefix === 'dashboard' && window.loadDashboard) window.loadDashboard();
+    else if (prefix === 'sales' && window.loadSales) window.loadSales();
     else if (prefix === 'itemsSales' && window.loadItemsSales) window.loadItemsSales();
     else if (prefix === 'expense' && window.loadExpenses) window.loadExpenses();
     else if (prefix === 'consumption' && window.renderConsumptionHistoryList) window.renderConsumptionHistoryList();
@@ -3784,6 +3785,10 @@ function triggerModernTimeFilterCallback(prefix) {
 }
 
 // Backward-compatible global wrappers
+window.handleDashboardDateFilterChange = () => window.renderModernTimeFilterUI('dashboard');
+window.resetDashboardFilter = () => window.resetModernTimeFilter('dashboard');
+window.updateDashboardResetBtn = () => {};
+
 window.handleSalesDateFilterChange = () => window.renderModernTimeFilterUI('sales');
 window.resetSalesFilter = () => window.resetModernTimeFilter('sales');
 window.updateSalesResetBtn = () => {};
@@ -11229,248 +11234,114 @@ function loadDashboard() {
     // Get all data
     const sales = Storage.get('sales') || [];
     const expenses = getCombinedExpenses();
-    const employees = Storage.get('employees') || [];
-    const menuItems = Storage.get('menuItems') || [];
-    const holdOrders = Storage.get('holdOrders') || [];
-    const tables = Storage.get('tables') || [];
-
-    // Calculate today's date range
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    today.setHours(0, 0, 0, 0);
-    const todayEnd = new Date(today);
-    todayEnd.setHours(23, 59, 59, 999);
-
-    // Calculate week date range
-    const weekAgo = new Date(today);
-    weekAgo.setDate(weekAgo.getDate() - 7);
-
-    // Calculate month date range
-    const monthAgo = new Date(today);
-    monthAgo.setMonth(monthAgo.getMonth() - 1);
-
-    // Today's Sales
-    const todaySales = sales.filter(sale => {
-        if (!sale.date) return false;
-        const saleDate = new Date(sale.date);
-        saleDate.setHours(0, 0, 0, 0);
-        return saleDate.getTime() === today.getTime();
-    }).reduce((sum, sale) => {
-        // Use sale.total if available (includes tax), otherwise calculate with tax
-        if (sale.total) {
-            return sum + sale.total;
-        } else if (sale.items && Array.isArray(sale.items)) {
-            const subtotal = sale.items.reduce((s, item) => s + (item.price * item.quantity), 0);
-            return sum + subtotal;
-        } else {
-            // For old sales without items array, use amount and add tax if needed
-            const amount = sale.amount || sale.total || 0;
-            // If it's an old sale, assume it might not have tax, so add it
-            const subtotal = amount;
-            return sum + subtotal;
-        }
-    }, 0);
-
-    // Today's Expenses
-    const todayExpenses = expenses.filter(exp => {
-        if (!exp.date) return false;
-        const expDate = new Date(exp.date);
-        expDate.setHours(0, 0, 0, 0);
-        return expDate.getTime() === today.getTime();
-    }).reduce((sum, exp) => sum + (exp.amount || 0), 0);
-
-    // Today's Profit
-    const todayProfit = todaySales - todayExpenses;
-
-    // This Week Sales
-    const weekSales = sales.filter(sale => {
-        if (!sale.date) return false;
-        const saleDate = new Date(sale.date);
-        saleDate.setHours(0, 0, 0, 0);
-        return saleDate >= weekAgo && saleDate <= todayEnd;
-    }).reduce((sum, sale) => {
-        // Use sale.total if available (includes tax), otherwise calculate with tax
-        if (sale.total) {
-            return sum + sale.total;
-        } else if (sale.items && Array.isArray(sale.items)) {
-            const subtotal = sale.items.reduce((s, item) => s + (item.price * item.quantity), 0);
-            return sum + subtotal;
-        } else {
-            // For old sales without items array, use amount and add tax if needed
-            const amount = sale.amount || sale.total || 0;
-            // If it's an old sale, assume it might not have tax, so add it
-            const subtotal = amount;
-            return sum + subtotal;
-        }
-    }, 0);
-
-    // This Week Expenses
-    const weekExpenses = expenses.filter(exp => {
-        if (!exp.date) return false;
-        const expDate = new Date(exp.date);
-        expDate.setHours(0, 0, 0, 0);
-        return expDate >= weekAgo && expDate <= todayEnd;
-    }).reduce((sum, exp) => sum + (exp.amount || 0), 0);
-
-    // This Month Sales
-    const monthSales = sales.filter(sale => {
-        if (!sale.date) return false;
-        const saleDate = new Date(sale.date);
-        saleDate.setHours(0, 0, 0, 0);
-        return saleDate >= monthAgo && saleDate <= todayEnd;
-    }).reduce((sum, sale) => {
-        // Use sale.total if available (includes tax), otherwise calculate with tax
-        if (sale.total) {
-            return sum + sale.total;
-        } else if (sale.items && Array.isArray(sale.items)) {
-            const subtotal = sale.items.reduce((s, item) => s + (item.price * item.quantity), 0);
-            return sum + subtotal;
-        } else {
-            // For old sales without items array, use amount and add tax if needed
-            const amount = sale.amount || sale.total || 0;
-            // If it's an old sale, assume it might not have tax, so add it
-            const subtotal = amount;
-            return sum + subtotal;
-        }
-    }, 0);
-
-    // This Month Expenses
-    const monthExpenses = expenses.filter(exp => {
-        if (!exp.date) return false;
-        const expDate = new Date(exp.date);
-        expDate.setHours(0, 0, 0, 0);
-        return expDate >= monthAgo && expDate <= todayEnd;
-    }).reduce((sum, exp) => sum + (exp.amount || 0), 0);
-
-    // Tables Status - count only available (unbooked) tables
-    const availableTables = tables.filter(t => t.status !== 'booked').length;
-
-    // Today's Discounts (total)
-    const todayDiscounts = sales.filter(sale => {
-        if (!sale.date) return false;
-        const saleDate = new Date(sale.date);
-        saleDate.setHours(0, 0, 0, 0);
-        return saleDate.getTime() === today.getTime();
-    }).reduce((sum, sale) => {
-        const subtotalFallback = (typeof sale.subtotal === 'number')
-            ? sale.subtotal
-            : (sale.items && Array.isArray(sale.items) ? sale.items.reduce((s, it) => s + (it.price * it.quantity), 0) : (sale.total || 0));
-        return sum + getDiscountAmountFromOrder(sale, subtotalFallback);
-    }, 0);
-
-    // Weekly Discounts (total)
-    const weeklyDiscounts = sales.filter(sale => {
-        if (!sale.date) return false;
-        const saleDate = new Date(sale.date);
-        saleDate.setHours(0, 0, 0, 0);
-        return saleDate >= weekAgo && saleDate <= todayEnd;
-    }).reduce((sum, sale) => {
-        const subtotalFallback = (typeof sale.subtotal === 'number')
-            ? sale.subtotal
-            : (sale.items && Array.isArray(sale.items) ? sale.items.reduce((s, it) => s + (it.price * it.quantity), 0) : (sale.total || 0));
-        return sum + getDiscountAmountFromOrder(sale, subtotalFallback);
-    }, 0);
-
-    // Calculate Today's and Weekly Order Counts
-    const todayOrdersCount = sales.filter(sale => {
-        if (!sale.date) return false;
-        const saleDate = new Date(sale.date);
-        saleDate.setHours(0, 0, 0, 0);
-        return saleDate.getTime() === today.getTime();
-    }).length;
-
-    const weeklyOrdersCount = sales.filter(sale => {
-        if (!sale.date) return false;
-        const saleDate = new Date(sale.date);
-        saleDate.setHours(0, 0, 0, 0);
-        return saleDate >= weekAgo && saleDate <= todayEnd;
-    }).length;
-
-    // Update Dashboard Elements
-    const todaySalesEl = document.getElementById('dashboardTodaySales');
-    const todayExpensesEl = document.getElementById('dashboardTodayExpenses');
-    const todayProfitEl = document.getElementById('dashboardTodayProfit');
-    const holdOrdersEl = document.getElementById('dashboardHoldOrders');
-    const todayDiscountsEl = document.getElementById('dashboardTodayDiscounts');
-    const weeklyDiscountsEl = document.getElementById('dashboardWeeklyDiscounts');
-    const todayOrdersCountEl = document.getElementById('dashboardTodayOrdersCount');
-    const weeklyOrdersCountEl = document.getElementById('dashboardWeeklyOrdersCount');
-    const weekSalesEl = document.getElementById('dashboardWeekSales');
-    const weekExpensesEl = document.getElementById('dashboardWeekExpenses');
-    const monthSalesEl = document.getElementById('dashboardMonthSales');
-    const monthExpensesEl = document.getElementById('dashboardMonthExpenses');
-    const recentSalesEl = document.getElementById('dashboardRecentSales');
-
-    // Calculate Stock Consumptions (Ingredient Cost)
-    const todayISO = getLocalISODate();
     const consumptions = Storage.get('stockConsumptions') || [];
+
     const stockMap = {};
     syncAndGetStockItems().forEach(s => { stockMap[String(s.id)] = s; stockMap[(s.itemName || '').toLowerCase()] = s; });
 
-    let todayIngredientsCost = 0;
-    let todayIngredientsCount = 0;
-    let weekIngredientsCost = 0;
-    let monthIngredientsCost = 0;
+    // Determine active filter state for 'dashboard'
+    const filterSelect = document.getElementById('dashboardDateFilter');
+    const filterMode = filterSelect ? filterSelect.value : 'today';
 
+    const now = new Date();
+    const todayStr = getLocalISODate();
+    const currentMonthStr = getLocalISOMonth();
+    const currentYearStr = String(now.getFullYear());
+
+    let selectedDate = todayStr;
+    let selectedMonth = currentMonthStr;
+    let selectedYear = currentYearStr;
+
+    if (filterMode === 'today') {
+        selectedDate = document.getElementById('dashboardDateInput')?.value || todayStr;
+    } else if (filterMode === 'month') {
+        selectedMonth = document.getElementById('dashboardMonthInput')?.value || currentMonthStr;
+    } else if (filterMode === 'year') {
+        selectedYear = document.getElementById('dashboardYearInput')?.value || currentYearStr;
+    }
+
+    // Filter helper function
+    const matchesFilter = (dateStr) => {
+        if (!dateStr) return false;
+        const d = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+        if (filterMode === 'today') return d === selectedDate;
+        if (filterMode === 'month') return d.startsWith(selectedMonth);
+        if (filterMode === 'year') return d.startsWith(selectedYear);
+        return true; // 'all'
+    };
+
+    // 1. Calculate Banner (Financial Closing / Period Summary)
+    let bannerSales = 0;
+    let bannerCashSales = 0;
+    let bannerOnlineSales = 0;
+
+    sales.forEach(sale => {
+        const saleDateStr = sale.date || sale.timestamp || '';
+        if (matchesFilter(saleDateStr)) {
+            let tot = 0;
+            if (sale.total) tot = sale.total;
+            else if (sale.items && Array.isArray(sale.items)) tot = sale.items.reduce((s, it) => s + (it.price * it.quantity), 0);
+            else tot = sale.amount || 0;
+
+            bannerSales += tot;
+            const pm = (sale.paymentMethod || sale.payment || 'cash').toLowerCase();
+            if (pm === 'online' || pm === 'card' || pm === 'digital' || pm === 'family') bannerOnlineSales += tot;
+            else bannerCashSales += tot;
+        }
+    });
+
+    let bannerIngredientsCost = 0;
+    let bannerIngredientsCount = 0;
     consumptions.forEach(c => {
         const cDateStr = c.date || (c.timestamp ? c.timestamp.split('T')[0] : '');
-        if (!cDateStr) return;
-        const cDate = new Date(cDateStr + 'T00:00:00');
-        const isToday = (cDateStr === todayISO);
-        const isWeek = (cDate >= weekAgo && cDate <= todayEnd);
-        const isMonth = (cDate >= monthAgo && cDate <= todayEnd);
-
-        if (isToday || isWeek || isMonth) {
+        if (matchesFilter(cDateStr)) {
             (c.items || []).forEach(item => {
                 const qty = parseFloat(item.finalDeductQty || item.enteredQty || item.deductedQty) || 0;
                 const stock = stockMap[String(item.stockId)] || stockMap[(item.itemName || '').toLowerCase()];
                 const price = stock ? (parseFloat(stock.unitPrice) || 0) : 0;
-                const cost = qty * price;
-                if (isToday) {
-                    todayIngredientsCost += cost;
-                    if (qty > 0) todayIngredientsCount++;
-                }
-                if (isWeek) weekIngredientsCost += cost;
-                if (isMonth) monthIngredientsCost += cost;
+                bannerIngredientsCost += (qty * price);
+                if (qty > 0) bannerIngredientsCount++;
             });
         }
     });
 
-    const weekProfit = weekSales - weekIngredientsCost - weekExpenses;
-    const monthProfit = monthSales - monthIngredientsCost - monthExpenses;
-
-    // Cash vs Online Breakdown for Today
-    let todayCashSales = 0;
-    let todayOnlineSales = 0;
-    const todaySalesList = sales.filter(sale => {
-        if (!sale.date) return false;
-        const saleDate = new Date(sale.date);
-        saleDate.setHours(0, 0, 0, 0);
-        return saleDate.getTime() === today.getTime();
-    });
-
-    todaySalesList.forEach(sale => {
-        let tot = 0;
-        if (sale.total) {
-            tot = sale.total;
-        } else if (sale.items && Array.isArray(sale.items)) {
-            tot = sale.items.reduce((s, item) => s + (item.price * item.quantity), 0);
-        } else {
-            tot = sale.amount || 0;
-        }
-        const pm = (sale.paymentMethod || sale.payment || 'cash').toLowerCase();
-        if (pm === 'online' || pm === 'card' || pm === 'digital' || pm === 'family') {
-            todayOnlineSales += tot;
-        } else {
-            todayCashSales += tot;
+    let bannerExpenses = 0;
+    expenses.forEach(exp => {
+        const expDateStr = exp.date || '';
+        if (matchesFilter(expDateStr)) {
+            bannerExpenses += (exp.amount || 0);
         }
     });
 
-    const todayNetActualProfit = todaySales - todayIngredientsCost - todayExpenses;
-    const profitMargin = todaySales > 0 ? ((todayNetActualProfit / todaySales) * 100).toFixed(1) : 0;
+    const bannerProfit = bannerSales - bannerIngredientsCost - bannerExpenses;
+    const bannerMargin = bannerSales > 0 ? ((bannerProfit / bannerSales) * 100).toFixed(1) : 0;
 
-    // Update EOD Card Elements
+    // Period formatting for Banner Header & Subtitle
+    const closingTitleEl = document.getElementById('dashboardClosingTitle');
     const eodDateEl = document.getElementById('dashboardClosingDateText');
+
+    if (filterMode === 'today') {
+        const isToday = (selectedDate === todayStr);
+        const parts = selectedDate.split('-');
+        const dObj = parts.length === 3 ? new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2])) : new Date();
+        const formattedDate = dObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+        if (closingTitleEl) closingTitleEl.textContent = isToday ? 'Daily Closing & Financial Summary' : 'Daily Financial Closing';
+        if (eodDateEl) eodDateEl.textContent = isToday ? `Daily Closing for Today (${formattedDate})` : `Financial Closing for ${formattedDate}`;
+    } else if (filterMode === 'month') {
+        const parts = selectedMonth.split('-');
+        const dObj = parts.length === 2 ? new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1) : new Date();
+        const monthName = dObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        if (closingTitleEl) closingTitleEl.textContent = 'Monthly Financial Summary';
+        if (eodDateEl) eodDateEl.textContent = `Financial Summary for ${monthName}`;
+    } else if (filterMode === 'year') {
+        if (closingTitleEl) closingTitleEl.textContent = 'Annual Financial Summary';
+        if (eodDateEl) eodDateEl.textContent = `Financial Summary for Year ${selectedYear}`;
+    } else {
+        if (closingTitleEl) closingTitleEl.textContent = 'All-Time Financial Summary';
+        if (eodDateEl) eodDateEl.textContent = 'Cumulative overall financial summary of all records';
+    }
+
+    // Update Banner Elements
     const eodGrossSalesEl = document.getElementById('eodGrossSales');
     const eodCashSalesEl = document.getElementById('eodCashSales');
     const eodOnlineSalesEl = document.getElementById('eodOnlineSales');
@@ -11480,52 +11351,126 @@ function loadDashboard() {
     const eodNetProfitEl = document.getElementById('eodNetProfit');
     const eodProfitMarginBadgeEl = document.getElementById('eodProfitMarginBadge');
 
-    if (eodDateEl) {
-        const formattedToday = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
-        eodDateEl.textContent = `Daily Closing for ${formattedToday}`;
-    }
-    if (eodGrossSalesEl) eodGrossSalesEl.textContent = `Rs. ${formatNumber(todaySales)}`;
-    if (eodCashSalesEl) eodCashSalesEl.textContent = `Rs. ${formatNumber(todayCashSales)}`;
-    if (eodOnlineSalesEl) eodOnlineSalesEl.textContent = `Rs. ${formatNumber(todayOnlineSales)}`;
-    if (eodIngredientsCostEl) eodIngredientsCostEl.textContent = `Rs. ${formatNumber(todayIngredientsCost)}`;
-    if (eodIngredientsItemsCountEl) eodIngredientsItemsCountEl.textContent = `${todayIngredientsCount} ingredient(s) deducted today`;
-    if (eodExpensesEl) eodExpensesEl.textContent = `Rs. ${formatNumber(todayExpenses)}`;
+    if (eodGrossSalesEl) eodGrossSalesEl.textContent = `Rs. ${formatNumber(bannerSales)}`;
+    if (eodCashSalesEl) eodCashSalesEl.textContent = `Rs. ${formatNumber(bannerCashSales)}`;
+    if (eodOnlineSalesEl) eodOnlineSalesEl.textContent = `Rs. ${formatNumber(bannerOnlineSales)}`;
+    if (eodIngredientsCostEl) eodIngredientsCostEl.textContent = `Rs. ${formatNumber(bannerIngredientsCost)}`;
+    if (eodIngredientsItemsCountEl) eodIngredientsItemsCountEl.textContent = `${bannerIngredientsCount} ingredient(s) deducted`;
+    if (eodExpensesEl) eodExpensesEl.textContent = `Rs. ${formatNumber(bannerExpenses)}`;
     if (eodNetProfitEl) {
-        eodNetProfitEl.textContent = `Rs. ${formatNumber(todayNetActualProfit)}`;
-        eodNetProfitEl.style.color = todayNetActualProfit >= 0 ? '#34d399' : '#f87171';
+        eodNetProfitEl.textContent = `Rs. ${formatNumber(bannerProfit)}`;
+        eodNetProfitEl.style.color = bannerProfit >= 0 ? '#34d399' : '#f87171';
     }
     if (eodProfitMarginBadgeEl) {
-        eodProfitMarginBadgeEl.textContent = `${profitMargin}% Margin`;
-        eodProfitMarginBadgeEl.style.background = todayNetActualProfit >= 0 ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)';
-        eodProfitMarginBadgeEl.style.color = todayNetActualProfit >= 0 ? '#a7f3d0' : '#fca5a5';
+        eodProfitMarginBadgeEl.textContent = `${bannerMargin}% Margin`;
+        eodProfitMarginBadgeEl.style.background = bannerProfit >= 0 ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)';
+        eodProfitMarginBadgeEl.style.color = bannerProfit >= 0 ? '#a7f3d0' : '#fca5a5';
     }
 
-    if (todaySalesEl) todaySalesEl.textContent = `Rs. ${formatNumber(todaySales)}`;
-    if (todayExpensesEl) todayExpensesEl.textContent = `Rs. ${formatNumber(todayExpenses)}`;
-    if (todayProfitEl) {
-        todayProfitEl.textContent = `Rs. ${formatNumber(todayProfit)}`;
-        todayProfitEl.style.color = todayProfit >= 0 ? '#27ae60' : '#e74c3c';
+    // 2. Day Overview Card (Today / Selected Day)
+    let daySales = 0;
+    sales.forEach(sale => {
+        const d = (sale.date || sale.timestamp || '').split('T')[0];
+        if (d === selectedDate) {
+            let tot = sale.total || (sale.items && Array.isArray(sale.items) ? sale.items.reduce((s, it) => s + (it.price * it.quantity), 0) : (sale.amount || 0));
+            daySales += tot;
+        }
+    });
+
+    let dayCost = 0;
+    consumptions.forEach(c => {
+        const d = (c.date || (c.timestamp ? c.timestamp.split('T')[0] : ''));
+        if (d === selectedDate) {
+            (c.items || []).forEach(item => {
+                const qty = parseFloat(item.finalDeductQty || item.enteredQty || item.deductedQty) || 0;
+                const stock = stockMap[String(item.stockId)] || stockMap[(item.itemName || '').toLowerCase()];
+                const price = stock ? (parseFloat(stock.unitPrice) || 0) : 0;
+                dayCost += (qty * price);
+            });
+        }
+    });
+
+    let dayExpenses = 0;
+    expenses.forEach(exp => {
+        const d = (exp.date || '').split('T')[0];
+        if (d === selectedDate) dayExpenses += (exp.amount || 0);
+    });
+    const dayProfit = daySales - dayCost - dayExpenses;
+
+    // 3. Month Overview Card (This Month / Selected Month)
+    let monthSales = 0;
+    sales.forEach(sale => {
+        const d = (sale.date || sale.timestamp || '').split('T')[0];
+        if (d.startsWith(selectedMonth)) {
+            let tot = sale.total || (sale.items && Array.isArray(sale.items) ? sale.items.reduce((s, it) => s + (it.price * it.quantity), 0) : (sale.amount || 0));
+            monthSales += tot;
+        }
+    });
+
+    let monthCost = 0;
+    consumptions.forEach(c => {
+        const d = (c.date || (c.timestamp ? c.timestamp.split('T')[0] : ''));
+        if (d.startsWith(selectedMonth)) {
+            (c.items || []).forEach(item => {
+                const qty = parseFloat(item.finalDeductQty || item.enteredQty || item.deductedQty) || 0;
+                const stock = stockMap[String(item.stockId)] || stockMap[(item.itemName || '').toLowerCase()];
+                const price = stock ? (parseFloat(stock.unitPrice) || 0) : 0;
+                monthCost += (qty * price);
+            });
+        }
+    });
+
+    let monthExpenses = 0;
+    expenses.forEach(exp => {
+        const d = (exp.date || '').split('T')[0];
+        if (d.startsWith(selectedMonth)) monthExpenses += (exp.amount || 0);
+    });
+    const monthProfit = monthSales - monthCost - monthExpenses;
+
+    // Update Day Card Title & Values
+    const dayCardTitleEl = document.getElementById('dashboardDayCardTitle');
+    if (dayCardTitleEl) {
+        if (selectedDate === todayStr) {
+            dayCardTitleEl.textContent = 'Today';
+        } else {
+            const parts = selectedDate.split('-');
+            const dObj = parts.length === 3 ? new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2])) : new Date();
+            dayCardTitleEl.textContent = dObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
     }
-    if (holdOrdersEl) holdOrdersEl.textContent = formatNumber(holdOrders.length);
-    if (todayDiscountsEl) todayDiscountsEl.textContent = `Rs. ${formatNumber(todayDiscounts)}`;
-    if (weeklyDiscountsEl) weeklyDiscountsEl.textContent = `Rs. ${formatNumber(weeklyDiscounts)}`;
-    if (todayOrdersCountEl) todayOrdersCountEl.textContent = formatNumber(todayOrdersCount);
-    if (weeklyOrdersCountEl) weeklyOrdersCountEl.textContent = formatNumber(weeklyOrdersCount);
-    const weekCostEl = document.getElementById('dashboardWeekCost');
-    const weekProfitEl = document.getElementById('dashboardWeekProfit');
+
+    const daySalesEl = document.getElementById('dashboardDaySales') || document.getElementById('dashboardTodaySales');
+    const dayCostEl = document.getElementById('dashboardDayCost');
+    const dayExpensesEl = document.getElementById('dashboardDayExpenses') || document.getElementById('dashboardTodayExpenses');
+    const dayProfitEl = document.getElementById('dashboardDayProfit') || document.getElementById('dashboardTodayProfit');
+
+    if (daySalesEl) daySalesEl.textContent = `Rs. ${formatNumber(daySales)}`;
+    if (dayCostEl) dayCostEl.textContent = `Rs. ${formatNumber(dayCost)}`;
+    if (dayExpensesEl) dayExpensesEl.textContent = `Rs. ${formatNumber(dayExpenses)}`;
+    if (dayProfitEl) {
+        dayProfitEl.textContent = `Rs. ${formatNumber(dayProfit)}`;
+        dayProfitEl.style.color = dayProfit >= 0 ? '#16a34a' : '#dc2626';
+    }
+
+    // Update Month Card Title & Values
+    const monthCardTitleEl = document.getElementById('dashboardMonthCardTitle');
+    if (monthCardTitleEl) {
+        if (selectedMonth === currentMonthStr) {
+            monthCardTitleEl.textContent = 'This Month';
+        } else {
+            const parts = selectedMonth.split('-');
+            const dObj = parts.length === 2 ? new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1) : new Date();
+            monthCardTitleEl.textContent = dObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        }
+    }
+
+    const monthSalesEl = document.getElementById('dashboardMonthSales');
     const monthCostEl = document.getElementById('dashboardMonthCost');
+    const monthExpensesEl = document.getElementById('dashboardMonthExpenses');
     const monthProfitEl = document.getElementById('dashboardMonthProfit');
 
-    if (weekSalesEl) weekSalesEl.textContent = `Rs. ${formatNumber(weekSales)}`;
-    if (weekCostEl) weekCostEl.textContent = `Rs. ${formatNumber(weekIngredientsCost)}`;
-    if (weekExpensesEl) weekExpensesEl.textContent = `Rs. ${formatNumber(weekExpenses)}`;
-    if (weekProfitEl) {
-        weekProfitEl.textContent = `Rs. ${formatNumber(weekProfit)}`;
-        weekProfitEl.style.color = weekProfit >= 0 ? '#16a34a' : '#dc2626';
-    }
-
     if (monthSalesEl) monthSalesEl.textContent = `Rs. ${formatNumber(monthSales)}`;
-    if (monthCostEl) monthCostEl.textContent = `Rs. ${formatNumber(monthIngredientsCost)}`;
+    if (monthCostEl) monthCostEl.textContent = `Rs. ${formatNumber(monthCost)}`;
     if (monthExpensesEl) monthExpensesEl.textContent = `Rs. ${formatNumber(monthExpenses)}`;
     if (monthProfitEl) {
         monthProfitEl.textContent = `Rs. ${formatNumber(monthProfit)}`;
@@ -11533,6 +11478,7 @@ function loadDashboard() {
     }
 
     // Load Recent Sales
+    const recentSalesEl = document.getElementById('dashboardRecentSales');
     if (recentSalesEl) {
         const recentSales = sales
             .sort((a, b) => new Date(b.date || b.timestamp) - new Date(a.date || a.timestamp))
@@ -11545,7 +11491,6 @@ function loadDashboard() {
                 const saleDate = sale.date ? new Date(sale.date) : (sale.timestamp ? new Date(sale.timestamp) : new Date());
                 const dateStr = formatDate(saleDate);
                 const timeStr = formatTime(saleDate);
-                // Use sale.total if available (includes tax), otherwise calculate with tax
                 let total;
                 if (sale.total) {
                     total = sale.total;
@@ -11553,19 +11498,21 @@ function loadDashboard() {
                     const subtotal = sale.items.reduce((s, item) => s + (item.price * item.quantity), 0);
                     total = subtotal;
                 } else {
-                    const amount = sale.amount || 0;
-                    const subtotal = amount;
-                    total = subtotal;
+                    total = sale.amount || 0;
                 }
-                const paymentMethod = formatPaymentMethod(sale.paymentMethod || sale.payment || 'N/A');
-
+                const isFamily = sale.isFamilyAccount || sale.paymentMethod === 'family';
                 return `
-                    <div style="padding: 15px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #f0f0f0; ${isFamily ? 'background: #fff8e1;' : ''}">
                         <div>
-                            <div style="font-weight: 600; color: #333; margin-bottom: 5px;">${dateStr} ${timeStr}</div>
-                            <div style="font-size: 12px; color: #666;">Payment: ${paymentMethod}</div>
+                            <div style="font-weight: 600; color: #333; display: flex; align-items: center; gap: 8px;">
+                                Order #${sale.id}
+                                ${isFamily ? '<span style="font-size: 11px; padding: 2px 6px; background: #f39c12; color: white; border-radius: 4px; font-weight: 600;">Family</span>' : ''}
+                            </div>
+                            <div style="font-size: 12px; color: #999;">${dateStr} ${timeStr}</div>
                         </div>
-                        <div style="font-weight: 700; color: #1e3a5f; font-size: 18px;">Rs. ${formatNumber(total)}</div>
+                        <div style="font-weight: 700; color: ${isFamily ? '#f39c12' : '#27ae60'}; font-size: 16px;">
+                            ${isFamily ? 'On Account' : `Rs. ${formatNumber(total)}`}
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -16546,7 +16493,7 @@ onDOMReady(() => {
     initializeMenuStructure();
 
     // Initialize unified dynamic modern time filters
-    ['sales', 'itemsSales', 'expense', 'consumption', 'consumptionLogs', 'table'].forEach(prefix => {
+    ['dashboard', 'sales', 'itemsSales', 'expense', 'consumption', 'consumptionLogs', 'table'].forEach(prefix => {
         if (typeof window.renderModernTimeFilterUI === 'function') {
             window.renderModernTimeFilterUI(prefix);
         }

@@ -231,9 +231,25 @@
 
             <!-- Dashboard Tab -->
             <div class="tab-content" id="dashboard">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
                     <h2 style="margin: 0; font-weight: 800;">Dashboard</h2>
-                    <div style="display: flex; gap: 10px; align-items: center;">
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <div class="modern-time-filter-wrapper" id="dashboardTimeFilterWrapper">
+                            <select id="dashboardDateFilter" style="display: none;">
+                                <option value="today" selected>Daily</option>
+                                <option value="month">Monthly</option>
+                                <option value="year">Annual</option>
+                                <option value="all">All Time</option>
+                            </select>
+                            <div class="time-pills-group">
+                                <button type="button" class="time-pill-btn active" data-filter="today" onclick="setModernTimeFilterMode('dashboard', 'today')">Daily</button>
+                                <button type="button" class="time-pill-btn" data-filter="month" onclick="setModernTimeFilterMode('dashboard', 'month')">Monthly</button>
+                                <button type="button" class="time-pill-btn" data-filter="year" onclick="setModernTimeFilterMode('dashboard', 'year')">Annual</button>
+                                <button type="button" class="time-pill-btn" data-filter="all" onclick="setModernTimeFilterMode('dashboard', 'all')">All</button>
+                            </div>
+                            <div id="dashboardTimeValueContainer" class="time-navigator-container"></div>
+                            <button id="dashboardResetFilterBtn" class="btn-reset-filter" title="Reset to today" onclick="resetModernTimeFilter('dashboard')" style="display: none;">✕</button>
+                        </div>
                         <button onclick="openAdvancedSettingsModal()"
                             style="background: #4a90e2; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2); height: 34px; display: flex; align-items: center; justify-content: center; gap: 8px; letter-spacing: 0.2px;">⚙️
                             Advanced Settings</button>
@@ -244,14 +260,14 @@
                 </div>
 
                 <!-- End of Day Financial Closing & Summary Card -->
-                <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 12px; padding: 14px 18px; color: white; margin-bottom: 14px; box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12); border: 1px solid rgba(255, 255, 255, 0.08);">
+                <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 12px; padding: 14px 18px; color: white; margin-bottom: 16px; box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12); border: 1px solid rgba(255, 255, 255, 0.08);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <div style="width: 36px; height: 36px; border-radius: 9px; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; font-size: 18px; border: 1px solid rgba(59, 130, 246, 0.4);">
                                 🌙
                             </div>
                             <div>
-                                <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #ffffff; letter-spacing: 0.1px;">Daily Closing & Financial Summary</h3>
+                                <h3 id="dashboardClosingTitle" style="margin: 0; font-size: 15px; font-weight: 700; color: #ffffff; letter-spacing: 0.1px;">Daily Closing & Financial Summary</h3>
                                 <div id="dashboardClosingDateText" style="font-size: 11.5px; color: #94a3b8; font-weight: 500; margin-top: 1px;">Real-time cash in hand, ingredient costs & net profit</div>
                             </div>
                         </div>
@@ -307,165 +323,53 @@
                     </div>
                 </div>
 
-                <!-- Summary Cards Row 1 -->
-                <div
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 14px;">
-                    <div
-                        style="background: white; padding: 10px 14px; border-radius: 9px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 3px solid #4a90e2; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #e2e8f0;">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-                            <h3
-                                style="margin: 0; font-size: 11.5px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
-                                Today's Sales</h3>
-                            <span style="font-size: 18px;">💰</span>
-                        </div>
-                        <p id="dashboardTodaySales"
-                            style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.2;">Rs. 0</p>
-                    </div>
-
-                    <div
-                        style="background: white; padding: 10px 14px; border-radius: 9px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 3px solid #e74c3c; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #e2e8f0;">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-                            <h3
-                                style="margin: 0; font-size: 11.5px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
-                                Today's Expenses</h3>
-                            <span style="font-size: 18px;">💸</span>
-                        </div>
-                        <p id="dashboardTodayExpenses"
-                            style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.2;">Rs. 0</p>
-                    </div>
-
-                    <div
-                        style="background: white; padding: 10px 14px; border-radius: 9px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 3px solid #27ae60; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #e2e8f0;">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-                            <h3
-                                style="margin: 0; font-size: 11.5px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
-                                Today's Profit</h3>
-                            <span style="font-size: 18px;">📈</span>
-                        </div>
-                        <p id="dashboardTodayProfit"
-                            style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.2;">Rs. 0</p>
-                    </div>
-
-                    <div
-                        style="background: white; padding: 10px 14px; border-radius: 9px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 3px solid #f39c12; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #e2e8f0;">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-                            <h3
-                                style="margin: 0; font-size: 11.5px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
-                                Hold Orders</h3>
-                            <span style="font-size: 18px;">⏸️</span>
-                        </div>
-                        <p id="dashboardHoldOrders"
-                            style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.2;">0</p>
-                    </div>
-                </div>
-
-                <!-- Summary Cards Row 2 -->
-                <div
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 14px;">
-                    <div
-                        style="background: white; padding: 10px 14px; border-radius: 9px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 3px solid #e74c3c; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #e2e8f0;">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-                            <h3
-                                style="margin: 0; font-size: 11.5px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
-                                Today's Discounts</h3>
-                            <span style="font-size: 18px;">🏷️</span>
-                        </div>
-                        <p id="dashboardTodayDiscounts"
-                            style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.2;">Rs. 0</p>
-                    </div>
-
-                    <div
-                        style="background: white; padding: 10px 14px; border-radius: 9px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 3px solid #f39c12; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #e2e8f0;">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-                            <h3
-                                style="margin: 0; font-size: 11.5px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
-                                Weekly Discounts</h3>
-                            <span style="font-size: 18px;">🏷️</span>
-                        </div>
-                        <p id="dashboardWeeklyDiscounts"
-                            style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.2;">Rs. 0</p>
-                    </div>
-
-                    <div
-                        style="background: white; padding: 10px 14px; border-radius: 9px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 3px solid #3498db; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #e2e8f0;">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-                            <h3
-                                style="margin: 0; font-size: 11.5px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
-                                Today's Orders</h3>
-                            <span style="font-size: 18px;">🧾</span>
-                        </div>
-                        <p id="dashboardTodayOrdersCount"
-                            style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.2;">0</p>
-                    </div>
-
-                    <div
-                        style="background: white; padding: 10px 14px; border-radius: 9px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 3px solid #16a085; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #e2e8f0;">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-                            <h3
-                                style="margin: 0; font-size: 11.5px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
-                                Weekly Orders</h3>
-                            <span style="font-size: 18px;">📊</span>
-                        </div>
-                        <p id="dashboardWeeklyOrdersCount"
-                            style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.2;">0</p>
-                    </div>
-                </div>
-
-                <!-- Monthly Overview -->
+                <!-- Quick Overview Cards (Today & This Month) -->
                 <div
                     style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px;">
                     <div
-                        style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                        <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #1e3a5f; font-weight: 700;">This Week
+                        style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid #e2e8f0;">
+                        <h3 id="dashboardDayCardTitle" style="margin: 0 0 15px 0; font-size: 18px; color: #1e3a5f; font-weight: 700;">Today
                         </h3>
                         <div style="margin-bottom: 10px;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                <span style="color: #666; font-size: 14px;">Sales:</span>
-                                <span id="dashboardWeekSales" style="font-weight: 600; color: #1e3a5f;">Rs. 0</span>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                <span style="color: #64748b; font-size: 14px; font-weight: 500;">Sales:</span>
+                                <span id="dashboardDaySales" style="font-weight: 700; color: #1e3a5f;">Rs. 0</span>
                             </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                <span style="color: #666; font-size: 14px;">Cost:</span>
-                                <span id="dashboardWeekCost" style="font-weight: 600; color: #dc2626;">Rs. 0</span>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                <span style="color: #64748b; font-size: 14px; font-weight: 500;">Cost:</span>
+                                <span id="dashboardDayCost" style="font-weight: 700; color: #dc2626;">Rs. 0</span>
                             </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                <span style="color: #666; font-size: 14px;">Expenses:</span>
-                                <span id="dashboardWeekExpenses" style="font-weight: 600; color: #1e3a5f;">Rs. 0</span>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                <span style="color: #64748b; font-size: 14px; font-weight: 500;">Expenses:</span>
+                                <span id="dashboardDayExpenses" style="font-weight: 700; color: #dc2626;">Rs. 0</span>
                             </div>
-                            <div style="display: flex; justify-content: space-between; padding-top: 6px; border-top: 1px solid #f1f5f9; margin-top: 4px;">
+                            <div style="display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px solid #f1f5f9; margin-top: 6px;">
                                 <span style="color: #475569; font-size: 14px; font-weight: 600;">Profit:</span>
-                                <span id="dashboardWeekProfit" style="font-weight: 700; color: #16a34a;">Rs. 0</span>
+                                <span id="dashboardDayProfit" style="font-weight: 800; color: #16a34a;">Rs. 0</span>
                             </div>
                         </div>
                     </div>
 
                     <div
-                        style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                        <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #1e3a5f; font-weight: 700;">This Month
+                        style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid #e2e8f0;">
+                        <h3 id="dashboardMonthCardTitle" style="margin: 0 0 15px 0; font-size: 18px; color: #1e3a5f; font-weight: 700;">This Month
                         </h3>
                         <div style="margin-bottom: 10px;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                <span style="color: #666; font-size: 14px;">Sales:</span>
-                                <span id="dashboardMonthSales" style="font-weight: 600; color: #1e3a5f;">Rs. 0</span>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                <span style="color: #64748b; font-size: 14px; font-weight: 500;">Sales:</span>
+                                <span id="dashboardMonthSales" style="font-weight: 700; color: #1e3a5f;">Rs. 0</span>
                             </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                <span style="color: #666; font-size: 14px;">Cost:</span>
-                                <span id="dashboardMonthCost" style="font-weight: 600; color: #dc2626;">Rs. 0</span>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                <span style="color: #64748b; font-size: 14px; font-weight: 500;">Cost:</span>
+                                <span id="dashboardMonthCost" style="font-weight: 700; color: #dc2626;">Rs. 0</span>
                             </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                <span style="color: #666; font-size: 14px;">Expenses:</span>
-                                <span id="dashboardMonthExpenses" style="font-weight: 600; color: #1e3a5f;">Rs. 0</span>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                <span style="color: #64748b; font-size: 14px; font-weight: 500;">Expenses:</span>
+                                <span id="dashboardMonthExpenses" style="font-weight: 700; color: #dc2626;">Rs. 0</span>
                             </div>
-                            <div style="display: flex; justify-content: space-between; padding-top: 6px; border-top: 1px solid #f1f5f9; margin-top: 4px;">
+                            <div style="display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px solid #f1f5f9; margin-top: 6px;">
                                 <span style="color: #475569; font-size: 14px; font-weight: 600;">Profit:</span>
-                                <span id="dashboardMonthProfit" style="font-weight: 700; color: #16a34a;">Rs. 0</span>
+                                <span id="dashboardMonthProfit" style="font-weight: 800; color: #16a34a;">Rs. 0</span>
                             </div>
                         </div>
                     </div>
