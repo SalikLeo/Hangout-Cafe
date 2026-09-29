@@ -13596,7 +13596,7 @@ function updateCart() {
             </div>
             <div class="order-item-right">
                 <div class="order-item-actions">
-                    <button type="button" class="order-action-btn order-item-remove" title="Remove" onclick="removeFromCart(${item.id})">
+                    <button type="button" class="order-action-btn order-item-remove" title="Remove Item" onclick="removeFromCart(${item.id})">
                         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -13604,19 +13604,8 @@ function updateCart() {
                             <line x1="14" y1="11" x2="14" y2="17"></line>
                         </svg>
                     </button>
-                    <button type="button" class="order-action-btn order-item-subtract" title="Decrease" onclick="updateQuantity(${item.id}, -1)">
-                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                    </button>
-                    <input type="number" class="order-item-qty-input" value="${item.quantity}" min="0" step="0.01" data-original-value="${item.quantity}" onchange="setCartQuantityDirect(${item.id}, parseFloat(this.value) || 0); this.setAttribute('data-original-value', this.value);" onblur="if(this.value === '' || parseFloat(this.value) <= 0) { this.value = this.getAttribute('data-original-value') || 1; setCartQuantityDirect(${item.id}, parseFloat(this.value) || 1); }" onclick="event.stopPropagation();">
-                    <input type="number" class="order-item-price-input" value="${Math.round(itemTotal)}" min="0" step="1" onchange="setCartPriceDirect(${item.id}, this.value)" onclick="event.stopPropagation();">
-                    <button type="button" class="order-action-btn order-item-add" title="Increase" onclick="updateQuantity(${item.id}, 1)">
-                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                    </button>
+                    <input type="number" class="order-item-qty-input" value="${item.quantity}" min="1" step="1" title="Quantity (use arrows to change)" data-original-value="${item.quantity}" oninput="setCartQuantityDirect(${item.id}, parseFloat(this.value) || 0)" onchange="setCartQuantityDirect(${item.id}, parseFloat(this.value) || 0); this.setAttribute('data-original-value', this.value);" onblur="if(this.value === '' || parseFloat(this.value) <= 0) { this.value = this.getAttribute('data-original-value') || 1; setCartQuantityDirect(${item.id}, parseFloat(this.value) || 1); }" onclick="event.stopPropagation();">
+                    <input type="number" class="order-item-price-input" value="${Math.round(itemTotal)}" min="0" step="1" title="Total Item Price" onchange="setCartPriceDirect(${item.id}, this.value)" onclick="event.stopPropagation();">
                 </div>
             </div>
         `;
