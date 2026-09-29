@@ -4306,3 +4306,31 @@ select.pos-form-control {
 .time-nav-reset-icon:hover {
     background: #fecaca;
 }
+
+/* Reports Tab Inputs */
+#reportAnnualYear,
+#reportDailyDate,
+#reportMonthlyMonth {
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    padding: 0 14px !important;
+    line-height: 44px !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    font-family: 'Poppins', 'Inter', sans-serif !important;
+    border: 2px solid #e0e0e0 !important;
+    border-radius: 10px !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+#reportAnnualYear option {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f172a;
+    padding: 8px 12px;
+}
