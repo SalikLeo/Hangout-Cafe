@@ -2586,22 +2586,29 @@ window.openAddMenuItemModal = () => {
     document.getElementById('addMenuItemForm').reset();
     clearMenuItemImage();
 
-    // Add image preview handler
+    // Add image preview & instant optimization handler
     const imageInput = document.getElementById('addMenuItemImage');
     if (imageInput) {
-        imageInput.onchange = function (e) {
+        imageInput.onchange = async function (e) {
             const file = e.target.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = function (event) {
-                    const preview = document.getElementById('addMenuItemImagePreview');
-                    const previewImg = document.getElementById('addMenuItemImagePreviewImg');
-                    if (preview && previewImg) {
-                        previewImg.src = event.target.result;
-                        preview.style.display = 'block';
+                const preview = document.getElementById('addMenuItemImagePreview');
+                const previewImg = document.getElementById('addMenuItemImagePreviewImg');
+                const statsEl = document.getElementById('addMenuItemImageStats');
+                if (statsEl) statsEl.innerHTML = '<span style="color: #64748b;">Optimizing...</span>';
+                if (preview) preview.style.display = 'block';
+
+                const opt = await optimizeMenuItemImage(file);
+                if (opt && opt.dataUrl) {
+                    imageInput.dataset.optimizedDataUrl = opt.dataUrl;
+                    if (previewImg) previewImg.src = opt.dataUrl;
+                    if (statsEl) {
+                        const origKb = Math.round(opt.originalSize / 1024);
+                        const optKb = Math.max(1, Math.round(opt.compressedSize / 1024));
+                        const savedPct = origKb > 0 ? Math.round(((opt.originalSize - opt.compressedSize) / opt.originalSize) * 100) : 0;
+                        statsEl.innerHTML = `✓ Compressed to <b>${optKb} KB</b> ${savedPct > 0 ? `(saved ${savedPct}%)` : ''}`;
                     }
-                };
-                reader.readAsDataURL(file);
+                }
             }
         };
     }
@@ -2615,63 +2622,114 @@ window.clearMenuItemImage = () => {
     const imageInput = document.getElementById('addMenuItemImage');
     const preview = document.getElementById('addMenuItemImagePreview');
     const previewImg = document.getElementById('addMenuItemImagePreviewImg');
-    if (imageInput) imageInput.value = '';
+    const statsEl = document.getElementById('addMenuItemImageStats');
+    if (imageInput) {
+        imageInput.value = '';
+        delete imageInput.dataset.optimizedDataUrl;
+    }
     if (preview) preview.style.display = 'none';
     if (previewImg) previewImg.src = '';
+    if (statsEl) statsEl.innerHTML = '';
 };
 
-// Function to convert image file to base64
-function convertImageToBase64(file, callback) {
-    if (!file) {
-        callback(null);
+// High-Efficiency Sharp Image Optimizer for Menu Items
+function optimizeMenuItemImage(fileOrDataUrl, options = {}) {
+    const maxWidth = options.maxWidth || 240;
+    const maxHeight = options.maxHeight || 240;
+    const quality = options.quality !== undefined ? options.quality : 0.72;
+
+    return new Promise((resolve) => {
+        if (!fileOrDataUrl) {
+            resolve(null);
+            return;
+        }
+
+        const processImageSource = (src, origSize = 0) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                let w = img.naturalWidth || img.width;
+                let h = img.naturalHeight || img.height;
+
+                // Calculate target scale preserving aspect ratio
+                let scale = Math.min(1, maxWidth / w, maxHeight / h);
+                let targetW = Math.max(1, Math.round(w * scale));
+                let targetH = Math.max(1, Math.round(h * scale));
+
+                // Multi-step downsampling for crisp clarity
+                let curW = w;
+                let curH = h;
+                let curCanvas = document.createElement('canvas');
+                curCanvas.width = curW;
+                curCanvas.height = curH;
+                let curCtx = curCanvas.getContext('2d');
+                curCtx.drawImage(img, 0, 0);
+
+                while (curW / 2 >= targetW && curH / 2 >= targetH) {
+                    let nextW = Math.round(curW / 2);
+                    let nextH = Math.round(curH / 2);
+                    let nextCanvas = document.createElement('canvas');
+                    nextCanvas.width = nextW;
+                    nextCanvas.height = nextH;
+                    let nextCtx = nextCanvas.getContext('2d');
+                    nextCtx.imageSmoothingEnabled = true;
+                    nextCtx.imageSmoothingQuality = 'high';
+                    nextCtx.drawImage(curCanvas, 0, 0, curW, curH, 0, 0, nextW, nextH);
+                    curCanvas = nextCanvas;
+                    curCtx = nextCtx;
+                    curW = nextW;
+                    curH = nextH;
+                }
+
+                let finalCanvas = document.createElement('canvas');
+                finalCanvas.width = targetW;
+                finalCanvas.height = targetH;
+                let finalCtx = finalCanvas.getContext('2d');
+                finalCtx.imageSmoothingEnabled = true;
+                finalCtx.imageSmoothingQuality = 'high';
+                finalCtx.drawImage(curCanvas, 0, 0, curW, curH, 0, 0, targetW, targetH);
+
+                const optimizedDataUrl = finalCanvas.toDataURL('image/jpeg', quality);
+                const compressedSize = Math.round((optimizedDataUrl.length * 3) / 4);
+                const origSizeBytes = origSize || Math.round((src.length * 3) / 4);
+
+                resolve({
+                    dataUrl: optimizedDataUrl,
+                    originalSize: origSizeBytes,
+                    compressedSize: compressedSize,
+                    width: targetW,
+                    height: targetH
+                });
+            };
+            img.onerror = () => resolve(null);
+            img.src = src;
+        };
+
+        if (fileOrDataUrl instanceof File || fileOrDataUrl instanceof Blob) {
+            const origSize = fileOrDataUrl.size;
+            const reader = new FileReader();
+            reader.onload = (e) => processImageSource(e.target.result, origSize);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(fileOrDataUrl);
+        } else if (typeof fileOrDataUrl === 'string') {
+            processImageSource(fileOrDataUrl, 0);
+        } else {
+            resolve(null);
+        }
+    });
+}
+
+// Function to convert image file to base64 with automatic compression
+function convertImageToBase64(fileOrData, callback) {
+    if (!fileOrData) {
+        if (callback) callback(null);
         return;
     }
-
-    // Compress and resize image for better performance
-    const maxWidth = 300;
-    const maxHeight = 300;
-    const quality = 0.6;
-
-    const reader = new FileReader();
-    reader.onload = function (event) {
-        const img = new Image();
-        img.onload = function () {
-            const canvas = document.createElement('canvas');
-            let width = img.width;
-            let height = img.height;
-
-            // Calculate new dimensions
-            if (width > height) {
-                if (width > maxWidth) {
-                    height = (height * maxWidth) / width;
-                    width = maxWidth;
-                }
-            } else {
-                if (height > maxHeight) {
-                    width = (width * maxHeight) / height;
-                    height = maxHeight;
-                }
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-
-            // Convert to base64 with compression
-            const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
-            callback(compressedDataUrl);
-        };
-        img.onerror = function () {
-            callback(null);
-        };
-        img.src = event.target.result;
-    };
-    reader.onerror = function () {
-        callback(null);
-    };
-    reader.readAsDataURL(file);
+    optimizeMenuItemImage(fileOrData).then(res => {
+        if (callback) callback(res ? res.dataUrl : null);
+    }).catch(() => {
+        if (callback) callback(null);
+    });
 }
 
 // Function to check if all fields are filled and enable/disable "Add Next Item" button
@@ -2705,7 +2763,9 @@ window.addNextMenuItem = () => {
     const categoryId = categoryIdValue ? parseInt(categoryIdValue) : null;
     const name = document.getElementById('addMenuItemName').value.trim();
     const price = parseInt(document.getElementById('addMenuItemPrice').value);
-    const imageFile = document.getElementById('addMenuItemImage')?.files[0];
+    const imageInputEl = document.getElementById('addMenuItemImage');
+    const optimizedDataUrl = imageInputEl?.dataset.optimizedDataUrl;
+    const imageFile = imageInputEl?.files[0];
 
     if (!categoryId) {
         alert('Please select a category');
@@ -2722,8 +2782,7 @@ window.addNextMenuItem = () => {
         return;
     }
 
-    // Convert image to base64
-    convertImageToBase64(imageFile, (imageData) => {
+    const saveWithImageData = (imageData) => {
         const newItem = {
             id: Date.now(),
             categoryId: categoryId,
@@ -2772,7 +2831,17 @@ window.addNextMenuItem = () => {
 
         // Focus on item name field for quick entry
         document.getElementById('addMenuItemName').focus();
-    });
+    };
+
+    if (optimizedDataUrl) {
+        saveWithImageData(optimizedDataUrl);
+    } else if (imageFile) {
+        convertImageToBase64(imageFile, (imageData) => {
+            saveWithImageData(imageData);
+        });
+    } else {
+        saveWithImageData(null);
+    }
 };
 
 window.closeAddMenuItemModal = () => {
@@ -2821,7 +2890,9 @@ if (addMenuItemForm) {
         const categoryId = categoryIdValue ? parseInt(categoryIdValue) : null;
         const name = document.getElementById('addMenuItemName').value.trim();
         const price = parseInt(document.getElementById('addMenuItemPrice').value);
-        const imageFile = document.getElementById('addMenuItemImage')?.files[0];
+        const imageInputEl = document.getElementById('addMenuItemImage');
+        const optimizedDataUrl = imageInputEl?.dataset.optimizedDataUrl;
+        const imageFile = imageInputEl?.files[0];
 
         if (!categoryId) {
             alert('Please select a category');
@@ -2838,8 +2909,7 @@ if (addMenuItemForm) {
             return;
         }
 
-        // Convert image to base64
-        convertImageToBase64(imageFile, (imageData) => {
+        const saveItem = (imageData) => {
             const newItem = {
                 id: Date.now(),
                 categoryId: categoryId,
@@ -2876,7 +2946,17 @@ if (addMenuItemForm) {
                 loadCategories();
                 loadMenuItems();
             }
-        });
+        };
+
+        if (optimizedDataUrl) {
+            saveItem(optimizedDataUrl);
+        } else if (imageFile) {
+            convertImageToBase64(imageFile, (imageData) => {
+                saveItem(imageData);
+            });
+        } else {
+            saveItem(null);
+        }
     });
 }
 
@@ -3055,28 +3135,42 @@ function editMenuItemInlineInternal(id, item, categories, tr) {
         </td>
     `;
 
-    // Add image preview handler
+    // Add image preview & instant optimization handler
     const imageInput = tr.querySelector('.inline-edit-image');
     if (imageInput) {
-        imageInput.onchange = function (e) {
+        imageInput.onchange = async function (e) {
             const file = e.target.files[0];
             if (file) {
                 // Clear remove image flag if a new image is selected
                 delete tr.dataset.removeImage;
 
-                const reader = new FileReader();
-                reader.onload = function (event) {
+                const imageCell = tr.querySelector('.image-cell');
+                const opt = await optimizeMenuItemImage(file);
+                if (opt && opt.dataUrl) {
+                    imageInput.dataset.optimizedDataUrl = opt.dataUrl;
+
                     // Update the preview image if it exists, or create a new preview
-                    const imageCell = tr.querySelector('.image-cell');
                     const existingPreview = imageCell.querySelector('img');
                     if (existingPreview) {
-                        existingPreview.src = event.target.result;
+                        existingPreview.src = opt.dataUrl;
                     } else {
                         const noImageDiv = imageCell.querySelector('div[style*="No image"]');
                         if (noImageDiv) {
-                            noImageDiv.innerHTML = `<img src="${event.target.result}" alt="Preview" style="max-width: 80px; max-height: 80px; border-radius: 4px; border: 2px solid #e0e0e0; object-fit: cover;">`;
+                            noImageDiv.innerHTML = `<img src="${opt.dataUrl}" alt="Preview" style="max-width: 80px; max-height: 80px; border-radius: 4px; border: 2px solid #e0e0e0; object-fit: cover;">`;
                         }
                     }
+
+                    // Size badge
+                    let badge = imageCell.querySelector('.inline-img-opt-badge');
+                    if (!badge) {
+                        badge = document.createElement('div');
+                        badge.className = 'inline-img-opt-badge';
+                        badge.style.cssText = 'font-size: 11px; font-weight: 700; color: #059669; margin-top: 2px;';
+                        imageCell.querySelector('div').appendChild(badge);
+                    }
+                    const optKb = Math.max(1, Math.round(opt.compressedSize / 1024));
+                    badge.textContent = `✓ ${optKb} KB`;
+
                     // Show remove button if not already shown
                     if (!imageCell.querySelector('.inline-edit-remove-image')) {
                         const removeBtn = document.createElement('button');
@@ -3087,8 +3181,7 @@ function editMenuItemInlineInternal(id, item, categories, tr) {
                         removeBtn.style.cssText = 'background: #e74c3c; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; margin-top: 4px;';
                         imageCell.querySelector('div').appendChild(removeBtn);
                     }
-                };
-                reader.readAsDataURL(file);
+                }
             }
         };
     }
@@ -3112,6 +3205,10 @@ window.removeImageFromEdit = (id) => {
                 img.remove();
             }
 
+            // Remove badge
+            const badge = div.querySelector('.inline-img-opt-badge');
+            if (badge) badge.remove();
+
             // Show "No image" text
             const noImageDiv = div.querySelector('div[style*="No image"]');
             if (!noImageDiv) {
@@ -3131,6 +3228,7 @@ window.removeImageFromEdit = (id) => {
             const imageInput = div.querySelector('.inline-edit-image');
             if (imageInput) {
                 imageInput.value = '';
+                delete imageInput.dataset.optimizedDataUrl;
             }
         }
     }
@@ -3148,6 +3246,7 @@ window.saveMenuItemInline = (id) => {
     const nameInput = tr.querySelector('.inline-edit-name');
     const priceInput = tr.querySelector('.inline-edit-price');
     const imageInput = tr.querySelector('.inline-edit-image');
+    const optimizedDataUrl = imageInput?.dataset.optimizedDataUrl;
     const imageFile = imageInput?.files[0];
 
     const newCategoryId = parseInt(categorySelect.value);
@@ -3172,15 +3271,16 @@ window.saveMenuItemInline = (id) => {
     // Check if image should be removed
     const shouldRemoveImage = tr.dataset.removeImage === 'true';
 
-    // Convert new image to base64 if provided
-    if (imageFile) {
+    if (shouldRemoveImage) {
+        updateMenuItemWithImage(id, newCategoryId, newName, newPrice, null, true);
+    } else if (optimizedDataUrl) {
+        updateMenuItemWithImage(id, newCategoryId, newName, newPrice, optimizedDataUrl, false);
+    } else if (imageFile) {
         convertImageToBase64(imageFile, (imageData) => {
-            updateMenuItemWithImage(id, newCategoryId, newName, newPrice, imageData, shouldRemoveImage);
+            updateMenuItemWithImage(id, newCategoryId, newName, newPrice, imageData, false);
         });
     } else {
-        // No new image, but check if we should remove existing one
-        const newImageData = shouldRemoveImage ? null : (item.image || null);
-        updateMenuItemWithImage(id, newCategoryId, newName, newPrice, newImageData, false);
+        updateMenuItemWithImage(id, newCategoryId, newName, newPrice, item.image || null, false);
     }
 };
 
@@ -15852,6 +15952,39 @@ function initializeMenuStructure() {
     if (menuCategories.length === 0 || isOnlyOldDefaultKarahi || localStorage.getItem('hangout_menu_wmc_loaded') !== 'true') {
         // Seed full Hangout Cafe menu from Menu WMC
         seedHangoutWmcMenu(isOnlyOldDefaultKarahi || menuCategories.length === 0);
+    }
+
+    // Automatically optimize any heavy legacy menu item images in background
+    setTimeout(autoOptimizeStoredMenuImages, 1500);
+}
+
+// Auto-optimize all existing stored menu images in background once to free storage
+function autoOptimizeStoredMenuImages() {
+    try {
+        const menuItems = Storage.get('menuItems');
+        if (!Array.isArray(menuItems) || menuItems.length === 0) return;
+
+        let needsSave = false;
+        let pending = 0;
+
+        menuItems.forEach((item, index) => {
+            if (item && item.image && typeof item.image === 'string' && item.image.startsWith('data:image') && item.image.length > 40000) {
+                pending++;
+                optimizeMenuItemImage(item.image).then(res => {
+                    if (res && res.dataUrl && res.dataUrl.length < item.image.length) {
+                        menuItems[index].image = res.dataUrl;
+                        needsSave = true;
+                    }
+                }).catch(() => {}).finally(() => {
+                    pending--;
+                    if (pending === 0 && needsSave) {
+                        Storage.set('menuItems', menuItems);
+                    }
+                });
+            }
+        });
+    } catch (e) {
+        console.warn('Auto-optimize stored menu images error:', e);
     }
 }
 
