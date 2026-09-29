@@ -8810,7 +8810,7 @@ window.addConsumptionRow = function addConsumptionRow(prefillStockId = '', prefi
                 <span style="font-weight: 600; color: #0f172a; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">
                     ${escapeHtml(stock.itemName)}
                 </span>
-                <span style="font-size: 10.5px; color: #059669; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 1px 5px; border-radius: 3px; font-weight: 600; white-space: nowrap; flex-shrink: 0; line-height: 15px; height: 15px;">
+                <span style="font-size: 10.5px; color: #475569; background: #f1f5f9; border: 1px solid #cbd5e1; padding: 1px 5px; border-radius: 3px; font-weight: 600; white-space: nowrap; flex-shrink: 0; line-height: 15px; height: 15px;">
                     ${formatQuantity(stock.quantity)} ${stock.unit}
                 </span>
             </div>

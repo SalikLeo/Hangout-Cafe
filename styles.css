@@ -3190,7 +3190,7 @@ select.pos-form-control {
 }
 
 .cons-excel-row:hover td {
-    background-color: #f0fdf4 !important;
+    background-color: #f8fafc !important;
 }
 
 .cons-excel-row:nth-child(even) td {
@@ -3198,7 +3198,7 @@ select.pos-form-control {
 }
 
 .cons-excel-row:nth-child(even):hover td {
-    background-color: #f0fdf4 !important;
+    background-color: #f8fafc !important;
 }
 
 .cons-excel-input {
@@ -3225,11 +3225,11 @@ select.pos-form-control {
 }
 
 .cons-excel-input:focus {
-    border-color: #10b981 !important;
+    border-color: #4a90e2 !important;
     background: #ffffff !important;
-    color: #065f46 !important;
-    font-weight: 700;
-    box-shadow: inset 0 0 0 1px #10b981 !important;
+    color: #0f172a !important;
+    font-weight: 600;
+    box-shadow: none !important;
 }
 
 .cons-excel-input.qty-error {
