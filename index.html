@@ -106,6 +106,10 @@
                     <span class="nav-icon">📊</span>
                     <span class="nav-text">Dashboard</span>
                 </button>
+                <button class="nav-item" data-tab="settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-text">Settings</span>
+                </button>
             </nav>
             <!-- Footer -->
             <div class="sidebar-footer">
@@ -1890,91 +1894,93 @@
 
                 <!-- Daily Stock Consumption / Ingredient Deduction Modal (Easy Non-Tech Staff View) -->
                 <div id="dailyConsumptionModal" class="modal" style="display: none;">
-                    <div class="modal-content" style="max-width: 960px; width: 95%; max-height: 92vh; display: flex; flex-direction: column;">
-                        <div class="modal-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border-radius: 12px 12px 0 0; padding: 16px 24px;">
+                    <div class="modal-content" style="max-width: 960px; width: 95%; max-height: 92vh; display: flex; flex-direction: column; height: auto;">
+                        <div class="modal-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border-radius: 12px 12px 0 0; padding: 10px 18px;">
                             <div style="display: flex; align-items: center; gap: 10px;">
-                                <span style="font-size: 22px;">📉</span>
+                                <span style="font-size: 18px;">📉</span>
                                 <div>
-                                    <h3 style="margin: 0; font-size: 19px; font-weight: 700; color: white;">Deduct Stock / Ingredients Used</h3>
-                                    <div style="font-size: 12px; color: rgba(255,255,255,0.85); margin-top: 2px;">Enter ingredients used in daily cooking & sales to subtract from inventory</div>
+                                    <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: white;">Deduct Stock / Ingredients Used</h3>
+                                    <div style="font-size: 11px; color: rgba(255,255,255,0.85); margin-top: 1px;">Enter ingredients used in daily cooking & sales to subtract from inventory</div>
                                 </div>
                             </div>
                             <span class="modal-close" onclick="closeDailyConsumptionModal()"
-                                style="font-size: 28px; cursor: pointer; color: white; opacity: 0.9;">&times;</span>
+                                style="font-size: 24px; cursor: pointer; color: white; opacity: 0.9;">&times;</span>
                         </div>
-                        <div class="modal-body" style="padding: 20px; overflow-y: auto; flex: 1; background: #f8fafc;">
-                            <!-- Top Bar: Date Selector -->
-                            <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-                                <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap;">
-                                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                                        <label style="font-weight: 700; color: #1e293b; font-size: 14px;">📅 Sales Date:</label>
-                                        <div style="display: inline-flex; align-items: center; gap: 8px;">
+                        <div class="modal-body" style="padding: 10px 14px; overflow-y: auto; max-height: calc(90vh - 120px); background: #f8fafc;">
+                            <!-- Top Bar: Date Selector & Search & Add (Single Line to Save Space) -->
+                            <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+                                    <!-- Left: Sales Date & Orders Summary -->
+                                    <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                                        <label style="font-weight: 700; color: #1e293b; font-size: 13px; white-space: nowrap;">📅 Sales Date:</label>
+                                        <div style="display: inline-flex; align-items: center; gap: 6px;">
                                             <input type="date" id="consumptionDate" onchange="handleConsumptionModalDateChange()" oninput="handleConsumptionModalDateChange()"
-                                                style="padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; font-weight: 600; color: #0f172a; background: white; height: 42px;">
+                                                style="padding: 4px 8px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 12.5px; font-family: inherit; font-weight: 600; color: #0f172a; background: white; height: 32px;">
                                             <button type="button" id="consumptionModalResetDateBtn" onclick="resetConsumptionModalDate()"
                                                 title="Reset to today's date"
-                                                style="display: none; background: #fee2e2; color: #dc2626; border: 1.5px solid #fca5a5; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 700; align-items: center; justify-content: center; transition: all 0.15s;"
+                                                style="display: none; background: #fee2e2; color: #dc2626; border: 1.5px solid #fca5a5; width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 700; align-items: center; justify-content: center; transition: all 0.15s;"
                                                 onmouseover="this.style.background='#fecaca';"
                                                 onmouseout="this.style.background='#fee2e2';">✕</button>
                                         </div>
-                                    </div>
-                                    <div id="consumptionOrdersSummary" style="font-size: 13.5px; font-weight: 700; color: #059669; background: #dcfce7; padding: 6px 14px; border-radius: 20px;">
-                                        Total Orders: 0
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Fast Ingredient Finder Bar (Searchable Dropdown) -->
-                            <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-                                <div style="display: flex; align-items: center; gap: 12px; position: relative;">
-                                    <label style="font-size: 13.5px; font-weight: 700; color: #0f172a; white-space: nowrap;">⚡ Search & Add:</label>
-                                    <div style="position: relative; flex: 1; max-width: 520px;">
-                                        <div style="display: flex; align-items: center; position: relative;">
-                                            <input type="text" id="consumptionSearchInput" placeholder="Type to search & select ingredient (e.g. Eggs, Oil, Potatoes)..."
-                                                autocomplete="off"
-                                                onfocus="openConsumptionDropdown()"
-                                                oninput="filterConsumptionDropdown()"
-                                                onkeydown="handleConsumptionSearchKeydown(event)"
-                                                style="width: 100%; padding: 10px 38px 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; font-weight: 600; color: #0f172a; background: white; height: 44px; box-sizing: border-box; outline: none;">
-                                            <span onclick="toggleConsumptionDropdown()" style="position: absolute; right: 12px; cursor: pointer; color: #64748b; font-size: 12px; user-select: none; padding: 4px;">
-                                                ▼
-                                            </span>
+                                        <div id="consumptionOrdersSummary" style="font-size: 11.5px; font-weight: 700; color: #059669; background: #dcfce7; padding: 3px 8px; border-radius: 14px; white-space: nowrap;">
+                                            Total Orders: 0
                                         </div>
-                                        <!-- Dropdown Menu -->
-                                        <div id="consumptionDropdownMenu"
-                                            style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 240px; overflow-y: auto; background: white; border: 1.5px solid #cbd5e1; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.12); z-index: 1000;">
+                                    </div>
+
+                                    <!-- Right: Fast Ingredient Finder Bar (Searchable Dropdown) -->
+                                    <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 260px; position: relative;">
+                                        <label style="font-size: 13px; font-weight: 700; color: #0f172a; white-space: nowrap;">⚡ Search & Add:</label>
+                                        <div style="position: relative; flex: 1;">
+                                            <div style="display: flex; align-items: center; position: relative;">
+                                                <input type="text" id="consumptionSearchInput" placeholder="Type ingredient name to add (e.g. Eggs, Oil, Potatoes)..."
+                                                    autocomplete="off"
+                                                    onfocus="openConsumptionDropdown()"
+                                                    oninput="filterConsumptionDropdown()"
+                                                    onkeydown="handleConsumptionSearchKeydown(event)"
+                                                    style="width: 100%; padding: 4px 28px 4px 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 12.5px; font-family: inherit; font-weight: 600; color: #0f172a; background: white; height: 32px; box-sizing: border-box; outline: none;">
+                                                <span onclick="toggleConsumptionDropdown()" style="position: absolute; right: 8px; cursor: pointer; color: #64748b; font-size: 10px; user-select: none; padding: 2px;">
+                                                    ▼
+                                                </span>
+                                            </div>
+                                            <!-- Dropdown Menu -->
+                                            <div id="consumptionDropdownMenu"
+                                                style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 220px; overflow-y: auto; background: white; border: 1.5px solid #cbd5e1; border-radius: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.12); z-index: 1000;">
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Deductions Table -->
-                            <div style="background: white; border: 1.5px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-                                <div style="padding: 12px 16px; background: #f8fafc; border-bottom: 1.5px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
-                                    <div style="font-weight: 700; color: #1e293b; font-size: 14.5px;">
+                            <!-- Deductions Table (Excel-Style Compact Row Layout) -->
+                            <div style="background: white; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+                                <div style="padding: 5px 10px; background: #f8fafc; border-bottom: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="font-weight: 700; color: #1e293b; font-size: 12.5px;">
                                         Ingredients to Deduct from Stock:
                                     </div>
-                                    <div style="font-size: 12px; color: #64748b;">
-                                        💡 Live balance and shortage warnings update automatically
+                                    <div style="font-size: 11px; color: #64748b;">
+                                        💡 Fill quantities and press save to deduct
                                     </div>
                                 </div>
-                                <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                                    <thead>
-                                        <tr style="background: #f1f5f9; border-bottom: 1.5px solid #e2e8f0; font-size: 11.5px; font-weight: 700; color: #475569; text-transform: uppercase;">
-                                            <th style="padding: 10px 14px; width: 42%;">Ingredient *</th>
-                                            <th style="padding: 10px 14px; width: 22%;">Used Qty *</th>
-                                            <th style="padding: 10px 14px;">Reason / Note (Optional)</th>
-                                            <th style="padding: 10px 14px; width: 44px; text-align: center;"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="consumptionRowsContainer">
-                                        <!-- Dynamic deduction rows with live remaining balance calculation -->
-                                    </tbody>
-                                </table>
+                                <div style="max-height: 52vh; overflow-y: auto; display: block; background: #ffffff;">
+                                    <table class="cons-excel-table" style="width: 100%; border-collapse: collapse;">
+                                        <thead>
+                                            <tr style="position: sticky; top: 0; z-index: 2; height: 24px;">
+                                                <th style="width: 32px; text-align: center;">#</th>
+                                                <th style="width: 38%;">Ingredient</th>
+                                                <th style="width: 22%;">Used Qty *</th>
+                                                <th>Reason / Note (Optional)</th>
+                                                <th style="width: 28px; text-align: center;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="consumptionRowsContainer">
+                                            <!-- Dynamic deduction rows with Excel-style inline inputs -->
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
-                        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid #e2e8f0; background: #ffffff; display: flex; justify-content: space-between; align-items: center;">
-                            <div id="consumptionSummaryFooter" style="font-size: 14px; font-weight: 600; color: #334155;">
+                        <div class="modal-footer" style="padding: 12px 18px; border-top: 1px solid #e2e8f0; background: #ffffff; display: flex; justify-content: space-between; align-items: center;">
+                            <div id="consumptionSummaryFooter" style="font-size: 13px; font-weight: 600; color: #334155;">
                                 Total Items: <strong id="consumptionTotalRowsCount" style="color: #059669;">0</strong> ingredient(s) ready to deduct
                             </div>
                             <div style="display: flex; gap: 10px; align-items: center;">
@@ -2116,6 +2122,186 @@
                     <!-- Tables will be dynamically loaded here in a table list form -->
                 </div>
             </div>
+
+            <!-- Settings Tab -->
+            <div class="tab-content" id="settings">
+                <div class="settings-tab-container">
+                    <div class="settings-header-bar">
+                        <h2 class="settings-page-title">Settings</h2>
+                        <button type="button" id="btnSaveProfile" onclick="saveCafeSettings()" class="btn-save-settings">
+                            <span style="font-size: 16px;">💾</span> Save Profile
+                        </button>
+                    </div>
+
+                    <div class="settings-grid-layout">
+                        <!-- Cafe & Business Profile Card -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <h3><span>🏪</span> Cafe & Business Profile</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <!-- Logo Section -->
+                                <div class="settings-logo-row">
+                                    <div class="settings-logo-box" onclick="chooseLogoFile()">
+                                        <img id="settingLogoPreview" src="assets/logo.jpg" class="settings-logo-img" onerror="this.style.display='none'; document.getElementById('settingLogoPlaceholder').style.display='flex';">
+                                        <div id="settingLogoPlaceholder" class="settings-logo-placeholder" style="display: none;">
+                                            <span style="font-size: 24px;">🖼️</span>
+                                            <span style="font-size: 10px; font-weight: 700;">No Logo</span>
+                                        </div>
+                                        <div class="settings-logo-overlay">
+                                            <span>📤 Change</span>
+                                        </div>
+                                        <input type="hidden" id="settingLogoPath">
+                                    </div>
+                                    <div class="settings-logo-info">
+                                        <h4>Cafe Header Logo</h4>
+                                        <p>Used on POS receipts, thermal cash memos, and reports.</p>
+                                        <div class="settings-logo-actions">
+                                            <button type="button" onclick="chooseLogoFile()" class="btn-logo-choose">Choose File</button>
+                                            <button type="button" onclick="removeLogoFile()" class="btn-logo-remove">Remove</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Form Fields -->
+                                <div class="settings-fields-grid">
+                                    <div class="settings-field-full">
+                                        <div class="settings-field-header">
+                                            <label class="settings-field-label">Restaurant / Store Name</label>
+                                            <span class="settings-locked-tag">🔒 Locked</span>
+                                        </div>
+                                        <input type="text" id="setRestaurantName" readonly disabled value="Hangout Lounge & Co." class="settings-input-locked">
+                                    </div>
+
+                                    <div>
+                                        <div class="settings-field-header">
+                                            <label class="settings-field-label">Phone / WhatsApp</label>
+                                            <span class="settings-locked-tag">🔒 Locked</span>
+                                        </div>
+                                        <input type="text" id="setRestaurantPhone" readonly disabled value="0300-9509536" class="settings-input-locked">
+                                    </div>
+
+                                    <div>
+                                        <div class="settings-field-header">
+                                            <label class="settings-field-label">Official Website / Portal</label>
+                                        </div>
+                                        <input type="text" id="setRestaurantWebsite" placeholder="e.g. www.hangoutlounge.com" class="settings-input">
+                                    </div>
+
+                                    <div class="settings-field-full">
+                                        <div class="settings-field-header">
+                                            <label class="settings-field-label">Physical Address</label>
+                                            <span class="settings-locked-tag">🔒 Locked</span>
+                                        </div>
+                                        <textarea id="setRestaurantAddress" rows="2" readonly disabled class="settings-input-locked" style="resize: none;">Wah Cantt</textarea>
+                                    </div>
+
+                                    <div class="settings-field-full">
+                                        <div class="settings-field-header">
+                                            <label class="settings-field-label">Return & Disclaimer Notice (Printed on Bill)</label>
+                                        </div>
+                                        <textarea id="setRestaurantReturnPolicy" rows="2" placeholder="Thank you for visiting Hangout Lounge & Co.!" class="settings-textarea"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab Access Security Card -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <h3><span>🔐</span> Tab Access Security</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-sec-box">
+                                    <div class="settings-sec-icon-circle">🔒</div>
+                                    <div class="settings-sec-content">
+                                        <h4>Security Password</h4>
+                                        <p>Set a password to restrict access to selected tabs. Leave blank to disable protection.</p>
+
+                                        <div class="settings-pw-grid">
+                                            <div>
+                                                <label class="settings-field-label" style="display: block; margin-bottom: 5px;">New Password</label>
+                                                <div class="settings-pw-wrap">
+                                                    <input type="password" id="setStaffPassword" placeholder="••••••••" class="settings-input">
+                                                    <button type="button" class="settings-pw-toggle" onclick="togglePasswordVisibility('setStaffPassword', this)">👁️</button>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="settings-field-label" style="display: block; margin-bottom: 5px;">Confirm Password</label>
+                                                <div class="settings-pw-wrap">
+                                                    <input type="password" id="setStaffPasswordConfirm" placeholder="••••••••" class="settings-input">
+                                                    <button type="button" class="settings-pw-toggle" onclick="togglePasswordVisibility('setStaffPasswordConfirm', this)">👁️</button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button type="button" id="btnRemoveStaffPassword" onclick="removeStaffSecurityPassword()" class="btn-remove-pass" style="display: none;">
+                                            <span>🔓</span> Remove Current Password
+                                        </button>
+
+                                        <div style="border-top: 1px solid #f1f5f9; padding-top: 12px; margin-top: 4px;">
+                                            <label class="settings-field-label" style="display: block; margin-bottom: 6px;">Locked Tabs Selection</label>
+                                            <div style="position: relative;">
+                                                <button type="button" id="lockedTabsDropdownBtn" onclick="toggleLockedTabsMenu(event)" class="locked-tabs-dropdown-btn">
+                                                    <span id="lockedTabsSummaryText">No Tabs Locked</span>
+                                                    <span style="font-size: 10px; color: #94a3b8;">▼</span>
+                                                </button>
+                                                <div id="lockedTabsDropdownMenu" class="locked-tabs-dropdown-menu">
+                                                    <!-- Dynamically populated -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Backup & Data Card (Full Width) -->
+                        <div class="settings-card full-width">
+                            <div class="settings-card-header">
+                                <h3><span>💾</span> Backup & Data</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <!-- Backup Option -->
+                                <div class="backup-action-row">
+                                    <div class="backup-icon-box blue">📥</div>
+                                    <div class="backup-info-content">
+                                        <h4>Backup Data Locally</h4>
+                                        <p>Backup all orders, sales, expenses, menu, employees, stock, tables, and settings into a single file.</p>
+                                        <button type="button" onclick="handleAppBackup()" class="btn-backup-dark">
+                                            <span>💾</span> Backup App Data
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Restore Option -->
+                                <div class="backup-action-row">
+                                    <div class="backup-icon-box amber">🔄</div>
+                                    <div class="backup-info-content">
+                                        <h4>Restore from Backup</h4>
+                                        <p>Restore your entire system from a previous backup file. <span style="color: #ef4444; font-weight: 700;">This will replace current data.</span></p>
+                                        <button type="button" onclick="handleAppRestore()" class="btn-restore-light">
+                                            <span>📂</span> Restore Data
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Clear Option -->
+                                <div class="backup-action-row">
+                                    <div class="backup-icon-box red">🗑️</div>
+                                    <div class="backup-info-content">
+                                        <h4>Clear All App Data</h4>
+                                        <p>Permanently delete all data and reset the application to its original state. <span style="color: #dc2626; font-weight: 700; text-decoration: underline;">This action cannot be undone.</span></p>
+                                        <button type="button" onclick="handleAppClearData()" class="btn-clear-red">
+                                            <span>⚠️</span> Clear All Data
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
 
         <!-- Order Section - Only visible on POS page -->
@@ -2135,26 +2321,39 @@
                 </div>
                 <div class="order-summary">
                     <div class="summary-item discount-row">
-                        <span>Discount</span>
-                        <a href="#" id="applyDiscount"
-                            style="color: #4a90e2; text-decoration: none; font-weight: 600;">Apply</a>
+                        <span style="font-weight: 600; color: #475569;">Discount</span>
+                        <div class="discount-controls">
+                            <div class="discount-toggle-group">
+                                <button type="button" class="discount-toggle-btn active" id="discountTypeRs" onclick="setInlineDiscountType('fixed')">Rs.</button>
+                                <button type="button" class="discount-toggle-btn" id="discountTypePct" onclick="setInlineDiscountType('percentage')">%</button>
+                            </div>
+                            <input type="number" id="inlineDiscountInput" min="0" step="any" placeholder="0" oninput="handleInlineDiscountInput(this.value)" class="discount-input-field">
+                        </div>
+                    </div>
+                    <div class="summary-item subtotal-row" id="subtotalRow">
+                        <span style="color: #64748b;">Subtotal</span>
+                        <span id="cartSubtotal" style="color: #475569; font-weight: 600;">Rs.0</span>
                     </div>
                     <div class="summary-item total-row">
                         <span>Total</span>
                         <span id="cartTotal">Rs.0</span>
                     </div>
                 </div>
-                <div style="padding: 4px 12px; margin: 0 12px 2px 12px;">
-                    <select id="selectedWaiter"
-                        style="width: 100%; padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; cursor: pointer; font-family: 'Inter', sans-serif; box-sizing: border-box;">
-                        <option value="">-- Select Waiter --</option>
-                    </select>
+                <div style="display: flex; gap: 8px; padding: 4px 12px; margin: 0 12px 2px 12px;">
+                    <div style="flex: 1; min-width: 0;">
+                        <select id="selectedWaiter" class="pos-form-control">
+                            <option value="">-- Select Waiter --</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <input type="number" id="waitingTimeInput" class="pos-form-control" placeholder="Wait (mins)" min="0" step="1">
+                    </div>
                 </div>
                 <div style="padding: 4px 12px; margin: 0 12px 2px 12px; position: relative;">
                     <input type="hidden" id="selectedTable" value="">
                     <div id="tableDropdownContainer" style="position: relative; width: 100%;">
-                        <input type="text" id="tableSearchInput" placeholder="-- Select Table No --" readonly
-                            style="width: 100%; padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; cursor: pointer; font-family: 'Inter', sans-serif; box-sizing: border-box; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
+                        <input type="text" id="tableSearchInput" placeholder="-- Select Table No --" readonly class="pos-form-control"
+                            style="cursor: pointer; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
                         <div id="tableDropdownContent" style="display: none; position: absolute; background-color: #ffffff; width: 100%; border: 1.5px solid #e0e0e0; border-radius: 8px; box-shadow: 0px -8px 16px 0px rgba(0,0,0,0.15); z-index: 1000; max-height: 200px; overflow-y: auto; box-sizing: border-box; bottom: 100%; margin-bottom: 4px;">
                             <input type="text" id="tableSearchFilter" placeholder="Search table..."
                                 style="width: 100%; padding: 8px 12px; border: none; border-bottom: 1.5px solid #e0e0e0; box-sizing: border-box; font-size: 14px; font-family: 'Inter', sans-serif; outline: none; position: sticky; top: 0; background: white; border-radius: 6px 6px 0 0;">
@@ -2165,12 +2364,7 @@
                     </div>
                 </div>
                 <div style="padding: 4px 12px; margin: 0 12px 2px 12px;">
-                    <input type="text" id="customerNameInput" placeholder="Enter customer name (optional)"
-                        style="width: 100%; padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; font-family: 'Inter', sans-serif; box-sizing: border-box;">
-                </div>
-                <div style="padding: 4px 12px; margin: 0 12px 2px 12px;">
-                    <input type="number" id="waitingTimeInput" placeholder="Waiting time (minutes)" min="0" step="1"
-                        style="width: 100%; padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; font-family: 'Inter', sans-serif; box-sizing: border-box;">
+                    <input type="text" id="customerNameInput" placeholder="Enter customer name (optional)" class="pos-form-control">
                 </div>
                 <div class="payment-methods" style="display: none;">
                     <button class="payment-btn cash-btn active" onclick="selectPaymentMethod('cash')">Gents</button>

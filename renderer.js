@@ -95,8 +95,517 @@ onDOMReady(() => {
     }
 });
 
-// Staff password for restricted tabs
+// Staff password & lockable tabs configuration
+const APP_LOCKABLE_TABS = [
+    { key: 'pos', name: 'POS / New Order' },
+    { key: 'holdOrders', name: 'Hold Orders' },
+    { key: 'sales', name: 'Sales' },
+    { key: 'menu', name: 'Menu' },
+    { key: 'employees', name: 'Employees' },
+    { key: 'expenses', name: 'Expenses' },
+    { key: 'stock', name: 'Stock' },
+    { key: 'tables', name: 'Tables' },
+    { key: 'reports', name: 'Reports' },
+    { key: 'dashboard', name: 'Dashboard' },
+    { key: 'settings', name: 'Settings' }
+];
+
 const ALLOWED_TABS_WITHOUT_STAFF_PASSWORD = ['pos', 'holdOrders'];
+
+function isTabLocked(tab) {
+    const adminPass = getAdminPassword();
+    const loginPass = getLoginPassword();
+    const hasPassword = (adminPass !== '' || loginPass !== '');
+    if (!hasPassword) return false;
+
+    let lockedTabs = Storage.get('locked_tabs');
+    if (!Array.isArray(lockedTabs)) {
+        lockedTabs = ['sales', 'menu', 'employees', 'expenses', 'stock', 'tables', 'reports', 'dashboard', 'settings'];
+    }
+    return lockedTabs.includes(tab);
+}
+
+// ==========================================
+// CAFE SETTINGS & BACKUP/RESTORE MANAGEMENT
+// ==========================================
+function getCafeSettings() {
+    const defaults = {
+        restaurantName: 'Hangout Lounge & Co.',
+        phone: '0300-9509536',
+        address: 'Wah Cantt',
+        website: 'www.hangoutlounge.com',
+        returnPolicy: 'Thank you for visiting Hangout Lounge & Co.!',
+        logo: 'assets/logo.jpg'
+    };
+    try {
+        const saved = Storage.get('cafeSettings');
+        if (saved && typeof saved === 'object' && !Array.isArray(saved)) {
+            return {
+                ...defaults,
+                ...saved,
+                // Locked store details
+                restaurantName: 'Hangout Lounge & Co.',
+                phone: '0300-9509536',
+                address: 'Wah Cantt'
+            };
+        }
+    } catch (e) {
+        console.error('Error reading cafe settings:', e);
+    }
+    return defaults;
+}
+
+function saveCafeSettingsToStorage(settings) {
+    const sanitized = {
+        ...settings,
+        restaurantName: 'Hangout Lounge & Co.',
+        phone: '0300-9509536',
+        address: 'Wah Cantt'
+    };
+    Storage.set('cafeSettings', sanitized);
+    return sanitized;
+}
+
+function loadCafeSettings() {
+    const s = getCafeSettings();
+    
+    const nameEl = document.getElementById('setRestaurantName');
+    const phoneEl = document.getElementById('setRestaurantPhone');
+    const webEl = document.getElementById('setRestaurantWebsite');
+    const addrEl = document.getElementById('setRestaurantAddress');
+    const policyEl = document.getElementById('setRestaurantReturnPolicy');
+    const logoPathInput = document.getElementById('settingLogoPath');
+    const logoPreview = document.getElementById('settingLogoPreview');
+    const logoPlaceholder = document.getElementById('settingLogoPlaceholder');
+
+    if (nameEl) nameEl.value = s.restaurantName || 'Hangout Lounge & Co.';
+    if (phoneEl) phoneEl.value = s.phone || '0300-9509536';
+    if (webEl) webEl.value = s.website || '';
+    if (addrEl) addrEl.value = s.address || 'Wah Cantt';
+    if (policyEl) policyEl.value = s.returnPolicy || '';
+    if (logoPathInput) logoPathInput.value = s.logo || '';
+
+    if (logoPreview && logoPlaceholder) {
+        if (s.logo) {
+            logoPreview.src = s.logo;
+            logoPreview.style.display = 'block';
+            logoPlaceholder.style.display = 'none';
+        } else {
+            logoPreview.src = '';
+            logoPreview.style.display = 'none';
+            logoPlaceholder.style.display = 'flex';
+        }
+    }
+
+    // Password fields
+    const currentPass = getAdminPassword() || getLoginPassword() || '';
+    const passInput = document.getElementById('setStaffPassword');
+    const confirmInput = document.getElementById('setStaffPasswordConfirm');
+    const removeBtn = document.getElementById('btnRemoveStaffPassword');
+
+    if (passInput) passInput.value = currentPass;
+    if (confirmInput) confirmInput.value = currentPass;
+    if (removeBtn) {
+        removeBtn.style.display = currentPass ? 'inline-flex' : 'none';
+    }
+
+    renderLockedTabsDropdown();
+}
+
+function renderLockedTabsDropdown() {
+    const menu = document.getElementById('lockedTabsDropdownMenu');
+    const summaryText = document.getElementById('lockedTabsSummaryText');
+    if (!menu || !summaryText) return;
+
+    let lockedTabs = Storage.get('locked_tabs');
+    if (!Array.isArray(lockedTabs)) {
+        lockedTabs = ['sales', 'menu', 'employees', 'expenses', 'stock', 'tables', 'reports', 'dashboard', 'settings'];
+    }
+
+    menu.innerHTML = APP_LOCKABLE_TABS.map(tab => {
+        const isChecked = lockedTabs.includes(tab.key);
+        return `
+            <label class="locked-tab-checkbox-item">
+                <span>${tab.name}</span>
+                <input type="checkbox" value="${tab.key}" ${isChecked ? 'checked' : ''} onchange="handleLockedTabChange(this)">
+            </label>
+        `;
+    }).join('');
+
+    updateLockedTabsSummaryText(lockedTabs);
+}
+
+function updateLockedTabsSummaryText(lockedTabs) {
+    const summaryText = document.getElementById('lockedTabsSummaryText');
+    if (!summaryText) return;
+    if (!lockedTabs || lockedTabs.length === 0) {
+        summaryText.textContent = 'No Tabs Locked';
+    } else if (lockedTabs.length === APP_LOCKABLE_TABS.length) {
+        summaryText.textContent = 'All Tabs Locked';
+    } else {
+        summaryText.textContent = `${lockedTabs.length} Tab(s) Locked`;
+    }
+}
+
+function handleLockedTabChange(checkbox) {
+    let lockedTabs = Storage.get('locked_tabs');
+    if (!Array.isArray(lockedTabs)) {
+        lockedTabs = ['sales', 'menu', 'employees', 'expenses', 'stock', 'tables', 'reports', 'dashboard', 'settings'];
+    }
+    const val = checkbox.value;
+    if (checkbox.checked) {
+        if (!lockedTabs.includes(val)) lockedTabs.push(val);
+    } else {
+        lockedTabs = lockedTabs.filter(k => k !== val);
+    }
+    Storage.set('locked_tabs', lockedTabs);
+    updateLockedTabsSummaryText(lockedTabs);
+}
+
+function toggleLockedTabsMenu(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    const menu = document.getElementById('lockedTabsDropdownMenu');
+    if (menu) {
+        menu.classList.toggle('show');
+    }
+}
+
+// Close locked tabs dropdown on outside click
+document.addEventListener('click', (e) => {
+    const menu = document.getElementById('lockedTabsDropdownMenu');
+    const btn = document.getElementById('lockedTabsDropdownBtn');
+    if (menu && menu.classList.contains('show')) {
+        if (!menu.contains(e.target) && (!btn || !btn.contains(e.target))) {
+            menu.classList.remove('show');
+        }
+    }
+});
+
+async function chooseLogoFile() {
+    try {
+        let selectedPath = null;
+        let base64Data = null;
+
+        if (window.require) {
+            try {
+                const { ipcRenderer } = window.require('electron');
+                const res = await ipcRenderer.invoke('select-logo-file');
+                if (res) {
+                    selectedPath = res.filePath;
+                    base64Data = res.base64;
+                }
+            } catch (e) {
+                console.warn('IPC select-logo-file error:', e);
+            }
+        }
+
+        if (!selectedPath && !base64Data) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        applySelectedLogo(event.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            input.click();
+            return;
+        }
+
+        applySelectedLogo(base64Data || selectedPath);
+    } catch (err) {
+        console.error('Error choosing logo:', err);
+        showCustomAlert('Failed to select logo: ' + err.message, 'Logo Error');
+    }
+}
+
+function applySelectedLogo(logoData) {
+    if (!logoData) return;
+    const s = getCafeSettings();
+    s.logo = logoData;
+    saveCafeSettingsToStorage(s);
+
+    const logoPathInput = document.getElementById('settingLogoPath');
+    const logoPreview = document.getElementById('settingLogoPreview');
+    const logoPlaceholder = document.getElementById('settingLogoPlaceholder');
+    const sidebarLogo = document.getElementById('logoImage');
+
+    if (logoPathInput) logoPathInput.value = logoData;
+    if (logoPreview) {
+        logoPreview.src = logoData;
+        logoPreview.style.display = 'block';
+    }
+    if (logoPlaceholder) logoPlaceholder.style.display = 'none';
+    if (sidebarLogo) sidebarLogo.src = logoData;
+
+    if (window.require) {
+        try {
+            const { ipcRenderer } = window.require('electron');
+            ipcRenderer.invoke('sync-app-logo-data', logoData);
+        } catch (e) {}
+    }
+
+    showCustomAlert('Logo updated successfully and synced with the application icon.', 'Logo Updated');
+}
+
+function removeLogoFile() {
+    showCustomConfirm('Are you sure you want to remove the custom logo and revert to default?', () => {
+        const s = getCafeSettings();
+        s.logo = 'assets/logo.jpg';
+        saveCafeSettingsToStorage(s);
+
+        const logoPathInput = document.getElementById('settingLogoPath');
+        const logoPreview = document.getElementById('settingLogoPreview');
+        const sidebarLogo = document.getElementById('logoImage');
+
+        if (logoPathInput) logoPathInput.value = 'assets/logo.jpg';
+        if (logoPreview) {
+            logoPreview.src = 'assets/logo.jpg';
+            logoPreview.style.display = 'block';
+        }
+        if (sidebarLogo) sidebarLogo.src = 'assets/logo.jpg';
+
+        if (window.require) {
+            try {
+                const { ipcRenderer } = window.require('electron');
+                ipcRenderer.invoke('sync-app-logo-data', 'assets/logo.jpg');
+            } catch (e) {}
+        }
+        showCustomAlert('Logo reset to default.', 'Logo Reset');
+    });
+}
+
+function saveCafeSettings() {
+    const webEl = document.getElementById('setRestaurantWebsite');
+    const policyEl = document.getElementById('setRestaurantReturnPolicy');
+    const logoPathInput = document.getElementById('settingLogoPath');
+    const passInput = document.getElementById('setStaffPassword');
+    const confirmInput = document.getElementById('setStaffPasswordConfirm');
+
+    const newPass = passInput ? passInput.value.trim() : '';
+    const newPassConfirm = confirmInput ? confirmInput.value.trim() : '';
+
+    if (newPass !== newPassConfirm) {
+        showCustomAlert('Security passwords do not match! Please check and try again.', 'Validation Error');
+        return;
+    }
+
+    // Save passwords
+    if (newPass) {
+        Storage.set('adminPassword', newPass);
+        Storage.set('loginPassword', newPass);
+    } else {
+        Storage.set('adminPassword', '');
+        Storage.set('loginPassword', '');
+    }
+
+    const prev = getCafeSettings();
+    const updated = {
+        ...prev,
+        website: webEl ? webEl.value.trim() : prev.website,
+        returnPolicy: policyEl ? policyEl.value.trim() : prev.returnPolicy,
+        logo: logoPathInput ? logoPathInput.value.trim() : prev.logo
+    };
+    saveCafeSettingsToStorage(updated);
+
+    loadCafeSettings();
+    showCustomAlert('Settings and profile saved successfully!', 'Settings Saved');
+}
+
+function removeStaffSecurityPassword() {
+    showCustomConfirm('Are you sure you want to remove the security password and disable tab lock protection?', () => {
+        Storage.set('adminPassword', '');
+        Storage.set('loginPassword', '');
+        Storage.set('locked_tabs', []);
+        sessionStorage.removeItem('unlockedTabs');
+        loadCafeSettings();
+        showCustomAlert('Security password removed. Tab protection disabled.', 'Password Removed');
+    });
+}
+
+// Backup & Restore Data Functions
+async function handleAppBackup() {
+    try {
+        const backupData = {
+            appName: 'Hangout Lounge & Co.',
+            version: '1.0.0',
+            exportedAt: new Date().toISOString(),
+            storage: {}
+        };
+
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key) {
+                backupData.storage[key] = localStorage.getItem(key);
+            }
+        }
+
+        if (window.require) {
+            try {
+                const { ipcRenderer } = window.require('electron');
+                const res = await ipcRenderer.invoke('backup-data-file', backupData);
+                if (res && res.success) {
+                    showCustomAlert(`Backup created successfully!\n\nSaved at:\n${res.filePath}`, 'Backup Successful');
+                    return;
+                } else if (res && res.error && res.error !== 'Cancelled') {
+                    showCustomAlert('Backup failed: ' + res.error, 'Backup Error');
+                    return;
+                } else if (res && res.error === 'Cancelled') {
+                    return;
+                }
+            } catch (ipcErr) {
+                console.warn('IPC backup-data-file error:', ipcErr);
+            }
+        }
+
+        // Browser fallback download
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+        const downloadAnchor = document.createElement('a');
+        const now = new Date();
+        const dateStr = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `HangoutCafe-Backup-${dateStr}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+        showCustomAlert('Backup file downloaded successfully!', 'Backup Successful');
+
+    } catch (err) {
+        console.error('Backup error:', err);
+        showCustomAlert('Failed to generate backup: ' + err.message, 'Backup Error');
+    }
+}
+
+async function handleAppRestore() {
+    showCustomConfirm(
+        'Restoring a backup will overwrite ALL current data (orders, sales, stock, expenses, menu, settings) and reload the app.\n\nAre you sure you want to proceed?',
+        async () => {
+            try {
+                if (window.require) {
+                    try {
+                        const { ipcRenderer } = window.require('electron');
+                        const res = await ipcRenderer.invoke('restore-data-file');
+                        if (res && res.success && res.data) {
+                            applyRestoredData(res.data);
+                            return;
+                        } else if (res && res.error && res.error !== 'Cancelled') {
+                            showCustomAlert('Failed to read backup file: ' + res.error, 'Restore Error');
+                            return;
+                        } else if (res && res.error === 'Cancelled') {
+                            return;
+                        }
+                    } catch (ipcErr) {
+                        console.warn('IPC restore-data-file error:', ipcErr);
+                    }
+                }
+
+                // Browser file picker fallback
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = '.json,.bak';
+                fileInput.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const parsed = JSON.parse(event.target.result);
+                            applyRestoredData(parsed);
+                        } catch (err) {
+                            showCustomAlert('Invalid backup file format: ' + err.message, 'Restore Error');
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+                fileInput.click();
+
+            } catch (err) {
+                console.error('Restore error:', err);
+                showCustomAlert('Failed to restore data: ' + err.message, 'Restore Error');
+            }
+        },
+        null,
+        {
+            title: 'Restore Database',
+            confirmText: 'Select Backup File',
+            type: 'warning'
+        }
+    );
+}
+
+function applyRestoredData(backupObj) {
+    if (!backupObj || typeof backupObj !== 'object') {
+        showCustomAlert('Invalid backup data structure.', 'Restore Failed');
+        return;
+    }
+
+    const storageData = backupObj.storage || backupObj;
+    if (typeof storageData !== 'object') {
+        showCustomAlert('Invalid backup data payload.', 'Restore Failed');
+        return;
+    }
+
+    // Clear current localStorage
+    localStorage.clear();
+
+    // Rehydrate
+    for (const [key, val] of Object.entries(storageData)) {
+        if (key && val !== null && val !== undefined) {
+            localStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val));
+        }
+    }
+
+    // Sync restored logo if available
+    try {
+        const s = getCafeSettings();
+        if (s && s.logo && window.require) {
+            const { ipcRenderer } = window.require('electron');
+            ipcRenderer.invoke('sync-app-logo-data', s.logo);
+        }
+    } catch (e) {}
+
+    showCustomAlert('Data restored successfully! The application will now reload.', 'Restore Complete', () => {
+        window.location.reload();
+    });
+}
+
+function handleAppClearData() {
+    showCustomConfirm(
+        'WARNING: This will permanently delete all transaction history, sales, orders, hold orders, expenses, and custom stock.\n\nThis action CANNOT be undone. Are you absolutely sure?',
+        () => {
+            const preservedExpiry = localStorage.getItem('appExpiryConfig');
+            const preservedLogin = localStorage.getItem('loginPassword');
+            const preservedAdmin = localStorage.getItem('adminPassword');
+            const preservedSettings = localStorage.getItem('cafeSettings');
+
+            localStorage.clear();
+
+            if (preservedExpiry) localStorage.setItem('appExpiryConfig', preservedExpiry);
+            if (preservedLogin) localStorage.setItem('loginPassword', preservedLogin);
+            if (preservedAdmin) localStorage.setItem('adminPassword', preservedAdmin);
+            if (preservedSettings) localStorage.setItem('cafeSettings', preservedSettings);
+
+            showCustomAlert('All application transaction data has been cleared.', 'Data Cleared', () => {
+                window.location.reload();
+            });
+        },
+        null,
+        {
+            title: 'Clear All App Data',
+            confirmText: 'Yes, Clear All Data',
+            type: 'danger'
+        }
+    );
+}
+
 let pendingTabSwitch = null;
 
 // Global delete confirmation state
@@ -911,6 +1420,7 @@ function switchToTab(tab) {
         }
         else if (tab === 'stock') loadStock();
         else if (tab === 'tables') loadTables();
+        else if (tab === 'settings') loadCafeSettings();
         else if (tab === 'reports') {
             const today = getLocalISODate();
             const thisMonth = getLocalISOMonth();
@@ -1298,13 +1808,25 @@ function generateFullReceiptHTML(order) {
     const itemsHtml = formatReceiptItems(itemsList);
     const summaryHtml = formatReceiptSummary(subtotal, discountAmount, tax, serviceCharges, total);
 
+    const cafeSettings = (typeof getCafeSettings === 'function') ? getCafeSettings() : {
+        restaurantName: 'Hangout Lounge & Co.',
+        phone: '0300-9509536',
+        address: 'Wah Cantt',
+        returnPolicy: 'THANK YOU FOR VISITING HANGOUT LOUNGE & CO.!',
+        logo: 'assets/logo.jpg'
+    };
+    const storeName = cafeSettings.restaurantName || 'Hangout Lounge & Co.';
+    const storeAddress = cafeSettings.address || 'Wah Cantt';
+    const storePhone = cafeSettings.phone || '0300-9509536';
+    const returnNotice = cafeSettings.returnPolicy || 'THANK YOU FOR VISITING HANGOUT LOUNGE & CO.!';
+
     return `
         <div class="receipt-container" style="font-family: 'Poppins', sans-serif !important; width: 100%; max-width: 320px; margin: 0 auto; color: #000; box-sizing: border-box; text-align: left; background: #fff; line-height: 1.4;">
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 6px; font-family: 'Poppins', sans-serif !important;">
-                <div style="font-size: 17px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; color: #000; margin-bottom: 2px; font-family: 'Poppins', sans-serif !important;">Hangout Lounge & Co.</div>
-                <div style="font-size: 11px; font-weight: 500; color: #333; line-height: 1.35; font-family: 'Poppins', sans-serif !important;">Wah Cantt</div>
-                <div style="font-size: 11px; font-weight: 500; color: #333; line-height: 1.35; font-family: 'Poppins', sans-serif !important;">Phone: 0300-9509536</div>
+                <div style="font-size: 17px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; color: #000; margin-bottom: 2px; font-family: 'Poppins', sans-serif !important;">${escapeHtml(storeName)}</div>
+                <div style="font-size: 11px; font-weight: 500; color: #333; line-height: 1.35; font-family: 'Poppins', sans-serif !important;">${escapeHtml(storeAddress)}</div>
+                <div style="font-size: 11px; font-weight: 500; color: #333; line-height: 1.35; font-family: 'Poppins', sans-serif !important;">Phone: ${escapeHtml(storePhone)}</div>
             </div>
 
             <!-- Dashed Divider -->
@@ -1318,12 +1840,12 @@ function generateFullReceiptHTML(order) {
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: baseline; font-family: 'Poppins', sans-serif !important;">
                     <span style="font-weight: 600; font-family: 'Poppins', sans-serif !important;">Date & Time:</span>
-                    <span style="font-weight: 400; color: #333; font-family: 'Poppins', sans-serif !important;">${dateStr}, ${timeStr}</span>
+                    <span style="font-weight: 600; font-size: 13px; color: #000; font-family: 'Poppins', sans-serif !important;">${dateStr}, ${timeStr}</span>
                 </div>
                 ${receiveTime ? `
                 <div style="display: flex; justify-content: space-between; align-items: baseline; font-family: 'Poppins', sans-serif !important;">
                     <span style="font-weight: 600; font-family: 'Poppins', sans-serif !important;">Order Receive Time:</span>
-                    <span style="font-weight: 400; color: #333; font-family: 'Poppins', sans-serif !important;">${receiveTime}</span>
+                    <span style="font-weight: 600; font-size: 13px; color: #000; font-family: 'Poppins', sans-serif !important;">${receiveTime}</span>
                 </div>` : ''}
                 ${order.customerName && order.customerName !== '-' ? `
                 <div style="display: flex; justify-content: space-between; align-items: baseline; font-family: 'Poppins', sans-serif !important;">
@@ -1364,8 +1886,8 @@ function generateFullReceiptHTML(order) {
             <!-- Dashed Divider -->
             <div style="border-top: 1px dashed #999; margin: 7px 0 6px 0;"></div>
 
-            <!-- Thank You -->
-            <div style="text-align: center; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #000; font-family: 'Poppins', sans-serif !important;">THANK YOU FOR ORDERING!</div>
+            <!-- Thank You / Return Policy Notice -->
+            <div style="text-align: center; font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2px; color: #000; font-family: 'Poppins', sans-serif !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;">${escapeHtml(returnNotice)}</div>
 
             <!-- Tear Cut Line -->
             <div style="text-align: center; font-size: 10px; color: #777; margin-top: 6px; letter-spacing: 2px; font-family: 'Poppins', sans-serif !important;">✂ - - - - - - - - - - - - - - - - - - -</div>
@@ -1538,9 +2060,28 @@ function formatTime(date) {
     return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 }
 
-// Calculate order receive time (add 40 minutes to order time)
+// Calculate order receive time (only calculated and shown when waiting minutes are entered)
 function calculateReceiveTime(orderTime, orderDate, customWaitingMinutes) {
     if (!orderTime && !orderDate) return '';
+
+    // Determine waiting minutes to add
+    let minutesToAdd = null;
+    if (customWaitingMinutes !== undefined && customWaitingMinutes !== null && customWaitingMinutes !== '') {
+        const parsed = parseInt(customWaitingMinutes, 10);
+        if (!isNaN(parsed) && parsed > 0) {
+            minutesToAdd = parsed;
+        }
+    } else if (typeof getWaitingTime === 'function') {
+        const inputMinutes = getWaitingTime();
+        if (inputMinutes !== null && inputMinutes > 0) {
+            minutesToAdd = inputMinutes;
+        }
+    }
+
+    // Only show receive time if user explicitly entered waiting minutes
+    if (minutesToAdd === null || minutesToAdd === undefined || minutesToAdd <= 0) {
+        return '';
+    }
 
     let orderDateTime;
 
@@ -1592,29 +2133,11 @@ function calculateReceiveTime(orderTime, orderDate, customWaitingMinutes) {
             // Set the time on the date object
             orderDateTime.setHours(hours, minutes, 0, 0);
         }
-    } else if (!orderTime && orderDate instanceof Date) {
-        // If no time string but we have a date object, use its time
     }
 
     // Validate that we have a valid date/time
     if (isNaN(orderDateTime.getTime())) {
         orderDateTime = new Date();
-    }
-
-    // Determine waiting minutes to add
-    let minutesToAdd = null;
-    if (typeof customWaitingMinutes === 'number' && !isNaN(customWaitingMinutes)) {
-        minutesToAdd = customWaitingMinutes;
-    } else if (typeof getWaitingTime === 'function') {
-        const inputMinutes = getWaitingTime();
-        if (inputMinutes !== null) {
-            minutesToAdd = inputMinutes;
-        }
-    }
-
-    // Default to 40 minutes if not specified
-    if (minutesToAdd === null || minutesToAdd === undefined) {
-        minutesToAdd = 40;
     }
 
     orderDateTime.setMinutes(orderDateTime.getMinutes() + minutesToAdd);
@@ -1631,9 +2154,7 @@ function calculateReceiveTime(orderTime, orderDate, customWaitingMinutes) {
         return fallbackTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     }
 
-    const fallbackTime = new Date();
-    fallbackTime.setMinutes(fallbackTime.getMinutes() + minutesToAdd);
-    return fallbackTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    return '';
 }
 
 // Alert override to use custom modal
@@ -1782,7 +2303,7 @@ document.querySelectorAll('.nav-item').forEach(btn => {
         if (editingHoldOrderId && tab !== 'pos') {
             showCustomConfirm('You are editing an order. Cancel editing and switch tab?', () => {
                 cancelEditHoldOrder();
-                if (!ALLOWED_TABS_WITHOUT_STAFF_PASSWORD.includes(tab)) {
+                if (isTabLocked(tab)) {
                     const unlockedTabs = JSON.parse(sessionStorage.getItem('unlockedTabs') || '[]');
                     if (!unlockedTabs.includes(tab)) {
                         openStaffPasswordModal(tab);
@@ -1796,8 +2317,8 @@ document.querySelectorAll('.nav-item').forEach(btn => {
             return;
         }
 
-        // Check if tab requires staff password (all tabs except pos and holdOrders)
-        if (!ALLOWED_TABS_WITHOUT_STAFF_PASSWORD.includes(tab)) {
+        // Check if tab requires staff password
+        if (isTabLocked(tab)) {
             // Check if THIS SPECIFIC TAB is authenticated
             const unlockedTabs = JSON.parse(sessionStorage.getItem('unlockedTabs') || '[]');
             if (!unlockedTabs.includes(tab)) {
@@ -1825,7 +2346,7 @@ onDOMReady(() => {
         const activeTab = document.querySelector('.tab-content.active');
         if (activeTab) {
             const tabId = activeTab.id;
-            if (!ALLOWED_TABS_WITHOUT_STAFF_PASSWORD.includes(tabId)) {
+            if (isTabLocked(tabId)) {
                 const unlockedTabs = JSON.parse(sessionStorage.getItem('unlockedTabs') || '[]');
                 if (!unlockedTabs.includes(tabId)) {
                     // Switch to POS tab if not authenticated
@@ -4147,7 +4668,7 @@ window.viewSale = (orderId) => {
     const orderDate = new Date(order.date);
     const dateStr = formatDate(orderDate);
     const timeStr = formatTime(orderDate);
-    const receiveTime = calculateReceiveTime(timeStr, orderDate);
+    const receiveTime = calculateReceiveTime(timeStr, orderDate, order.waitingTime);
     const displayOrderNumber = (order.orderNumber || extractOrderNumber(order.orderId || order.id) || '').toString().padStart(7, '0');
     const receiptHTML = generateFullReceiptHTML(order);
 
@@ -4443,31 +4964,6 @@ window.openAddPayoutModal = (employeeId) => {
 
     // Add real-time calculation for "After this Payout"
     updatePayoutAfterAmount(remaining);
-
-    // Update discount display
-    const discountElement = document.querySelector('.discount-row');
-    if (currentDiscount.type) {
-        const discountText = currentDiscount.type === 'fixed'
-            ? `Rs.${formatNumber(currentDiscount.value)}`
-            : `${currentDiscount.value}%`;
-        discountElement.innerHTML = `
-            <span>Discount (${currentDiscount.type === 'fixed' ? 'Fixed' : 'Percentage'})</span>
-            <div>
-                <span style="color: #e74c3c; margin-right: 10px;">-${discountText}</span>
-                <a href="#" onclick="clearDiscount()" style="color: #e74c3c; text-decoration: none; font-weight: 600; font-size: 14px;">Remove</a>
-            </div>`;
-    } else {
-        discountElement.innerHTML = `
-            <span>Discount</span>
-            <a href="#" id="applyDiscount" style="color: #4a90e2; text-decoration: none; font-weight: 600;" onclick="showDiscountModal(); return false;">Apply</a>`;
-        // Re-attach event listener to the new Apply link
-        document.getElementById('applyDiscount').addEventListener('click', (e) => {
-            e.preventDefault();
-            showDiscountModal();
-        });
-    }
-
-    document.getElementById('cartTotal').textContent = `Rs.${formatNumber(total)}`;
 };
 
 window.closeAddPayoutModal = () => {
@@ -8078,30 +8574,48 @@ window.filterConsumptionDropdown = function filterConsumptionDropdown() {
     const query = (input ? input.value : '').toLowerCase().trim();
     const stocks = syncAndGetStockItems();
 
+    // Get all already added stock IDs in current table
+    const alreadyAddedIds = new Set(
+        Array.from(document.querySelectorAll('#consumptionRowsContainer input.cons-stock-id'))
+            .map(el => String(el.value))
+    );
+
     const filtered = stocks.filter(s => {
         if (!query) return true;
         return s.itemName.toLowerCase().includes(query) || (s.unit && s.unit.toLowerCase().includes(query));
     });
 
     if (filtered.length === 0) {
-        menu.innerHTML = `<div style="padding: 14px; color: #94a3b8; font-size: 13px; text-align: center;">No matching ingredients found for "${escapeHtml(query)}"</div>`;
+        menu.innerHTML = `<div style="padding: 10px; color: #94a3b8; font-size: 12px; text-align: center;">No matching ingredients found for "${escapeHtml(query)}"</div>`;
         highlightedDropdownIndex = -1;
         return;
     }
 
     highlightedDropdownIndex = -1;
-    menu.innerHTML = filtered.map((stock, idx) => `
-        <div class="cons-dropdown-item" data-id="${stock.id}" data-idx="${idx}"
-            onclick="selectConsumptionDropdownItem('${stock.id}')">
-            <span style="font-weight: 700; color: #0f172a;">${escapeHtml(stock.itemName)}</span>
-            <span style="font-size: 12px; font-weight: 600; color: #059669; background: #ecfdf5; padding: 2px 8px; border-radius: 6px; border: 1px solid #d1fae5;">Available: ${formatQuantity(stock.quantity)} ${stock.unit}</span>
-        </div>
-    `).join('');
+    menu.innerHTML = filtered.map((stock, idx) => {
+        const isAdded = alreadyAddedIds.has(String(stock.id));
+        if (isAdded) {
+            return `
+                <div class="cons-dropdown-item cons-dropdown-item-disabled" data-id="${stock.id}" data-idx="${idx}" data-disabled="true"
+                    title="Already added to deduction list">
+                    <span style="font-weight: 600; color: #64748b;">${escapeHtml(stock.itemName)}</span>
+                    <span style="font-size: 11px; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 1px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">✓ Added (${formatQuantity(stock.quantity)} ${stock.unit})</span>
+                </div>
+            `;
+        }
+        return `
+            <div class="cons-dropdown-item" data-id="${stock.id}" data-idx="${idx}"
+                onclick="selectConsumptionDropdownItem('${stock.id}')">
+                <span style="font-weight: 600; color: #0f172a;">${escapeHtml(stock.itemName)}</span>
+                <span style="font-size: 11px; font-weight: 600; color: #059669; background: #ecfdf5; padding: 1px 7px; border-radius: 4px; border: 1px solid #d1fae5;">Available: ${formatQuantity(stock.quantity)} ${stock.unit}</span>
+            </div>
+        `;
+    }).join('');
 };
 
 window.handleConsumptionSearchKeydown = function handleConsumptionSearchKeydown(event) {
     const menu = document.getElementById('consumptionDropdownMenu');
-    const items = menu ? menu.querySelectorAll('.cons-dropdown-item') : [];
+    const items = menu ? Array.from(menu.querySelectorAll('.cons-dropdown-item')) : [];
 
     if (event.key === 'ArrowDown') {
         event.preventDefault();
@@ -8113,9 +8627,18 @@ window.handleConsumptionSearchKeydown = function handleConsumptionSearchKeydown(
             if (highlightedDropdownIndex >= 0 && items[highlightedDropdownIndex]) {
                 items[highlightedDropdownIndex].classList.remove('active');
             }
-            highlightedDropdownIndex = (highlightedDropdownIndex + 1) % items.length;
-            items[highlightedDropdownIndex].classList.add('active');
-            items[highlightedDropdownIndex].scrollIntoView({ block: 'nearest' });
+            let nextIdx = (highlightedDropdownIndex + 1) % items.length;
+            for (let i = 0; i < items.length; i++) {
+                if (items[nextIdx] && items[nextIdx].dataset.disabled !== 'true') {
+                    break;
+                }
+                nextIdx = (nextIdx + 1) % items.length;
+            }
+            highlightedDropdownIndex = nextIdx;
+            if (items[highlightedDropdownIndex] && items[highlightedDropdownIndex].dataset.disabled !== 'true') {
+                items[highlightedDropdownIndex].classList.add('active');
+                items[highlightedDropdownIndex].scrollIntoView({ block: 'nearest' });
+            }
         }
     } else if (event.key === 'ArrowUp') {
         event.preventDefault();
@@ -8123,21 +8646,34 @@ window.handleConsumptionSearchKeydown = function handleConsumptionSearchKeydown(
             if (highlightedDropdownIndex >= 0 && items[highlightedDropdownIndex]) {
                 items[highlightedDropdownIndex].classList.remove('active');
             }
-            highlightedDropdownIndex = (highlightedDropdownIndex - 1 + items.length) % items.length;
-            items[highlightedDropdownIndex].classList.add('active');
-            items[highlightedDropdownIndex].scrollIntoView({ block: 'nearest' });
+            let prevIdx = (highlightedDropdownIndex - 1 + items.length) % items.length;
+            for (let i = 0; i < items.length; i++) {
+                if (items[prevIdx] && items[prevIdx].dataset.disabled !== 'true') {
+                    break;
+                }
+                prevIdx = (prevIdx - 1 + items.length) % items.length;
+            }
+            highlightedDropdownIndex = prevIdx;
+            if (items[highlightedDropdownIndex] && items[highlightedDropdownIndex].dataset.disabled !== 'true') {
+                items[highlightedDropdownIndex].classList.add('active');
+                items[highlightedDropdownIndex].scrollIntoView({ block: 'nearest' });
+            }
         }
     } else if (event.key === 'Enter') {
         event.preventDefault();
-        if (items.length > 0 && highlightedDropdownIndex >= 0 && items[highlightedDropdownIndex]) {
+        if (items.length > 0 && highlightedDropdownIndex >= 0 && items[highlightedDropdownIndex] && items[highlightedDropdownIndex].dataset.disabled !== 'true') {
             const stockId = items[highlightedDropdownIndex].dataset.id;
             if (stockId) selectConsumptionDropdownItem(stockId);
         } else {
             const input = document.getElementById('consumptionSearchInput');
             const q = (input ? input.value : '').toLowerCase().trim();
             if (q) {
+                const alreadyAddedIds = new Set(
+                    Array.from(document.querySelectorAll('#consumptionRowsContainer input.cons-stock-id'))
+                        .map(el => String(el.value))
+                );
                 const stocks = syncAndGetStockItems();
-                const matched = stocks.find(s => s.itemName.toLowerCase() === q || s.itemName.toLowerCase().includes(q));
+                const matched = stocks.find(s => !alreadyAddedIds.has(String(s.id)) && (s.itemName.toLowerCase() === q || s.itemName.toLowerCase().includes(q)));
                 if (matched) {
                     selectConsumptionDropdownItem(matched.id);
                 }
@@ -8207,36 +8743,43 @@ window.addConsumptionRow = function addConsumptionRow(prefillStockId = '', prefi
 
     const tr = document.createElement('tr');
     tr.id = rowId;
-    tr.style.borderBottom = '1px solid #e2e8f0';
+    tr.className = 'cons-excel-row';
+
+    const currentCount = container.querySelectorAll('tr:not(#consumptionEmptyRow)').length + 1;
+
+    tr.style.cssText = 'height: 24px !important; max-height: 24px !important; line-height: 22px !important;';
 
     tr.innerHTML = `
-        <td style="padding: 12px 14px;">
-            <div style="font-weight: 700; color: #0f172a; font-size: 15px; margin-bottom: 2px;">
-                ${escapeHtml(stock.itemName)}
-            </div>
-            <div style="font-size: 12px; color: #64748b; font-weight: 500;">
-                Available in Stock: <strong style="color: #059669;">${formatQuantity(stock.quantity)} ${stock.unit}</strong>
+        <td style="text-align: center; color: #64748b; font-size: 10.5px; font-weight: 700; padding: 0 2px !important; background: #f8fafc; user-select: none; width: 32px; height: 24px !important; max-height: 24px !important;">
+            <span class="cons-row-index">${currentCount}</span>
+        </td>
+        <td style="padding: 0 4px !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; height: 24px !important; max-height: 24px !important;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px; width: 100%; height: 22px;">
+                <span style="font-weight: 600; color: #0f172a; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">
+                    ${escapeHtml(stock.itemName)}
+                </span>
+                <span style="font-size: 9.5px; color: #059669; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 0 3px; border-radius: 2px; font-weight: 600; white-space: nowrap; flex-shrink: 0; line-height: 13px; height: 13px;">
+                    ${formatQuantity(stock.quantity)} ${stock.unit}
+                </span>
             </div>
             <input type="hidden" class="cons-stock-id" value="${stock.id}" data-name="${escapeHtml(stock.itemName)}" data-available="${stock.quantity}" data-unit="${escapeHtml(stock.unit)}">
-            <div id="${rowId}_balancePreview" class="cons-live-balance-preview" style="display: none; margin-top: 6px;"></div>
         </td>
-        <td style="padding: 12px 14px;">
-            <div style="display: flex; align-items: center; position: relative;">
-                <input type="number" class="cons-qty-input" step="any" min="0.001" placeholder="e.g. 0.3 or 5" value="${prefillQty}" required
+        <td style="position: relative; padding: 0 2px !important; height: 24px !important; max-height: 24px !important;">
+            <div style="display: flex; align-items: center; position: relative; width: 100%; height: 22px;">
+                <input type="number" class="cons-excel-input cons-qty-input" step="any" min="0.001" placeholder="0" value="${prefillQty}" required
                     oninput="updateConsumptionRowBalance('${rowId}')"
-                    style="width: 100%; padding: 8px 56px 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; font-weight: 700; height: 42px; line-height: normal; color: #0f172a;">
-                <span id="${rowId}_unitBadge" style="position: absolute; right: 8px; font-size: 12px; font-weight: 700; color: #475569; background: #f1f5f9; padding: 3px 8px; border-radius: 5px; pointer-events: none; border: 1px solid #cbd5e1;">
+                    style="font-weight: 700; padding-right: 24px !important; height: 20px !important; line-height: 20px !important;">
+                <span id="${rowId}_unitBadge" style="position: absolute; right: 3px; font-size: 9.5px; font-weight: 600; color: #64748b; pointer-events: none; user-select: none; line-height: 20px;">
                     ${escapeHtml(stock.unit)}
                 </span>
             </div>
         </td>
-        <td style="padding: 12px 14px;">
-            <input type="text" class="cons-note-input" placeholder="e.g. Daily sales deduction" value="${escapeHtml(prefillNote)}"
-                style="width: 100%; padding: 8px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; box-sizing: border-box; font-family: inherit; height: 42px; line-height: normal; color: #334155;">
+        <td style="padding: 0 2px !important; height: 24px !important; max-height: 24px !important;">
+            <input type="text" class="cons-excel-input cons-note-input" placeholder="e.g. Daily sales deduction" value="${escapeHtml(prefillNote)}"
+                style="color: #334155; height: 20px !important; line-height: 20px !important; font-size: 11px;">
         </td>
-        <td style="padding: 12px 14px; text-align: center;">
-            <button type="button" onclick="removeConsumptionRow('${rowId}')"
-                style="background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s;"
+        <td style="text-align: center; width: 28px; padding: 0 !important; height: 24px !important; max-height: 24px !important;">
+            <button type="button" class="cons-excel-del-btn" onclick="removeConsumptionRow('${rowId}')"
                 title="Remove row">✕</button>
         </td>
     `;
@@ -8252,7 +8795,10 @@ window.addConsumptionRow = function addConsumptionRow(prefillStockId = '', prefi
         const row = document.getElementById(rowId);
         if (row) {
             const qtyInput = row.querySelector('.cons-qty-input');
-            if (qtyInput) qtyInput.focus();
+            if (qtyInput) {
+                qtyInput.focus();
+                qtyInput.select();
+            }
         }
     }, 50);
 
@@ -8265,28 +8811,27 @@ window.updateConsumptionRowBalance = function updateConsumptionRowBalance(rowId)
 
     const hiddenStockInput = row.querySelector('.cons-stock-id');
     const qtyInput = row.querySelector('.cons-qty-input');
-    const previewEl = document.getElementById(`${rowId}_balancePreview`);
 
-    if (!previewEl || !hiddenStockInput) return;
+    if (!hiddenStockInput || !qtyInput) return;
 
     const availableQty = parseFloat(hiddenStockInput.dataset.available || 0);
     const stockUnit = hiddenStockInput.dataset.unit || '';
     const enteredQty = parseFloat(qtyInput.value) || 0;
 
     if (!qtyInput.value || isNaN(enteredQty)) {
-        previewEl.style.display = 'none';
+        qtyInput.classList.remove('qty-error');
+        qtyInput.title = '';
         return;
     }
 
     const remaining = availableQty - enteredQty;
 
-    previewEl.style.display = 'flex';
-    if (remaining >= 0) {
-        previewEl.className = 'cons-live-balance-preview ok';
-        previewEl.innerHTML = `✓ Available: <strong>${formatQuantity(availableQty)} ${stockUnit}</strong> ➔ Remaining: <strong>${formatQuantity(remaining)} ${stockUnit}</strong>`;
+    if (remaining < 0) {
+        qtyInput.classList.add('qty-error');
+        qtyInput.title = `⚠️ Shortage: Remaining stock will be ${formatQuantity(remaining)} ${stockUnit}`;
     } else {
-        previewEl.className = 'cons-live-balance-preview warning';
-        previewEl.innerHTML = `⚠️ Available: <strong>${formatQuantity(availableQty)} ${stockUnit}</strong> ➔ Shortage: <strong>${formatQuantity(Math.abs(remaining))} ${stockUnit}</strong>`;
+        qtyInput.classList.remove('qty-error');
+        qtyInput.title = `Remaining stock: ${formatQuantity(remaining)} ${stockUnit}`;
     }
 };
 
@@ -8294,8 +8839,15 @@ window.removeConsumptionRow = function removeConsumptionRow(rowId) {
     const row = document.getElementById(rowId);
     if (row) {
         row.remove();
+        const indices = document.querySelectorAll('#consumptionRowsContainer .cons-row-index');
+        indices.forEach((el, i) => { el.textContent = i + 1; });
         checkAndRenderEmptyConsumptionPlaceholder();
         updateConsumptionRowCount();
+        // Refresh dropdown menu if open
+        const menu = document.getElementById('consumptionDropdownMenu');
+        if (menu && menu.style.display === 'block') {
+            filterConsumptionDropdown();
+        }
     }
 };
 
@@ -8306,8 +8858,8 @@ function checkAndRenderEmptyConsumptionPlaceholder() {
     if (rows.length === 0) {
         container.innerHTML = `
             <tr id="consumptionEmptyRow">
-                <td colspan="4" style="text-align: center; padding: 32px 16px; color: #64748b; font-size: 14px; background: #ffffff;">
-                    👆 Choose an ingredient from the dropdown above to add it to your deduction list.
+                <td colspan="5" style="text-align: center; padding: 14px 10px; color: #64748b; font-size: 11.5px; background: #ffffff; border: none;">
+                    👆 Choose an ingredient from the search bar above to add it to your deduction list.
                 </td>
             </tr>
         `;
@@ -12119,6 +12671,32 @@ window.removeFromFavorites = (itemId) => {
 };
 
 // POS Functions
+function updateActiveCategoryButton() {
+    const containers = document.querySelectorAll('.category-dropdown-container');
+    containers.forEach(container => {
+        const btn = container.querySelector('.category-btn');
+        const key = container.dataset.categoryKey;
+        if (!btn) return;
+
+        let isActive = false;
+        if (selectedCategory === 'all' && key === 'all') {
+            isActive = true;
+        } else if (selectedCategory === 'favorites' && key === 'favorites') {
+            isActive = true;
+        } else if (typeof selectedCategory === 'number' && parseInt(key) === selectedCategory) {
+            isActive = true;
+        } else if (String(selectedCategory) === String(key)) {
+            isActive = true;
+        }
+
+        if (isActive) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+
 function loadCategories() {
     const categoryButtons = document.getElementById('categoryButtons');
     if (!categoryButtons) return;
@@ -12134,25 +12712,57 @@ function loadCategories() {
     const createCategoryDropdown = (title, count, isActive, categoryKey, items) => {
         const container = document.createElement('div');
         container.className = 'category-dropdown-container';
+        container.dataset.categoryKey = categoryKey;
 
-        const btn = document.createElement('button');
+        const btn = document.createElement('div');
         btn.className = `category-btn ${isActive ? 'active' : ''}`;
         btn.innerHTML = `
-            <span class="cat-name">${escapeHtml(title)}</span>
-            <span class="cat-badge">${count}</span>
-            <span class="cat-arrow">▼</span>
+            <span class="cat-content">
+                <span class="cat-name">${escapeHtml(title)}</span>
+                <span class="cat-badge">${count}</span>
+            </span>
+            <span class="cat-arrow-btn" title="View ${escapeHtml(title)} items">
+                <svg class="cat-arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </span>
         `;
 
+        // Clicking the category button selects the category and closes any open dropdowns
         btn.onclick = (e) => {
-            e.stopPropagation();
-            const isOpen = container.classList.contains('open');
-            // Close any other open category dropdowns
-            document.querySelectorAll('.category-dropdown-container.open').forEach(c => {
-                if (c !== container) c.classList.remove('open');
-            });
-            container.classList.toggle('open', !isOpen);
-            selectCategory(categoryKey);
+            document.querySelectorAll('.category-dropdown-container.open').forEach(c => c.classList.remove('open'));
+            selectCategory(categoryKey, false);
         };
+
+        // Clicking only the dropdown arrow button toggles the dropdown menu
+        const arrowBtn = btn.querySelector('.cat-arrow-btn');
+        if (arrowBtn) {
+            arrowBtn.onclick = (e) => {
+                e.stopPropagation();
+                const isOpen = container.classList.contains('open');
+                // Close any other open category dropdowns
+                document.querySelectorAll('.category-dropdown-container.open').forEach(c => {
+                    if (c !== container) c.classList.remove('open');
+                });
+                if (!isOpen) {
+                    container.classList.add('open');
+                    const menu = container.querySelector('.category-dropdown-menu');
+                    if (menu) {
+                        const rect = btn.getBoundingClientRect();
+                        const menuWidth = 260;
+                        if (rect.left + menuWidth > window.innerWidth - 20) {
+                            menu.style.left = 'auto';
+                            menu.style.right = '0';
+                        } else {
+                            menu.style.left = '0';
+                            menu.style.right = 'auto';
+                        }
+                    }
+                } else {
+                    container.classList.remove('open');
+                }
+            };
+        }
 
         const menu = document.createElement('div');
         menu.className = 'category-dropdown-menu';
@@ -12208,7 +12818,7 @@ function loadCategories() {
     });
 }
 
-function selectCategory(categoryId) {
+function selectCategory(categoryId, reloadCategories = true) {
     // Ensure selectedCategory is stored correctly
     if (categoryId === 'all') {
         selectedCategory = 'all';
@@ -12224,9 +12834,40 @@ function selectCategory(categoryId) {
     if (menuSearchInput) {
         menuSearchInput.value = '';
     }
-    loadCategories();
+    if (reloadCategories) {
+        loadCategories();
+    } else {
+        updateActiveCategoryButton();
+    }
     loadMenuItems();
 }
+
+// Global outside click, pointerdown, escape, and scroll handler to close open category dropdowns
+document.addEventListener('pointerdown', (e) => {
+    if (!e.target.closest('.category-dropdown-container')) {
+        document.querySelectorAll('.category-dropdown-container.open').forEach(c => c.classList.remove('open'));
+    }
+});
+
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.category-dropdown-container')) {
+        document.querySelectorAll('.category-dropdown-container.open').forEach(c => c.classList.remove('open'));
+    }
+}, true);
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.category-dropdown-container.open').forEach(c => c.classList.remove('open'));
+    }
+});
+
+window.addEventListener('scroll', (e) => {
+    // Do not close if the user is scrolling inside the category dropdown menu itself
+    if (e.target && (e.target.classList?.contains('category-dropdown-menu') || e.target.closest?.('.category-dropdown-menu'))) {
+        return;
+    }
+    document.querySelectorAll('.category-dropdown-container.open').forEach(c => c.classList.remove('open'));
+}, { passive: true, capture: true });
 
 window.loadMenuItems = function loadMenuItems() {
     const menuItems = Storage.get('menuItems');
@@ -12776,42 +13417,110 @@ window.closeDiscountModal = function closeDiscountModal() {
     if (modal) modal.style.display = 'none';
 };
 
-// Apply discount to the cart
+window.setInlineDiscountType = function(type) {
+    if (!currentDiscount) currentDiscount = { type: 'fixed', value: 0 };
+    currentDiscount.type = type;
+    const btnRs = document.getElementById('discountTypeRs');
+    const btnPct = document.getElementById('discountTypePct');
+    if (btnRs) btnRs.classList.toggle('active', type === 'fixed');
+    if (btnPct) btnPct.classList.toggle('active', type === 'percentage');
+    updateCartTotalsOnly();
+};
+
+window.handleInlineDiscountInput = function(val) {
+    const num = parseFloat(val) || 0;
+    if (!currentDiscount) currentDiscount = { type: 'fixed', value: 0 };
+    if (!currentDiscount.type) currentDiscount.type = 'fixed';
+    currentDiscount.value = num;
+    updateCartTotalsOnly();
+};
+
+function updateCartTotalsOnly() {
+    let subtotal = 0;
+    if (Array.isArray(cart)) {
+        cart.forEach(item => {
+            subtotal += ((item.price || 0) * (item.quantity || 0));
+        });
+    }
+
+    let discountAmount = 0;
+    if (currentDiscount && currentDiscount.value > 0) {
+        if (currentDiscount.type === 'percentage') {
+            discountAmount = (subtotal * currentDiscount.value) / 100;
+        } else {
+            discountAmount = Math.min(currentDiscount.value, subtotal);
+        }
+    }
+
+    const grandTotal = Math.max(0, subtotal - discountAmount);
+
+    const cartSubtotal = document.getElementById('cartSubtotal');
+    if (cartSubtotal) cartSubtotal.textContent = `Rs.${formatNumber(subtotal)}`;
+
+    const cartTotal = document.getElementById('cartTotal');
+    if (cartTotal) cartTotal.textContent = `Rs.${formatNumber(grandTotal)}`;
+
+    let discountRow = document.getElementById('discountAmountRow');
+    if (discountAmount > 0) {
+        if (!discountRow) {
+            const subtotalRow = document.getElementById('subtotalRow');
+            if (subtotalRow && subtotalRow.parentNode) {
+                discountRow = document.createElement('div');
+                discountRow.id = 'discountAmountRow';
+                discountRow.className = 'summary-item';
+                discountRow.style.cssText = 'display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #ef4444; font-weight: 600; padding: 1px 0;';
+                subtotalRow.parentNode.insertBefore(discountRow, subtotalRow.nextSibling);
+            }
+        }
+        if (discountRow) {
+            const label = currentDiscount.type === 'percentage' ? `${currentDiscount.value}%` : 'Fixed';
+            discountRow.innerHTML = `<span>Discount (${label})</span><span>-Rs.${formatNumber(discountAmount)}</span>`;
+            discountRow.style.display = 'flex';
+        }
+    } else if (discountRow) {
+        discountRow.style.display = 'none';
+    }
+}
+
+// Apply discount to the cart (legacy support)
 function applyDiscount() {
-    const discountType = document.getElementById('discountType').value;
-    const discountValue = parseFloat(document.getElementById('discountValue').value);
+    const discountType = document.getElementById('discountType')?.value || 'fixed';
+    const discountValue = parseFloat(document.getElementById('discountValue')?.value || 0);
     const errorElement = document.getElementById('discountError');
 
-    // Validate discount value
     if (isNaN(discountValue) || discountValue <= 0) {
-        errorElement.textContent = 'Please enter a valid discount amount';
-        errorElement.style.display = 'block';
+        if (errorElement) {
+            errorElement.textContent = 'Please enter a valid discount amount';
+            errorElement.style.display = 'block';
+        }
         return;
     }
 
     if (discountType === 'percentage' && (discountValue < 0 || discountValue > 100)) {
-        errorElement.textContent = 'Percentage must be between 0 and 100';
-        errorElement.style.display = 'block';
+        if (errorElement) {
+            errorElement.textContent = 'Percentage must be between 0 and 100';
+            errorElement.style.display = 'block';
+        }
         return;
     }
 
-    // Save discount and update cart
     currentDiscount = { type: discountType, value: discountValue };
-    document.getElementById('discountModal').style.display = 'none';
+    const modal = document.getElementById('discountModal');
+    if (modal) modal.style.display = 'none';
     updateCart();
 }
 
 // Clear any applied discount
 function clearDiscount() {
-    currentDiscount = { type: null, value: 0 };
-    updateCart();
+    currentDiscount = { type: 'fixed', value: 0 };
+    const inlineInput = document.getElementById('inlineDiscountInput');
+    if (inlineInput) inlineInput.value = '';
+    updateCartTotalsOnly();
 }
 
 function updateCart() {
     const cartItems = document.getElementById('cartItems');
-    const cartTotal = document.getElementById('cartTotal');
     const orderHeaderTitle = document.getElementById('orderHeaderTitle');
-    const orderSummary = document.querySelector('.order-summary');
 
     if (!cartItems) return;
 
@@ -12822,35 +13531,20 @@ function updateCart() {
 
     if (cart.length === 0) {
         cartItems.innerHTML = '<div class="empty-cart">No items in cart</div>';
-        if (cartTotal) cartTotal.textContent = 'Rs.0';
-        // Reset discount when cart is empty
-        currentDiscount = { type: null, value: 0 };
-        updateCardQuantityBadge();
-        // Reset discount display
-        if (orderSummary) {
-            orderSummary.innerHTML = `
-                <div class="summary-item discount-row">
-                    <span>Discount</span>
-                    <a href="#" id="applyDiscount" style="color: #4a90e2; text-decoration: none; font-weight: 600;" onclick="showDiscountModal(); return false;">Apply</a>
-                </div>
-                <div class="summary-item subtotal-row">
-                    <span>Subtotal</span>
-                    <span>Rs.0</span>
-                </div>
-                <div class="summary-item total-row">
-                    <span>Total</span>
-                    <span id="cartTotal">Rs.0</span>
-                </div>`;
+        currentDiscount = { type: 'fixed', value: 0 };
+        const inlineInput = document.getElementById('inlineDiscountInput');
+        if (inlineInput && document.activeElement !== inlineInput) {
+            inlineInput.value = '';
         }
+        updateCardQuantityBadge();
+        updateCartTotalsOnly();
         return;
     }
 
     cartItems.innerHTML = '';
-    let subtotal = 0;
 
     cart.forEach(item => {
         const itemTotal = item.price * item.quantity;
-        subtotal += itemTotal;
 
         const orderItem = document.createElement('div');
         orderItem.className = 'order-item';
@@ -12891,65 +13585,16 @@ function updateCart() {
         cartItems.appendChild(orderItem);
     });
 
-    // Calculate discount amount
-    let discountAmount = 0;
-    if (currentDiscount.type === 'fixed') {
-        discountAmount = Math.min(currentDiscount.value, subtotal);
-    } else if (currentDiscount.type === 'percentage') {
-        discountAmount = (subtotal * currentDiscount.value) / 100;
+    const inlineInput = document.getElementById('inlineDiscountInput');
+    if (inlineInput && document.activeElement !== inlineInput) {
+        inlineInput.value = (currentDiscount && currentDiscount.value > 0) ? currentDiscount.value : '';
     }
+    const btnRs = document.getElementById('discountTypeRs');
+    const btnPct = document.getElementById('discountTypePct');
+    if (btnRs) btnRs.classList.toggle('active', !currentDiscount || currentDiscount.type !== 'percentage');
+    if (btnPct) btnPct.classList.toggle('active', currentDiscount && currentDiscount.type === 'percentage');
 
-    const total = Math.max(0, subtotal - discountAmount);
-
-    // Update order summary with discount and total
-    if (orderSummary) {
-        let discountHtml = '';
-        if (currentDiscount.type) {
-            const discountText = currentDiscount.type === 'fixed'
-                ? `Rs.${formatNumber(currentDiscount.value)}`
-                : `${currentDiscount.value}%`;
-            discountHtml = `
-                <div class="summary-item discount-row">
-                    <span>Discount (${currentDiscount.type === 'fixed' ? 'Fixed' : 'Percentage'})</span>
-                    <div>
-                        <span style="color: #e74c3c; margin-right: 10px;">-Rs.${formatNumber(discountAmount)}</span>
-                        <span style="color:#999; font-size: 12px; margin-right: 10px;">(${discountText})</span>
-                        <a href="#" onclick="clearDiscount()" style="color: #e74c3c; text-decoration: none; font-weight: 600; font-size: 14px;">Remove</a>
-                    </div>
-                </div>`;
-        } else {
-            discountHtml = `
-                <div class="summary-item discount-row">
-                    <span>Discount</span>
-                    <a href="#" id="applyDiscount" style="color: #4a90e2; text-decoration: none; font-weight: 600;" onclick="showDiscountModal(); return false;">Apply</a>
-                </div>`;
-        }
-
-        const grandTotal = Math.max(0, subtotal - discountAmount);
-
-        orderSummary.innerHTML = `
-            ${discountHtml}
-            <div class="summary-item subtotal-row">
-                <span>Subtotal</span>
-                <span>Rs.${formatNumber(subtotal)}</span>
-            </div>
-            <div class="summary-item total-row">
-                <span>Total</span>
-                <span id="cartTotal">Rs.${formatNumber(grandTotal)}</span>
-            </div>`;
-
-        // Re-attach event listener to the Apply Discount link
-        const applyDiscountLink = document.getElementById('applyDiscount');
-        if (applyDiscountLink) {
-            applyDiscountLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                showDiscountModal();
-            });
-        }
-    } else if (cartTotal) {
-        const grandTotal = Math.max(0, subtotal - discountAmount);
-        cartTotal.textContent = `Rs.${formatNumber(grandTotal)}`;
-    }
+    updateCartTotalsOnly();
 }
 
 function clearCart() {
@@ -13069,6 +13714,7 @@ function holdOrder() {
         waiter: selectedWaiter || null,
         tableNo: selectedTableNo || null,
         customerName: getCustomerName() || null,
+        waitingTime: getWaitingTime(),
         status: 'pending',
         createdAt: now.toISOString()
     };
@@ -13081,7 +13727,7 @@ function holdOrder() {
 
     // Build KOT as HTML instead of plain text
     const kotItemsTable = formatKOTItems(heldOrder.items);
-    const receiveTime = calculateReceiveTime(heldOrder.time, heldOrder.date);
+    const receiveTime = calculateReceiveTime(heldOrder.time, heldOrder.date, heldOrder.waitingTime);
     const kotHTML = `
         <div style="text-align: center; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; width: 100%; line-height: 1.2;">
             <div style="font-size: 20px; font-weight: 900; margin-bottom: 2px;">Hangout Lounge & Co.</div>
@@ -13115,6 +13761,8 @@ function holdOrder() {
     updateCart();
     loadMenuItems();
     resetTableSelection();
+    resetCustomerName();
+    resetWaitingTime();
 
     // Skip success modal when printing receipts (user requested)
     // showHoldOrderSuccessModal(orderId, heldOrder.id, cartBackup, menuItemQuantitiesBackup);
@@ -14444,7 +15092,8 @@ function holdOrderAndGenerateContent() {
     return {
         receipt,
         kot,
-        displayOrderNumber
+        displayOrderNumber,
+        waitingTime: heldOrder.waitingTime
     };
 }
 
@@ -14492,7 +15141,7 @@ window.printSeparateKOTs = function () {
         const now = new Date();
         const dateStr = formatDate(now);
         const timeStr = formatTime(now);
-        const receiveTime = calculateReceiveTime(timeStr, now);
+        const receiveTime = calculateReceiveTime(timeStr, now, content.waitingTime);
 
         // Print separate KOT for each item in the original cart
         cartCopy.forEach((item, index) => {
@@ -15756,9 +16405,12 @@ window.resetItemsSalesFilter = () => {
 function setLogoPath() {
     const logoImage = document.getElementById('logoImage');
     if (logoImage) {
-        // Use relative path - works in both development and when packaged
-        // The assets folder should be included in the build
-        logoImage.src = 'assets/logo.jpg';
+        const s = (typeof getCafeSettings === 'function') ? getCafeSettings() : null;
+        if (s && s.logo) {
+            logoImage.src = s.logo;
+        } else {
+            logoImage.src = 'assets/logo.jpg';
+        }
     }
 }
 
