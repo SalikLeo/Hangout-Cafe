@@ -270,6 +270,14 @@ function toggleLockedTabsMenu(event) {
     const menu = document.getElementById('lockedTabsDropdownMenu');
     if (menu) {
         menu.classList.toggle('show');
+        const card = menu.closest('.settings-card');
+        if (card) {
+            if (menu.classList.contains('show')) {
+                card.classList.add('has-open-dropdown');
+            } else {
+                card.classList.remove('has-open-dropdown');
+            }
+        }
     }
 }
 
@@ -280,6 +288,8 @@ document.addEventListener('click', (e) => {
     if (menu && menu.classList.contains('show')) {
         if (!menu.contains(e.target) && (!btn || !btn.contains(e.target))) {
             menu.classList.remove('show');
+            const card = menu.closest('.settings-card');
+            if (card) card.classList.remove('has-open-dropdown');
         }
     }
 });
