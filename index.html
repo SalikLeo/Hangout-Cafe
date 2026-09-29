@@ -1568,22 +1568,17 @@
                 <div id="stockDeductSection" style="display: none;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
                         <h2 style="margin: 0; font-weight: 800;">Deduct Stock / Ingredients Used</h2>
-                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                             <!-- View Switcher -->
-                            <div class="stock-view-switcher" style="display: flex; gap: 4px; background: #e8e8e8; border-radius: 12px; padding: 4px; box-shadow: inset 2px 2px 4px rgba(0,0,0,0.1), inset -2px -2px 4px rgba(255,255,255,0.8);">
-                                <button class="stock-inventory-btn" onclick="switchStockView('inventory')"
-                                    style="background: transparent; border: 1px solid transparent; color: #666; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 15px; margin: 0; display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">
+                            <div class="top-segmented-group stock-view-switcher">
+                                <button class="top-segmented-btn stock-inventory-btn" onclick="switchStockView('inventory')">
                                     📦 Stock Inventory
                                 </button>
-                                <button class="stock-deduct-btn" onclick="switchStockView('deduct')"
-                                    style="background: #4a90e2; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 15px; box-shadow: 0 2px 4px rgba(74, 144, 226, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2); margin: 0; display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">
+                                <button class="top-segmented-btn stock-deduct-btn active" onclick="switchStockView('deduct')">
                                     📉 Deduct Stock Used
                                 </button>
                             </div>
-                            <button onclick="printConsumptionLogsReport()"
-                                style="background: #e67e22; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 10px 18px; border-radius: 12px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 700; font-size: 15px; box-shadow: 0 4px 12px rgba(230, 126, 34, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; gap: 6px;">
-                                🖨️ Print Report
-                            </button>
+                            <button class="top-action-btn btn-orange" onclick="printConsumptionLogsReport()">🖨️ Print Report</button>
                         </div>
                     </div>
 
@@ -1746,19 +1741,16 @@
                 <div id="stockConsumptionLogsSection" style="display: none;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
                         <div style="display: flex; align-items: center; gap: 14px;">
-                            <button onclick="switchStockView('inventory')"
-                                style="background: #e2e8f0; color: #1e293b; border: 1px solid #cbd5e1; padding: 9px 16px; border-radius: 10px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                            <button class="top-action-btn btn-secondary" onclick="switchStockView('inventory')">
                                 ← Back to Stock Inventory
                             </button>
                             <h2 style="margin: 0; font-weight: 800; font-size: 22px;">Daily Stock Consumption Logs</h2>
                         </div>
-                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                            <button onclick="openDailyConsumptionModal()"
-                                style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 9px 16px; border-radius: 10px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35); display: flex; align-items: center; gap: 6px;">
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <button class="top-action-btn btn-teal" onclick="openDailyConsumptionModal()">
                                 📉 Deduct Stock Used (End of Day)
                             </button>
-                            <button onclick="printConsumptionLogsReport()"
-                                style="background: #e67e22; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 9px 16px; border-radius: 10px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 700; font-size: 14px; box-shadow: 0 4px 12px rgba(230, 126, 34, 0.4); display: flex; align-items: center; gap: 6px;">
+                            <button class="top-action-btn btn-orange" onclick="printConsumptionLogsReport()">
                                 🖨️ Print Logs Report
                             </button>
                         </div>
@@ -1828,8 +1820,7 @@
                 <div id="stockItemLedgerSection" style="display: none;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
                         <div style="display: flex; align-items: center; gap: 14px;">
-                            <button onclick="switchStockView('inventory')"
-                                style="background: #e2e8f0; color: #1e293b; border: 1px solid #cbd5e1; padding: 9px 16px; border-radius: 10px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                            <button class="top-action-btn btn-secondary" onclick="switchStockView('inventory')">
                                 ← Back to Stock Inventory
                             </button>
                             <div>
@@ -1837,13 +1828,11 @@
                                 <div id="pageItemLedgerSubtitle" style="font-size: 12.5px; color: #64748b; font-weight: 600; margin-top: 2px;">Transaction History & Balance Movements</div>
                             </div>
                         </div>
-                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                            <button type="button" onclick="exportStockLedgerToCSV()"
-                                style="background: #10b981; color: white; border: none; padding: 9px 16px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);">
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <button type="button" class="top-action-btn btn-teal" onclick="exportStockLedgerToCSV()">
                                 📥 Export Excel (CSV)
                             </button>
-                            <button type="button" onclick="printStockItemLedgerReport()"
-                                style="background: #e67e22; color: white; border: none; padding: 9px 16px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(230, 126, 34, 0.4);">
+                            <button type="button" class="top-action-btn btn-orange" onclick="printStockItemLedgerReport()">
                                 🖨️ Print Ledger
                             </button>
                         </div>
