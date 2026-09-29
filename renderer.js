@@ -8474,9 +8474,29 @@ function getDailySoldItemsSummary(dateStr) {
 }
 
 window.openDailyConsumptionModal = function openDailyConsumptionModal() {
+    switchStockView('deduct');
+};
+
+window.closeDailyConsumptionModal = function closeDailyConsumptionModal() {
+    switchStockView('inventory');
+};
+
+window.clearConsumptionRows = function clearConsumptionRows() {
+    const container = document.getElementById('consumptionRowsContainer');
+    if (container) {
+        container.innerHTML = '';
+        checkAndRenderEmptyConsumptionPlaceholder();
+        updateConsumptionRowCount();
+    }
+    const searchInput = document.getElementById('consumptionSearchInput');
+    if (searchInput) searchInput.value = '';
+    closeConsumptionDropdown();
+};
+
+window.initStockDeductView = function initStockDeductView() {
     const todayStr = getLocalISODate();
     const dateInput = document.getElementById('consumptionDate');
-    if (dateInput) {
+    if (dateInput && !dateInput.value) {
         dateInput.value = todayStr;
     }
     updateConsumptionModalDateResetBtn();
@@ -8487,20 +8507,52 @@ window.openDailyConsumptionModal = function openDailyConsumptionModal() {
 
     loadDailySalesSummaryForConsumption();
 
-    // Clear and add placeholder
     const container = document.getElementById('consumptionRowsContainer');
-    if (container) {
-        container.innerHTML = '';
+    if (container && container.querySelectorAll('tr').length === 0) {
         checkAndRenderEmptyConsumptionPlaceholder();
         updateConsumptionRowCount();
     }
 
-    document.getElementById('dailyConsumptionModal').style.display = 'flex';
+    updateDeductViewKPIs();
+
+    if (typeof handleConsumptionDateFilterChange === 'function') {
+        handleConsumptionDateFilterChange();
+    } else {
+        renderConsumptionHistoryList();
+    }
 };
 
-window.closeDailyConsumptionModal = function closeDailyConsumptionModal() {
-    document.getElementById('dailyConsumptionModal').style.display = 'none';
-    closeConsumptionDropdown();
+window.updateDeductViewKPIs = function updateDeductViewKPIs() {
+    const consumptions = Storage.get('stockConsumptions') || [];
+    const todayStr = getLocalISODate();
+    const stocks = syncAndGetStockItems();
+    const stockMap = {};
+    stocks.forEach(s => { stockMap[String(s.id)] = s; stockMap[(s.itemName || '').toLowerCase()] = s; });
+
+    let todayItemsCount = 0;
+    let todayEstimatedValue = 0;
+
+    consumptions.forEach(log => {
+        const cDate = log.date || (log.timestamp ? log.timestamp.split('T')[0] : '');
+        if (cDate === todayStr) {
+            (log.items || []).forEach(item => {
+                const qty = parseFloat(item.finalDeductQty || item.enteredQty || item.deductedQty) || 0;
+                todayItemsCount += qty > 0 ? 1 : 0;
+                const stock = stockMap[String(item.stockId)] || stockMap[(item.itemName || '').toLowerCase()];
+                const price = stock ? (parseFloat(stock.unitPrice) || 0) : 0;
+                todayEstimatedValue += (qty * price);
+            });
+        }
+    });
+
+    const todayItemsEl = document.getElementById('deductSummaryTodayItems');
+    if (todayItemsEl) todayItemsEl.textContent = `${todayItemsCount} item(s)`;
+
+    const todayValEl = document.getElementById('deductSummaryTodayValue');
+    if (todayValEl) todayValEl.textContent = `Rs. ${formatNumber(todayEstimatedValue)}`;
+
+    const totalLogsEl = document.getElementById('deductSummaryTotalLogs');
+    if (totalLogsEl) totalLogsEl.textContent = `${consumptions.length} log(s)`;
 };
 
 window.handleConsumptionModalDateChange = function handleConsumptionModalDateChange() {
@@ -9000,7 +9052,9 @@ window.submitDailyConsumption = function submitDailyConsumption() {
     });
     Storage.set('stockConsumptions', consumptions);
 
-    closeDailyConsumptionModal();
+    clearConsumptionRows();
+    updateDeductViewKPIs();
+    renderConsumptionHistoryList();
     loadStock();
 
     const successMsg = `Daily stock consumption for ${consumptionDate} recorded successfully! ${deductions.length} ingredient(s) subtracted from stock.` + (warningMsg ? `\n\nStock Alert:${warningMsg}` : '');
@@ -9014,29 +9068,62 @@ window.submitDailyConsumption = function submitDailyConsumption() {
 // ==========================================
 // CONSUMPTION HISTORY LOGS
 // ==========================================
-// Switch between Stock Inventory table, Daily Consumption Logs page, and Item Ledger page
+// Switch between Stock Inventory table, Deduct Stock page, Daily Consumption Logs page, and Item Ledger page
 window.switchStockView = function switchStockView(view) {
     const invSection = document.getElementById('stockInventorySection');
+    const deductSection = document.getElementById('stockDeductSection');
     const logsSection = document.getElementById('stockConsumptionLogsSection');
     const ledgerSection = document.getElementById('stockItemLedgerSection');
 
-    if (view === 'consumption') {
-        if (invSection) invSection.style.display = 'none';
-        if (ledgerSection) ledgerSection.style.display = 'none';
+    // Update all switcher buttons
+    const invBtns = document.querySelectorAll('.stock-inventory-btn');
+    const deductBtns = document.querySelectorAll('.stock-deduct-btn');
+    const logsBtns = document.querySelectorAll('.stock-logs-btn');
+
+    const setActiveBtn = (btns, isActive) => {
+        btns.forEach(btn => {
+            if (isActive) {
+                btn.style.background = '#4a90e2';
+                btn.style.color = '#ffffff';
+                btn.style.border = '1px solid rgba(255, 255, 255, 0.2)';
+                btn.style.fontWeight = '600';
+                btn.style.boxShadow = '0 2px 4px rgba(74, 144, 226, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
+            } else {
+                btn.style.background = 'transparent';
+                btn.style.color = '#666';
+                btn.style.border = '1px solid transparent';
+                btn.style.fontWeight = '500';
+                btn.style.boxShadow = 'none';
+            }
+        });
+    };
+
+    if (invSection) invSection.style.display = 'none';
+    if (deductSection) deductSection.style.display = 'none';
+    if (logsSection) logsSection.style.display = 'none';
+    if (ledgerSection) ledgerSection.style.display = 'none';
+
+    setActiveBtn(invBtns, false);
+    setActiveBtn(deductBtns, false);
+    setActiveBtn(logsBtns, false);
+
+    if (view === 'deduct') {
+        if (deductSection) deductSection.style.display = 'block';
+        setActiveBtn(deductBtns, true);
+        initStockDeductView();
+    } else if (view === 'consumption') {
         if (logsSection) logsSection.style.display = 'block';
+        setActiveBtn(logsBtns, true);
         if (typeof handleConsumptionDateFilterChange === 'function') {
             handleConsumptionDateFilterChange();
         } else {
             renderConsumptionHistoryList();
         }
     } else if (view === 'ledger') {
-        if (invSection) invSection.style.display = 'none';
-        if (logsSection) logsSection.style.display = 'none';
         if (ledgerSection) ledgerSection.style.display = 'block';
     } else {
-        if (logsSection) logsSection.style.display = 'none';
-        if (ledgerSection) ledgerSection.style.display = 'none';
         if (invSection) invSection.style.display = 'block';
+        setActiveBtn(invBtns, true);
         loadStock();
     }
 };
@@ -9772,6 +9859,7 @@ window.deleteConsumptionRecord = function deleteConsumptionRecord(logId, itemInd
 
             renderConsumptionHistoryList();
             loadStock();
+            if (typeof updateDeductViewKPIs === 'function') updateDeductViewKPIs();
             if (typeof showCustomAlert === 'function') {
                 showCustomAlert('Consumption record reverted and stock quantity restored.', 'Restored');
             }

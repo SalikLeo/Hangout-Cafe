@@ -1540,15 +1540,20 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
                         <h2 style="margin: 0; font-weight: 800;">Stock & Ingredients Management</h2>
                         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <!-- View Switcher (Like Sales Tab) -->
+                            <div class="stock-view-switcher" style="display: flex; gap: 4px; background: #e8e8e8; border-radius: 12px; padding: 4px; box-shadow: inset 2px 2px 4px rgba(0,0,0,0.1), inset -2px -2px 4px rgba(255,255,255,0.8);">
+                                <button class="stock-inventory-btn" onclick="switchStockView('inventory')"
+                                    style="background: #4a90e2; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 15px; box-shadow: 0 2px 4px rgba(74, 144, 226, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2); margin: 0; display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">
+                                    📦 Stock Inventory
+                                </button>
+                                <button class="stock-deduct-btn" onclick="switchStockView('deduct')"
+                                    style="background: transparent; border: 1px solid transparent; color: #666; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 15px; margin: 0; display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">
+                                    📉 Deduct Stock Used
+                                </button>
+                            </div>
                             <button onclick="openAddStockModal()"
                                 style="background: #4a90e2; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 10px 18px; border-radius: 12px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 15px; box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; gap: 6px;">
                                 + Add Stock Item</button>
-                            <button onclick="openDailyConsumptionModal()"
-                                style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 10px 18px; border-radius: 12px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 15px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; gap: 6px;">
-                                📉 Deduct Stock Used (End of Day)</button>
-                            <button onclick="switchStockView('consumption')"
-                                style="background: #6366f1; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 10px 18px; border-radius: 12px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 15px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; gap: 6px;">
-                                📋 Consumption Logs</button>
                             <button onclick="printStockReport()"
                                 style="background: #e67e22; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 10px 18px; border-radius: 12px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 700; font-size: 15px; box-shadow: 0 4px 12px rgba(230, 126, 34, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; gap: 6px;">
                                 🖨️ Print Report</button>
@@ -1606,6 +1611,184 @@
                                 </tr>
                             </thead>
                             <tbody id="stockTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Dedicated Deduct Stock Full-Page View (Like Sales Tab) -->
+                <div id="stockDeductSection" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                        <h2 style="margin: 0; font-weight: 800;">Deduct Stock / Ingredients Used</h2>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <!-- View Switcher -->
+                            <div class="stock-view-switcher" style="display: flex; gap: 4px; background: #e8e8e8; border-radius: 12px; padding: 4px; box-shadow: inset 2px 2px 4px rgba(0,0,0,0.1), inset -2px -2px 4px rgba(255,255,255,0.8);">
+                                <button class="stock-inventory-btn" onclick="switchStockView('inventory')"
+                                    style="background: transparent; border: 1px solid transparent; color: #666; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 500; font-size: 15px; margin: 0; display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">
+                                    📦 Stock Inventory
+                                </button>
+                                <button class="stock-deduct-btn" onclick="switchStockView('deduct')"
+                                    style="background: #4a90e2; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 600; font-size: 15px; box-shadow: 0 2px 4px rgba(74, 144, 226, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2); margin: 0; display: flex; align-items: center; justify-content: center; letter-spacing: 0.1px;">
+                                    📉 Deduct Stock Used
+                                </button>
+                            </div>
+                            <button onclick="printConsumptionLogsReport()"
+                                style="background: #e67e22; border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 10px 18px; border-radius: 12px; cursor: pointer; font-family: 'Poppins', 'Inter', sans-serif; font-weight: 700; font-size: 15px; box-shadow: 0 4px 12px rgba(230, 126, 34, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                🖨️ Print Usage Log
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Summary KPIs -->
+                    <div class="summary-section">
+                        <div class="summary-card">
+                            <h4>Deductions Today</h4>
+                            <p id="deductSummaryTodayItems">0 items</p>
+                        </div>
+                        <div class="summary-card">
+                            <h4>Est. Ingredient Cost Today</h4>
+                            <p id="deductSummaryTodayValue">Rs. 0</p>
+                        </div>
+                        <div class="summary-card">
+                            <h4>Total Recorded Deductions</h4>
+                            <p id="deductSummaryTotalLogs">0 logs</p>
+                        </div>
+                    </div>
+
+                    <!-- 1. Deduction Form Card (Excel Style) -->
+                    <div style="background: white; border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 25px; overflow: hidden;">
+                        <div style="padding: 12px 18px; background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 18px;">📉</span>
+                                <div>
+                                    <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: white;">Record Ingredients Used / Deduct Stock</h3>
+                                    <div style="font-size: 11.5px; color: #cbd5e1; margin-top: 1px;">Select date, pick ingredients from search bar, enter quantities, and save.</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <button type="button" onclick="clearConsumptionRows()"
+                                    style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">
+                                    Clear List
+                                </button>
+                                <button type="button" onclick="submitDailyConsumption()"
+                                    style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 8px 22px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 14px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);">
+                                    ✓ Save & Deduct from Stock
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="padding: 14px 18px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap;">
+                                <!-- Date Selector -->
+                                <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                                    <label style="font-weight: 700; color: #1e293b; font-size: 13.5px; white-space: nowrap;">📅 Sales / Usage Date:</label>
+                                    <div style="display: inline-flex; align-items: center; gap: 6px;">
+                                        <input type="date" id="consumptionDate" onchange="handleConsumptionModalDateChange()" oninput="handleConsumptionModalDateChange()"
+                                            style="padding: 6px 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-family: inherit; font-weight: 600; color: #0f172a; background: white; height: 36px;">
+                                        <button type="button" id="consumptionModalResetDateBtn" onclick="resetConsumptionModalDate()"
+                                            title="Reset to today's date"
+                                            style="display: none; background: #fee2e2; color: #dc2626; border: 1.5px solid #fca5a5; width: 30px; height: 30px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 700; align-items: center; justify-content: center;">✕</button>
+                                    </div>
+                                    <div id="consumptionOrdersSummary" style="font-size: 12px; font-weight: 700; color: #059669; background: #dcfce7; padding: 4px 10px; border-radius: 14px; white-space: nowrap;">
+                                        Total Orders: 0
+                                    </div>
+                                </div>
+
+                                <!-- Search & Add Bar -->
+                                <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 280px; position: relative;">
+                                    <label style="font-size: 13.5px; font-weight: 700; color: #0f172a; white-space: nowrap;">⚡ Search & Add:</label>
+                                    <div style="position: relative; flex: 1;">
+                                        <div style="display: flex; align-items: center; position: relative;">
+                                            <input type="text" id="consumptionSearchInput" placeholder="Type ingredient name to add (e.g. Eggs, Oil, Potatoes, Chicken)..."
+                                                autocomplete="off"
+                                                onfocus="openConsumptionDropdown()"
+                                                oninput="filterConsumptionDropdown()"
+                                                onkeydown="handleConsumptionSearchKeydown(event)"
+                                                style="width: 100%; padding: 6px 30px 6px 12px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-family: inherit; font-weight: 600; color: #0f172a; background: white; height: 36px; box-sizing: border-box; outline: none;">
+                                            <span onclick="toggleConsumptionDropdown()" style="position: absolute; right: 10px; cursor: pointer; color: #64748b; font-size: 11px; user-select: none; padding: 2px;">
+                                                ▼
+                                            </span>
+                                        </div>
+                                        <div id="consumptionDropdownMenu"
+                                            style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 240px; overflow-y: auto; background: white; border: 1.5px solid #cbd5e1; border-radius: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 1000;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Table Container -->
+                        <div style="max-height: 48vh; overflow-y: auto; background: #ffffff;">
+                            <table class="cons-excel-table" style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="position: sticky; top: 0; z-index: 2; height: 28px;">
+                                        <th style="width: 38px; text-align: center;">#</th>
+                                        <th style="width: 36%;">Ingredient</th>
+                                        <th style="width: 22%;">Used Qty *</th>
+                                        <th>Reason / Note (Optional)</th>
+                                        <th style="width: 36px; text-align: center;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="consumptionRowsContainer">
+                                    <!-- Dynamic deduction rows -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div style="padding: 10px 18px; border-top: 1px solid #e2e8f0; background: #ffffff; display: flex; justify-content: space-between; align-items: center;">
+                            <div id="consumptionSummaryFooter" style="font-size: 13.5px; font-weight: 600; color: #334155;">
+                                Total Items to Deduct: <strong id="consumptionTotalRowsCount" style="color: #059669; font-size: 15px;">0</strong>
+                            </div>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <button type="button" onclick="submitDailyConsumption()"
+                                    style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 8px 24px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 14px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);">
+                                    ✓ Save & Deduct from Stock
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Items Used History With Each Date (Full History Table like Sales History) -->
+                    <div class="table-section">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                            <div>
+                                <h3 style="margin: 0; font-size: 18px; font-weight: 800; color: #1e293b;">Items Used History (By Date)</h3>
+                                <div style="font-size: 12.5px; color: #64748b; margin-top: 2px;">Chronological list of all ingredients deducted on each date with easy revert options.</div>
+                            </div>
+                        </div>
+
+                        <div class="filter-section" style="margin-bottom: 15px; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 12px 16px; background: #f8f9fa; border-radius: 10px; border: 1px solid #e2e8f0;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <label style="font-weight: 600; color: #495057; font-size: 13.5px;">Date Range:</label>
+                                <select id="consumptionDateFilter" onchange="handleConsumptionDateFilterChange()"
+                                    style="padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 13.5px; background: white; cursor: pointer;">
+                                    <option value="today" selected>Daily</option>
+                                    <option value="month">Monthly</option>
+                                    <option value="year">Annual</option>
+                                    <option value="all">All Time</option>
+                                </select>
+                                <div id="consumptionTimeValueContainer" style="display: inline-flex; gap: 8px; align-items: center;"></div>
+                                <button id="consumptionResetFilterBtn" class="btn-reset-filter" title="Reset filter" onclick="resetConsumptionFilter()" style="display: none;">✕</button>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="text" id="consumptionPageSearch" placeholder="Search used items by name or note..." oninput="renderConsumptionHistoryList()"
+                                    style="padding: 8px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 13.5px; width: 280px; background: white;">
+                            </div>
+                        </div>
+
+                        <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                            <thead>
+                                <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                                    <th style="width: 180px; padding: 12px; font-weight: 700; color: #475569; text-align: left;">Date & Time</th>
+                                    <th style="padding: 12px; font-weight: 700; color: #475569; text-align: left;">Ingredient</th>
+                                    <th style="width: 140px; padding: 12px; font-weight: 700; color: #475569; text-align: right;">Deducted Qty</th>
+                                    <th style="width: 130px; padding: 12px; font-weight: 700; color: #475569; text-align: right;">Est. Value</th>
+                                    <th style="padding: 12px; font-weight: 700; color: #475569; text-align: left;">Reason / Note</th>
+                                    <th style="width: 90px; padding: 12px; font-weight: 700; color: #475569; text-align: center;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="consumptionHistoryTableBody">
+                                <!-- Dynamic logs -->
                             </tbody>
                         </table>
                     </div>
@@ -1892,108 +2075,7 @@
                     </div>
                 </div>
 
-                <!-- Daily Stock Consumption / Ingredient Deduction Modal (Easy Non-Tech Staff View) -->
-                <div id="dailyConsumptionModal" class="modal" style="display: none;">
-                    <div class="modal-content" style="max-width: 960px; width: 95%; max-height: 92vh; display: flex; flex-direction: column; height: auto;">
-                        <div class="modal-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border-radius: 12px 12px 0 0; padding: 10px 18px;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <span style="font-size: 18px;">📉</span>
-                                <div>
-                                    <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: white;">Deduct Stock / Ingredients Used</h3>
-                                    <div style="font-size: 11px; color: rgba(255,255,255,0.85); margin-top: 1px;">Enter ingredients used in daily cooking & sales to subtract from inventory</div>
-                                </div>
-                            </div>
-                            <span class="modal-close" onclick="closeDailyConsumptionModal()"
-                                style="font-size: 24px; cursor: pointer; color: white; opacity: 0.9;">&times;</span>
-                        </div>
-                        <div class="modal-body" style="padding: 10px 14px; overflow-y: auto; max-height: calc(90vh - 120px); background: #f8fafc;">
-                            <!-- Top Bar: Date Selector & Search & Add (Single Line to Save Space) -->
-                            <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-                                <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
-                                    <!-- Left: Sales Date & Orders Summary -->
-                                    <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-                                        <label style="font-weight: 700; color: #1e293b; font-size: 13px; white-space: nowrap;">📅 Sales Date:</label>
-                                        <div style="display: inline-flex; align-items: center; gap: 6px;">
-                                            <input type="date" id="consumptionDate" onchange="handleConsumptionModalDateChange()" oninput="handleConsumptionModalDateChange()"
-                                                style="padding: 4px 8px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 12.5px; font-family: inherit; font-weight: 600; color: #0f172a; background: white; height: 32px;">
-                                            <button type="button" id="consumptionModalResetDateBtn" onclick="resetConsumptionModalDate()"
-                                                title="Reset to today's date"
-                                                style="display: none; background: #fee2e2; color: #dc2626; border: 1.5px solid #fca5a5; width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 700; align-items: center; justify-content: center; transition: all 0.15s;"
-                                                onmouseover="this.style.background='#fecaca';"
-                                                onmouseout="this.style.background='#fee2e2';">✕</button>
-                                        </div>
-                                        <div id="consumptionOrdersSummary" style="font-size: 11.5px; font-weight: 700; color: #059669; background: #dcfce7; padding: 3px 8px; border-radius: 14px; white-space: nowrap;">
-                                            Total Orders: 0
-                                        </div>
-                                    </div>
 
-                                    <!-- Right: Fast Ingredient Finder Bar (Searchable Dropdown) -->
-                                    <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 260px; position: relative;">
-                                        <label style="font-size: 13px; font-weight: 700; color: #0f172a; white-space: nowrap;">⚡ Search & Add:</label>
-                                        <div style="position: relative; flex: 1;">
-                                            <div style="display: flex; align-items: center; position: relative;">
-                                                <input type="text" id="consumptionSearchInput" placeholder="Type ingredient name to add (e.g. Eggs, Oil, Potatoes)..."
-                                                    autocomplete="off"
-                                                    onfocus="openConsumptionDropdown()"
-                                                    oninput="filterConsumptionDropdown()"
-                                                    onkeydown="handleConsumptionSearchKeydown(event)"
-                                                    style="width: 100%; padding: 4px 28px 4px 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 12.5px; font-family: inherit; font-weight: 600; color: #0f172a; background: white; height: 32px; box-sizing: border-box; outline: none;">
-                                                <span onclick="toggleConsumptionDropdown()" style="position: absolute; right: 8px; cursor: pointer; color: #64748b; font-size: 10px; user-select: none; padding: 2px;">
-                                                    ▼
-                                                </span>
-                                            </div>
-                                            <!-- Dropdown Menu -->
-                                            <div id="consumptionDropdownMenu"
-                                                style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 220px; overflow-y: auto; background: white; border: 1.5px solid #cbd5e1; border-radius: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.12); z-index: 1000;">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Deductions Table (Excel-Style Compact Row Layout) -->
-                            <div style="background: white; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
-                                <div style="padding: 5px 10px; background: #f8fafc; border-bottom: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center;">
-                                    <div style="font-weight: 700; color: #1e293b; font-size: 12.5px;">
-                                        Ingredients to Deduct from Stock:
-                                    </div>
-                                    <div style="font-size: 11px; color: #64748b;">
-                                        💡 Fill quantities and press save to deduct
-                                    </div>
-                                </div>
-                                <div style="max-height: 52vh; overflow-y: auto; display: block; background: #ffffff;">
-                                    <table class="cons-excel-table" style="width: 100%; border-collapse: collapse;">
-                                        <thead>
-                                            <tr style="position: sticky; top: 0; z-index: 2; height: 28px;">
-                                                <th style="width: 32px; text-align: center;">#</th>
-                                                <th style="width: 38%;">Ingredient</th>
-                                                <th style="width: 22%;">Used Qty *</th>
-                                                <th>Reason / Note (Optional)</th>
-                                                <th style="width: 28px; text-align: center;"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="consumptionRowsContainer">
-                                            <!-- Dynamic deduction rows with Excel-style inline inputs -->
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer" style="padding: 12px 18px; border-top: 1px solid #e2e8f0; background: #ffffff; display: flex; justify-content: space-between; align-items: center;">
-                            <div id="consumptionSummaryFooter" style="font-size: 13px; font-weight: 600; color: #334155;">
-                                Total Items: <strong id="consumptionTotalRowsCount" style="color: #059669;">0</strong> ingredient(s) ready to deduct
-                            </div>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <button type="button" onclick="closeDailyConsumptionModal()"
-                                    style="background: #f1f5f9; color: #334155; border: 1.5px solid #cbd5e1; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;">Cancel</button>
-                                <button type="button" onclick="submitDailyConsumption()"
-                                    style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 10px 26px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 14.5px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);">
-                                    ✓ Save & Deduct from Stock
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
 
 
