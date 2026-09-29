@@ -2114,8 +2114,9 @@ input[type="text"].pos-search-input::placeholder {
     box-shadow: -2px 0 8px rgba(0, 0, 0, 0.06);
 }
 
-.order-section-wrapper.show {
-    display: flex;
+.order-section-wrapper.show,
+.app-container:has(#pos.active) .order-section-wrapper {
+    display: flex !important;
 }
 
 .order-section {

@@ -16526,13 +16526,11 @@ onDOMReady(() => {
     initializeMenuStructure();
 
     // Initialize unified dynamic time filters
-    if (typeof initAllUniversalTimeFilters === 'function') initAllUniversalTimeFilters();
-    if (typeof handleSalesDateFilterChange === 'function') handleSalesDateFilterChange();
-    if (typeof handleTaxHistoryFilterChange === 'function') handleTaxHistoryFilterChange();
-    if (typeof handleItemsSalesDateFilterChange === 'function') handleItemsSalesDateFilterChange();
-    if (typeof handleExpenseDateFilterChange === 'function') handleExpenseDateFilterChange();
-    if (typeof handleConsumptionDateFilterChange === 'function') handleConsumptionDateFilterChange();
-    if (typeof handleTableTimeFilterTypeChange === 'function') handleTableTimeFilterTypeChange();
+    try {
+        if (typeof initAllUniversalTimeFilters === 'function') initAllUniversalTimeFilters();
+    } catch (e) {
+        console.error('Error initializing time filters:', e);
+    }
 
     // Seed 50 dummy tables data if tables list is less than 40
     let existingTables = Storage.get('tables') || [];
@@ -16565,12 +16563,12 @@ onDOMReady(() => {
         if (orderSectionWrapper) orderSectionWrapper.classList.add('show');
         if (mainContent) mainContent.classList.add('has-order-section');
         // Load initial POS data
-        loadCategories();
-        loadMenuItems();
-        loadWaitersDropdown();
-        loadTablesDropdown();
-        updateCart();
-        updateOrderDate();
+        try { loadCategories(); } catch (e) { console.error(e); }
+        try { loadMenuItems(); } catch (e) { console.error(e); }
+        try { loadWaitersDropdown(); } catch (e) { console.error(e); }
+        try { loadTablesDropdown(); } catch (e) { console.error(e); }
+        try { updateCart(); } catch (e) { console.error(e); }
+        try { updateOrderDate(); } catch (e) { console.error(e); }
     } else {
         if (orderSectionWrapper) orderSectionWrapper.classList.remove('show');
         if (mainContent) mainContent.classList.remove('has-order-section');
