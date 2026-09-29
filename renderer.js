@@ -9092,13 +9092,7 @@ function checkAndRenderEmptyConsumptionPlaceholder() {
     if (!container) return;
     const rows = container.querySelectorAll('tr:not(#consumptionEmptyRow)');
     if (rows.length === 0) {
-        container.innerHTML = `
-            <tr id="consumptionEmptyRow">
-                <td colspan="5" style="text-align: center; padding: 14px 10px; color: #64748b; font-size: 11.5px; background: #ffffff; border: none;">
-                    👆 Choose an ingredient from the search bar above to add it to your deduction list.
-                </td>
-            </tr>
-        `;
+        container.innerHTML = '';
     }
 }
 
