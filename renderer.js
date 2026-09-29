@@ -11401,7 +11401,7 @@ function loadDashboard() {
     const monthExpensesEl = document.getElementById('dashboardMonthExpenses');
     const recentSalesEl = document.getElementById('dashboardRecentSales');
 
-    // Calculate Today's Stock Consumptions (Ingredient Cost)
+    // Calculate Stock Consumptions (Ingredient Cost)
     const todayISO = getLocalISODate();
     const consumptions = Storage.get('stockConsumptions') || [];
     const stockMap = {};
@@ -11409,18 +11409,35 @@ function loadDashboard() {
 
     let todayIngredientsCost = 0;
     let todayIngredientsCount = 0;
+    let weekIngredientsCost = 0;
+    let monthIngredientsCost = 0;
+
     consumptions.forEach(c => {
-        const cDate = c.date || (c.timestamp ? c.timestamp.split('T')[0] : '');
-        if (cDate === todayISO) {
+        const cDateStr = c.date || (c.timestamp ? c.timestamp.split('T')[0] : '');
+        if (!cDateStr) return;
+        const cDate = new Date(cDateStr + 'T00:00:00');
+        const isToday = (cDateStr === todayISO);
+        const isWeek = (cDate >= weekAgo && cDate <= todayEnd);
+        const isMonth = (cDate >= monthAgo && cDate <= todayEnd);
+
+        if (isToday || isWeek || isMonth) {
             (c.items || []).forEach(item => {
                 const qty = parseFloat(item.finalDeductQty || item.enteredQty || item.deductedQty) || 0;
                 const stock = stockMap[String(item.stockId)] || stockMap[(item.itemName || '').toLowerCase()];
                 const price = stock ? (parseFloat(stock.unitPrice) || 0) : 0;
-                todayIngredientsCost += (qty * price);
-                if (qty > 0) todayIngredientsCount++;
+                const cost = qty * price;
+                if (isToday) {
+                    todayIngredientsCost += cost;
+                    if (qty > 0) todayIngredientsCount++;
+                }
+                if (isWeek) weekIngredientsCost += cost;
+                if (isMonth) monthIngredientsCost += cost;
             });
         }
     });
+
+    const weekProfit = weekSales - weekIngredientsCost - weekExpenses;
+    const monthProfit = monthSales - monthIngredientsCost - monthExpenses;
 
     // Cash vs Online Breakdown for Today
     let todayCashSales = 0;
@@ -11494,10 +11511,26 @@ function loadDashboard() {
     if (weeklyDiscountsEl) weeklyDiscountsEl.textContent = `Rs. ${formatNumber(weeklyDiscounts)}`;
     if (todayOrdersCountEl) todayOrdersCountEl.textContent = formatNumber(todayOrdersCount);
     if (weeklyOrdersCountEl) weeklyOrdersCountEl.textContent = formatNumber(weeklyOrdersCount);
+    const weekCostEl = document.getElementById('dashboardWeekCost');
+    const weekProfitEl = document.getElementById('dashboardWeekProfit');
+    const monthCostEl = document.getElementById('dashboardMonthCost');
+    const monthProfitEl = document.getElementById('dashboardMonthProfit');
+
     if (weekSalesEl) weekSalesEl.textContent = `Rs. ${formatNumber(weekSales)}`;
+    if (weekCostEl) weekCostEl.textContent = `Rs. ${formatNumber(weekIngredientsCost)}`;
     if (weekExpensesEl) weekExpensesEl.textContent = `Rs. ${formatNumber(weekExpenses)}`;
+    if (weekProfitEl) {
+        weekProfitEl.textContent = `Rs. ${formatNumber(weekProfit)}`;
+        weekProfitEl.style.color = weekProfit >= 0 ? '#16a34a' : '#dc2626';
+    }
+
     if (monthSalesEl) monthSalesEl.textContent = `Rs. ${formatNumber(monthSales)}`;
+    if (monthCostEl) monthCostEl.textContent = `Rs. ${formatNumber(monthIngredientsCost)}`;
     if (monthExpensesEl) monthExpensesEl.textContent = `Rs. ${formatNumber(monthExpenses)}`;
+    if (monthProfitEl) {
+        monthProfitEl.textContent = `Rs. ${formatNumber(monthProfit)}`;
+        monthProfitEl.style.color = monthProfit >= 0 ? '#16a34a' : '#dc2626';
+    }
 
     // Load Recent Sales
     if (recentSalesEl) {
