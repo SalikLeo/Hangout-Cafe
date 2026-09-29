@@ -1,8 +1,17 @@
-* {
+*, *::before, *::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     font-family: inherit;
+    -webkit-transition: none !important;
+    -moz-transition: none !important;
+    -o-transition: none !important;
+    transition: none !important;
+    -webkit-animation: none !important;
+    -moz-animation: none !important;
+    -o-animation: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
 }
 
 body {
@@ -1725,18 +1734,6 @@ input[type="text"].pos-search-input::placeholder {
 
 .category-dropdown-container.open .category-dropdown-menu {
     display: block;
-    animation: catDropdownSlideDown 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes catDropdownSlideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-6px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 .category-dropdown-item {
@@ -2764,21 +2761,15 @@ select.pos-form-control {
     right: 0;
     bottom: 0;
     background: rgba(15, 23, 42, 0.48);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
     z-index: 999999;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     padding: 20px;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.16s ease, visibility 0.16s ease;
 }
 
 .custom-msgbox-overlay.show {
-    opacity: 1;
-    visibility: visible;
+    display: flex;
 }
 
 .custom-msgbox-card {
@@ -2789,12 +2780,7 @@ select.pos-form-control {
     max-width: 430px;
     box-shadow: 0 22px 50px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(0, 0, 0, 0.05);
     text-align: center;
-    transform: scale(0.9) translateY(10px);
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.custom-msgbox-overlay.show .custom-msgbox-card {
-    transform: scale(1) translateY(0);
+    transform: none;
 }
 
 .custom-msgbox-icon {
@@ -2942,18 +2928,7 @@ select.pos-form-control {
     box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
     text-align: center;
     box-sizing: border-box;
-    animation: lockCardPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes lockCardPop {
-    from {
-        opacity: 0;
-        transform: scale(0.92) translateY(12px);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
+    transform: none;
 }
 
 .app-lock-icon {
@@ -3094,7 +3069,6 @@ select.pos-form-control {
     display: flex;
     align-items: center;
     gap: 8px;
-    animation: fadeIn 0.2s ease-in-out;
 }
 
 .popular-ingredients-wrapper {
