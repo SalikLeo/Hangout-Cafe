@@ -1494,6 +1494,8 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
                         <h2 style="margin: 0; font-weight: 800;">Stock & Ingredients Management</h2>
                         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <button class="top-action-btn btn-primary" onclick="openAddStockModal()">+ Add Stock Item</button>
+                            <button class="top-action-btn btn-orange" onclick="printStockReport()">🖨️ Print Report</button>
                             <!-- View Switcher -->
                             <div class="top-segmented-group stock-view-switcher">
                                 <button class="top-segmented-btn stock-inventory-btn active" onclick="switchStockView('inventory')">
@@ -1503,8 +1505,6 @@
                                     📉 Deduct Stock Used
                                 </button>
                             </div>
-                            <button class="top-action-btn btn-primary" onclick="openAddStockModal()">+ Add Stock Item</button>
-                            <button class="top-action-btn btn-orange" onclick="printStockReport()">🖨️ Print Report</button>
                         </div>
                     </div>
 
@@ -1569,6 +1569,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
                         <h2 style="margin: 0; font-weight: 800;">Deduct Stock / Ingredients Used</h2>
                         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <button class="top-action-btn btn-orange" onclick="printConsumptionLogsReport()">🖨️ Print Report</button>
                             <!-- View Switcher -->
                             <div class="top-segmented-group stock-view-switcher">
                                 <button class="top-segmented-btn stock-inventory-btn" onclick="switchStockView('inventory')">
@@ -1578,7 +1579,6 @@
                                     📉 Deduct Stock Used
                                 </button>
                             </div>
-                            <button class="top-action-btn btn-orange" onclick="printConsumptionLogsReport()">🖨️ Print Report</button>
                         </div>
                     </div>
 
