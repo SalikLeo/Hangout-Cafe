@@ -9273,31 +9273,35 @@ window.renderConsumptionHistoryList = function renderConsumptionHistoryList() {
             const qty = parseFloat(item.finalDeductQty || item.enteredQty || item.deductedQty) || 0;
             const stock = stockMap[String(item.stockId)] || stockMap[(item.itemName || '').toLowerCase()];
             const price = stock ? (parseFloat(stock.unitPrice) || 0) : 0;
+            const currentStockQty = stock ? (parseFloat(stock.quantity) || 0) : null;
             const itemEstimatedValue = qty * price;
-            const unitStr = item.enteredUnit || item.stockUnit || item.unit || '';
-            const noteStr = item.note || log.note || 'Daily Sales Consumption';
+            const unitStr = item.enteredUnit || item.stockUnit || item.unit || (stock ? stock.unit : '');
+            const rawNote = (item.note || log.note || '').trim();
+            const isDefaultNote = !rawNote || rawNote.toLowerCase() === 'daily sales consumption' || rawNote.toLowerCase() === 'stock consumption';
+            const noteStr = isDefaultNote ? '-' : rawNote;
 
             const tr = document.createElement('tr');
             tr.style.borderBottom = '1px solid #f1f5f9';
             tr.innerHTML = `
-                <td style="padding: 10px 12px; font-weight: 600; color: #1e293b; white-space: nowrap; font-size: 13px;">
-                    ${formattedDate}, <span style="color: #64748b; font-size: 12px; font-weight: 500;">${formattedTime}</span>
+                <td style="padding: 10px 12px; font-weight: 500; color: #334155; white-space: nowrap; font-size: 13px;">
+                    ${formattedDate}, <span style="color: #64748b; font-size: 12px;">${formattedTime}</span>
                 </td>
-                <td style="padding: 10px 12px; font-weight: 700; color: #0f172a; font-size: 13.5px;">
+                <td style="padding: 10px 12px; font-weight: 600; color: #0f172a; font-size: 13.5px;">
                     ${escapeHtml(item.itemName)}
                 </td>
                 <td style="padding: 10px 12px; text-align: right; white-space: nowrap;">
-                    <span style="color: #dc2626; font-weight: 700; font-size: 13px;">-${formatQuantity(qty)} ${escapeHtml(unitStr)}</span>
+                    <span style="color: #dc2626; font-weight: 600; font-size: 13px;">-${formatQuantity(qty)} ${escapeHtml(unitStr)}</span>
+                    ${currentStockQty !== null ? `<span style="color: #64748b; font-size: 12px; font-weight: 500; margin-left: 5px;">(${formatQuantity(currentStockQty)} ${escapeHtml(unitStr)} left)</span>` : ''}
                 </td>
-                <td style="padding: 10px 12px; text-align: right; font-weight: 700; color: #0f766e; font-size: 13px; white-space: nowrap;">
+                <td style="padding: 10px 12px; text-align: right; font-weight: 600; color: #0f766e; font-size: 13px; white-space: nowrap;">
                     ${itemEstimatedValue > 0 ? `Rs. ${formatNumber(itemEstimatedValue)}` : '-'}
                 </td>
-                <td style="padding: 10px 12px; color: #475569; font-size: 12.5px;">
+                <td style="padding: 10px 12px; color: ${isDefaultNote ? '#94a3b8' : '#334155'}; font-size: 12.5px;">
                     ${escapeHtml(noteStr)}
                 </td>
                 <td style="padding: 10px 12px; text-align: center; white-space: nowrap;">
                     <button type="button" onclick="deleteConsumptionRecord('${log.id}', ${itemIdx})"
-                        style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 700;"
+                        style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;"
                         title="Revert this item deduction">Revert</button>
                 </td>
             `;
@@ -9307,15 +9311,15 @@ window.renderConsumptionHistoryList = function renderConsumptionHistoryList() {
 
     if (tfoot) {
         tfoot.innerHTML = `
-            <tr style="background: #f8fafc; border-top: 2px solid #cbd5e1; font-weight: 800;">
+            <tr style="background: #f8fafc; border-top: 2px solid #cbd5e1; font-weight: 700;">
                 <td colspan="2" style="padding: 12px 14px; text-align: left; color: #0f172a; font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.5px;">
                     TOTAL STOCK USED (${totalItemsDeductedCount} item${totalItemsDeductedCount === 1 ? '' : 's'})
                 </td>
                 <td style="padding: 12px 14px; text-align: right; color: #64748b; font-size: 13px;">-</td>
-                <td style="padding: 12px 14px; text-align: right; color: #0f766e; font-size: 14.5px; font-weight: 900; white-space: nowrap;">
+                <td style="padding: 12px 14px; text-align: right; color: #0f766e; font-size: 14px; font-weight: 700; white-space: nowrap;">
                     Rs. ${formatNumber(totalEstimatedValue)}
                 </td>
-                <td colspan="2" style="padding: 12px 14px; color: #64748b; font-size: 12px; font-weight: 600;">
+                <td colspan="2" style="padding: 12px 14px; color: #64748b; font-size: 12px; font-weight: 500;">
                     Total worth of stock consumed for selected period
                 </td>
             </tr>
@@ -9384,26 +9388,27 @@ window.printConsumptionLogsReport = function printConsumptionLogsReport() {
     const itemRows = [];
 
     filtered.forEach(log => {
-        const dateObj = new Date(log.timestamp || log.date);
-        const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        const formattedTime = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-
         (log.items || []).forEach((item) => {
             const qty = parseFloat(item.finalDeductQty || item.enteredQty || item.deductedQty) || 0;
             totalItemsDeductedCount += qty > 0 ? 1 : 0;
             const stock = stockMap[String(item.stockId)] || stockMap[(item.itemName || '').toLowerCase()];
             const price = stock ? (parseFloat(stock.unitPrice) || 0) : 0;
+            const currentStockQty = stock ? (parseFloat(stock.quantity) || 0) : null;
             const itemEstimatedValue = qty * price;
             totalEstimatedValue += itemEstimatedValue;
-            const unitStr = item.enteredUnit || item.stockUnit || item.unit || '';
-            const noteStr = item.note || log.note || 'Daily Sales Consumption';
+            const unitStr = item.enteredUnit || item.stockUnit || item.unit || (stock ? stock.unit : '');
+
+            const rawNote = (item.note || log.note || '').trim();
+            const isDefaultNote = !rawNote || rawNote.toLowerCase() === 'daily sales consumption' || rawNote.toLowerCase() === 'stock consumption';
+            const customNote = isDefaultNote ? '' : rawNote;
+
+            const leftStockStr = currentStockQty !== null ? ` (${formatQuantity(currentStockQty)} ${unitStr} left)` : '';
 
             itemRows.push({
-                dateTime: `${formattedDate}, ${formattedTime}`,
                 itemName: item.itemName,
-                qtyStr: `-${formatQuantity(qty)} ${unitStr}`,
+                qtyStr: `-${formatQuantity(qty)} ${unitStr}${leftStockStr}`,
                 valStr: itemEstimatedValue > 0 ? `Rs. ${formatNumber(itemEstimatedValue)}` : '-',
-                noteStr: noteStr
+                customNote: customNote
             });
         });
     });
@@ -9425,10 +9430,10 @@ window.printConsumptionLogsReport = function printConsumptionLogsReport() {
                     box-sizing: border-box;
                     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
                 }
-                body {
+                body { 
                     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
                     padding: 8px;
-                    font-size: 11.5px;
+                    font-size: 11px;
                     display: flex;
                     flex-direction: column;
                     justify-content: flex-start;
@@ -9443,20 +9448,20 @@ window.printConsumptionLogsReport = function printConsumptionLogsReport() {
                 }
                 .header-section {
                     text-align: center;
-                    margin-bottom: 6px;
+                    margin-bottom: 5px;
                     width: 100%;
                 }
                 .restaurant-name {
-                    font-size: 17px;
-                    font-weight: 800;
+                    font-size: 16.5px;
+                    font-weight: 700;
                     letter-spacing: 0.3px;
                     text-transform: uppercase;
                     margin-bottom: 2px;
                     color: #000;
                 }
                 .report-info {
-                    font-size: 11px;
-                    font-weight: 500;
+                    font-size: 10.5px;
+                    font-weight: 400;
                     color: #333;
                     line-height: 1.35;
                 }
@@ -9465,57 +9470,57 @@ window.printConsumptionLogsReport = function printConsumptionLogsReport() {
                     border: 1.5px solid #000;
                     padding: 2px 12px;
                     font-size: 10.5px;
-                    font-weight: 700;
+                    font-weight: 600;
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
-                    margin: 5px 0 3px 0;
+                    margin: 4px 0 2px 0;
                 }
                 .separator {
-                    border-top: 1px dashed #999;
-                    margin: 6px 0;
+                    border-top: 1px dashed #777;
+                    margin: 5px 0;
                     width: 100%;
                 }
                 .meta-box {
-                    font-size: 11px;
+                    font-size: 10.5px;
                     text-align: left;
-                    line-height: 1.5;
+                    line-height: 1.45;
                     color: #000;
                     width: 100%;
                 }
                 .summary-box {
                     width: 100%;
-                    font-size: 11.5px;
-                    line-height: 1.55;
+                    font-size: 11px;
+                    line-height: 1.5;
                     color: #000;
                 }
                 .report-table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin: 5px 0;
+                    margin: 4px 0;
                     border: 1.5px solid #000;
                     background: #fff;
                     font-size: 10.5px;
                 }
                 .report-table th {
                     text-align: left;
-                    padding: 4px 4px;
+                    padding: 3.5px 4px;
                     font-size: 10px;
-                    font-weight: 700;
+                    font-weight: 600;
                     border-bottom: 1.5px solid #000;
                     border-right: 1px solid #000;
                     text-transform: uppercase;
                     color: #000;
-                    background: #f8f9fa;
+                    background: #fff;
                 }
                 .report-table th:last-child {
                     border-right: none;
                 }
                 .report-table td {
-                    padding: 4px 4px;
-                    border-bottom: 1px solid #ccc;
+                    padding: 3.5px 4px;
+                    border-bottom: 1px solid #ddd;
                     border-right: 1px solid #000;
                     color: #000;
-                    vertical-align: top;
+                    vertical-align: middle;
                 }
                 .report-table td:last-child {
                     border-right: none;
@@ -9524,9 +9529,9 @@ window.printConsumptionLogsReport = function printConsumptionLogsReport() {
                     border-bottom: none;
                 }
                 .section-title {
-                    font-size: 11.5px;
-                    font-weight: 700;
-                    margin: 6px 0 3px 0;
+                    font-size: 11px;
+                    font-weight: 600;
+                    margin: 5px 0 3px 0;
                     text-align: left;
                     width: 100%;
                     text-transform: uppercase;
@@ -9563,7 +9568,7 @@ window.printConsumptionLogsReport = function printConsumptionLogsReport() {
                 <div><span class="report-title-badge">STOCK CONSUMPTION REPORT</span></div>
                 <div class="separator"></div>
                 <div class="meta-box">
-                    <div style="display: flex; justify-content: space-between;"><span style="font-weight: 600;">Period:</span> <span style="font-weight: 400; color: #333;">${filterLabel}</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span style="font-weight: 600;">Period:</span> <span style="font-weight: 400; color: #333;">${escapeHtml(filterLabel)}</span></div>
                     <div style="display: flex; justify-content: space-between;"><span style="font-weight: 600;">Date:</span> <span style="font-weight: 400; color: #333;">${new Date().toLocaleString()}</span></div>
                 </div>
             </div>
@@ -9582,23 +9587,22 @@ window.printConsumptionLogsReport = function printConsumptionLogsReport() {
             <table class="report-table">
                 <thead>
                     <tr>
-                        <th style="width: 45%;">Item / Time</th>
-                        <th style="width: 25%; text-align: right;">Deducted</th>
-                        <th style="width: 30%; text-align: right;">Est. Value</th>
+                        <th style="width: 44%;">ITEM</th>
+                        <th style="width: 34%; text-align: right;">DEDUCTED</th>
+                        <th style="width: 22%; text-align: right;">EST. VALUE</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${itemRows.map(r => `
                         <tr>
                             <td>
-                                <div style="font-weight: 700; color: #000;">${escapeHtml(r.itemName)}</div>
-                                <div style="font-size: 9.5px; color: #555;">${escapeHtml(r.dateTime)}</div>
-                                ${r.noteStr ? `<div style="font-size: 9px; color: #777; font-style: italic;">${escapeHtml(r.noteStr)}</div>` : ''}
+                                <div style="font-weight: 500; color: #000;">${escapeHtml(r.itemName)}</div>
+                                ${r.customNote ? `<div style="font-size: 9px; color: #555; font-style: italic; margin-top: 1px;">${escapeHtml(r.customNote)}</div>` : ''}
                             </td>
-                            <td style="text-align: right; font-weight: 600; color: #000; white-space: nowrap;">
+                            <td style="text-align: right; font-weight: 500; color: #000; white-space: nowrap;">
                                 ${escapeHtml(r.qtyStr)}
                             </td>
-                            <td style="text-align: right; font-weight: 700; color: #000; white-space: nowrap;">
+                            <td style="text-align: right; font-weight: 600; color: #000; white-space: nowrap;">
                                 ${escapeHtml(r.valStr)}
                             </td>
                         </tr>
@@ -17045,10 +17049,12 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
                 const itemVal = qty * price;
                 const unit = item.enteredUnit || item.stockUnit || item.unit || (stock ? stock.unit : '');
 
+                const currentStockQty = stock ? (parseFloat(stock.quantity) || 0) : null;
+
                 periodIngredientCost += itemVal;
 
                 if (!consumedIngredientsMap[name]) {
-                    consumedIngredientsMap[name] = { name, quantity: 0, unit, totalValue: 0 };
+                    consumedIngredientsMap[name] = { name, quantity: 0, unit, totalValue: 0, currentStock: currentStockQty };
                 }
                 consumedIngredientsMap[name].quantity += qty;
                 consumedIngredientsMap[name].totalValue += itemVal;
@@ -17362,17 +17368,19 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
             <table class="compact-items-table">
                 <thead>
                     <tr style="border-bottom: 1.5px solid #000;">
-                        <th style="width: 50%; border-right: 1px solid #000;">INGREDIENT</th>
-                        <th style="width: 22%; text-align: center; border-right: 1px solid #000;">QTY</th>
-                        <th style="width: 28%; text-align: right;">EST. COST</th>
+                        <th style="width: 44%; border-right: 1px solid #000;">INGREDIENT</th>
+                        <th style="width: 32%; text-align: center; border-right: 1px solid #000;">DEDUCTED</th>
+                        <th style="width: 24%; text-align: right;">EST. COST</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${consumedIngredientsList.length > 0 ? consumedIngredientsList.map(item => `
                         <tr>
-                            <td style="border-right: 1px solid #000;">${escapeHtml(item.name)}</td>
-                            <td class="text-center bold" style="border-right: 1px solid #000;">${formatQuantity(item.quantity)} ${escapeHtml(item.unit)}</td>
-                            <td class="text-right">Rs. ${formatNumber(item.totalValue)}</td>
+                            <td style="border-right: 1px solid #000; font-weight: 500;">${escapeHtml(item.name)}</td>
+                            <td class="text-center" style="border-right: 1px solid #000; font-weight: 500;">
+                                -${formatQuantity(item.quantity)} ${escapeHtml(item.unit)}${item.currentStock !== null ? `<span style="font-size: 8.5px; color: #444; font-weight: 400; margin-left: 2px;"> (${formatQuantity(item.currentStock)} ${escapeHtml(item.unit)} left)</span>` : ''}
+                            </td>
+                            <td class="text-right" style="font-weight: 600;">Rs. ${formatNumber(item.totalValue)}</td>
                         </tr>
                     `).join('') : `
                         <tr>
@@ -17380,7 +17388,7 @@ function generateReportHTML(title, filterText, startDate, endDate, transactionLi
                         </tr>
                     `}
                     <tr class="totals-row" style="border-top: 1.5px solid #000; background: #fff;">
-                        <td colspan="2" style="border-right: 1px solid #000; font-weight: 700;">TOTAL INGREDIENT COST</td>
+                        <td colspan="2" style="border-right: 1px solid #000; font-weight: 600;">TOTAL INGREDIENT COST</td>
                         <td class="text-right bold">Rs. ${formatNumber(periodIngredientCost)}</td>
                     </tr>
                 </tbody>
