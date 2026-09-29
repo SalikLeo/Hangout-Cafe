@@ -8747,38 +8747,38 @@ window.addConsumptionRow = function addConsumptionRow(prefillStockId = '', prefi
 
     const currentCount = container.querySelectorAll('tr:not(#consumptionEmptyRow)').length + 1;
 
-    tr.style.cssText = 'height: 24px !important; max-height: 24px !important; line-height: 22px !important;';
+    tr.style.cssText = 'height: 30px !important; max-height: 30px !important;';
 
     tr.innerHTML = `
-        <td style="text-align: center; color: #64748b; font-size: 10.5px; font-weight: 700; padding: 0 2px !important; background: #f8fafc; user-select: none; width: 32px; height: 24px !important; max-height: 24px !important;">
+        <td style="text-align: center; color: #64748b; font-size: 11px; font-weight: 700; padding: 0 4px !important; background: #f8fafc; user-select: none; width: 32px; height: 30px !important; max-height: 30px !important;">
             <span class="cons-row-index">${currentCount}</span>
         </td>
-        <td style="padding: 0 4px !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; height: 24px !important; max-height: 24px !important;">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px; width: 100%; height: 22px;">
-                <span style="font-weight: 600; color: #0f172a; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">
+        <td style="padding: 2px 6px !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; height: 30px !important; max-height: 30px !important;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%;">
+                <span style="font-weight: 600; color: #0f172a; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">
                     ${escapeHtml(stock.itemName)}
                 </span>
-                <span style="font-size: 9.5px; color: #059669; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 0 3px; border-radius: 2px; font-weight: 600; white-space: nowrap; flex-shrink: 0; line-height: 13px; height: 13px;">
+                <span style="font-size: 10.5px; color: #059669; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 1px 5px; border-radius: 3px; font-weight: 600; white-space: nowrap; flex-shrink: 0; line-height: 15px; height: 15px;">
                     ${formatQuantity(stock.quantity)} ${stock.unit}
                 </span>
             </div>
             <input type="hidden" class="cons-stock-id" value="${stock.id}" data-name="${escapeHtml(stock.itemName)}" data-available="${stock.quantity}" data-unit="${escapeHtml(stock.unit)}">
         </td>
-        <td style="position: relative; padding: 0 2px !important; height: 24px !important; max-height: 24px !important;">
-            <div style="display: flex; align-items: center; position: relative; width: 100%; height: 22px;">
+        <td style="position: relative; padding: 2px 4px !important; height: 30px !important; max-height: 30px !important;">
+            <div style="display: flex; align-items: center; position: relative; width: 100%; height: 24px;">
                 <input type="number" class="cons-excel-input cons-qty-input" step="any" min="0.001" placeholder="0" value="${prefillQty}" required
                     oninput="updateConsumptionRowBalance('${rowId}')"
-                    style="font-weight: 700; padding-right: 24px !important; height: 20px !important; line-height: 20px !important;">
-                <span id="${rowId}_unitBadge" style="position: absolute; right: 3px; font-size: 9.5px; font-weight: 600; color: #64748b; pointer-events: none; user-select: none; line-height: 20px;">
+                    style="font-weight: 700; padding-right: 28px !important; height: 24px !important; line-height: 24px !important; font-size: 12.5px;">
+                <span id="${rowId}_unitBadge" style="position: absolute; right: 4px; font-size: 10.5px; font-weight: 600; color: #64748b; pointer-events: none; user-select: none; line-height: 24px;">
                     ${escapeHtml(stock.unit)}
                 </span>
             </div>
         </td>
-        <td style="padding: 0 2px !important; height: 24px !important; max-height: 24px !important;">
+        <td style="padding: 2px 4px !important; height: 30px !important; max-height: 30px !important;">
             <input type="text" class="cons-excel-input cons-note-input" placeholder="e.g. Daily sales deduction" value="${escapeHtml(prefillNote)}"
-                style="color: #334155; height: 20px !important; line-height: 20px !important; font-size: 11px;">
+                style="color: #334155; height: 24px !important; line-height: 24px !important; font-size: 12px;">
         </td>
-        <td style="text-align: center; width: 28px; padding: 0 !important; height: 24px !important; max-height: 24px !important;">
+        <td style="text-align: center; width: 28px; padding: 0 !important; height: 30px !important; max-height: 30px !important;">
             <button type="button" class="cons-excel-del-btn" onclick="removeConsumptionRow('${rowId}')"
                 title="Remove row">✕</button>
         </td>
