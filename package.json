@@ -11,10 +11,10 @@
   "build": {
     "appId": "com.salikrestaurant.system",
     "productName": "Hangout Lounge & Co.",
-    "icon": "assets/logo.jpg",
+    "icon": "build/icon.ico",
     "win": {
       "target": "nsis",
-      "icon": "assets/logo.jpg",
+      "icon": "build/icon.ico",
       "forceCodeSigning": false,
       "verifyUpdateCodeSignature": false,
       "signAndEditExecutable": false

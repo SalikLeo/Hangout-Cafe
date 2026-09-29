@@ -3427,189 +3427,261 @@ function getFilterYearOptions(selectedYear) {
     return options;
 }
 
-// Sales History Filter Handlers
-window.handleSalesDateFilterChange = function() {
-    const filterSelect = document.getElementById('salesDateFilter');
-    const container = document.getElementById('salesTimeValueContainer');
-    if (!filterSelect || !container) return;
+// ==========================================================================
+// Modern Universal Time Filter Controller (Daily, Monthly, Annual, All)
+// ==========================================================================
+const monthNamesList = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+];
 
-    const filter = filterSelect.value;
-    const todayStr = getLocalISODate();
-    const monthStr = getLocalISOMonth();
+window.timeFilterStates = window.timeFilterStates || {};
+
+window.getTimeFilterState = function(prefix) {
+    if (!window.timeFilterStates[prefix]) {
+        const now = new Date();
+        window.timeFilterStates[prefix] = {
+            mode: 'today',
+            date: getLocalISODate(now),
+            month: now.getMonth(),
+            year: now.getFullYear()
+        };
+    }
+    return window.timeFilterStates[prefix];
+};
+
+window.setUniversalTimeFilterMode = function(prefix, mode) {
+    const state = getTimeFilterState(prefix);
+    state.mode = mode;
+
+    // Update Pills UI
+    const widget = document.getElementById(`${prefix}FilterWidget`);
+    if (widget) {
+        widget.querySelectorAll('.time-filter-pill-btn').forEach(btn => {
+            if (btn.getAttribute('data-mode') === mode) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+
+    // Sync hidden select/input for backwards compatibility
+    const legacySelect = document.getElementById(`${prefix}DateFilter`) || document.getElementById(`${prefix}Filter`);
+    if (legacySelect) {
+        legacySelect.value = mode;
+    }
+
+    renderUniversalTimeControls(prefix);
+    triggerUniversalFilterChange(prefix);
+};
+
+window.renderUniversalTimeControls = function(prefix) {
+    const controlsBox = document.getElementById(`${prefix}TimeControls`);
+    if (!controlsBox) return;
+
+    const state = getTimeFilterState(prefix);
+    const mode = state.mode;
     const currentYear = new Date().getFullYear();
 
-    if (filter === 'today') {
-        container.innerHTML = `<input type="date" id="salesDateInput" value="${todayStr}" onchange="loadSales(); updateSalesResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif;">`;
-    } else if (filter === 'month') {
-        container.innerHTML = `<input type="month" id="salesMonthInput" value="${monthStr}" onchange="loadSales(); updateSalesResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif;">`;
-    } else if (filter === 'year') {
-        container.innerHTML = `<select id="salesYearInput" onchange="loadSales(); updateSalesResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif; cursor: pointer;">${getFilterYearOptions(currentYear)}</select>`;
+    if (mode === 'today') {
+        controlsBox.style.display = 'inline-flex';
+        controlsBox.innerHTML = `
+            <button type="button" class="time-filter-arrow-btn" onclick="navigateUniversalTime('${prefix}', -1)" title="Previous Day">‹</button>
+            <input type="date" id="${prefix}DateInput" class="time-filter-native-input" value="${state.date}" onchange="onUniversalDateInputChange('${prefix}', this.value)">
+            <button type="button" class="time-filter-arrow-btn" onclick="navigateUniversalTime('${prefix}', 1)" title="Next Day">›</button>
+            <button type="button" class="time-filter-quick-btn" onclick="setQuickUniversalTime('${prefix}', 'today')">TODAY</button>
+        `;
+    } else if (mode === 'month') {
+        controlsBox.style.display = 'inline-flex';
+        let monthOptions = monthNamesList.map((name, idx) => `<option value="${idx}" ${idx === state.month ? 'selected' : ''}>${name}</option>`).join('');
+        let yearOptions = getFilterYearOptions(state.year);
+        const isCurrentMonth = (state.month === new Date().getMonth() && state.year === currentYear);
+
+        controlsBox.innerHTML = `
+            <button type="button" class="time-filter-arrow-btn" onclick="navigateUniversalTime('${prefix}', -1)" title="Previous Month">‹</button>
+            <select id="${prefix}MonthSelect" class="time-filter-select" onchange="onUniversalMonthSelectChange('${prefix}')">
+                ${monthOptions}
+            </select>
+            <select id="${prefix}MonthYearSelect" class="time-filter-select" onchange="onUniversalMonthSelectChange('${prefix}')">
+                ${yearOptions}
+            </select>
+            <input type="hidden" id="${prefix}MonthInput" value="${state.year}-${String(state.month + 1).padStart(2, '0')}">
+            <button type="button" class="time-filter-arrow-btn" onclick="navigateUniversalTime('${prefix}', 1)" title="Next Month">›</button>
+            <button type="button" class="time-filter-quick-btn" onclick="setQuickUniversalTime('${prefix}', 'month')">THIS MONTH</button>
+            ${!isCurrentMonth ? `<button type="button" class="time-filter-clear-btn" onclick="setQuickUniversalTime('${prefix}', 'month')" title="Reset to current month">✕</button>` : ''}
+        `;
+    } else if (mode === 'year') {
+        controlsBox.style.display = 'inline-flex';
+        let yearOptions = getFilterYearOptions(state.year);
+        const isCurrentYear = (state.year === currentYear);
+
+        controlsBox.innerHTML = `
+            <button type="button" class="time-filter-arrow-btn" onclick="navigateUniversalTime('${prefix}', -1)" title="Previous Year">‹</button>
+            <select id="${prefix}YearInput" class="time-filter-select" onchange="onUniversalYearSelectChange('${prefix}')">
+                ${yearOptions}
+            </select>
+            <button type="button" class="time-filter-arrow-btn" onclick="navigateUniversalTime('${prefix}', 1)" title="Next Year">›</button>
+            <button type="button" class="time-filter-quick-btn" onclick="setQuickUniversalTime('${prefix}', 'year')">THIS YEAR</button>
+            ${!isCurrentYear ? `<button type="button" class="time-filter-clear-btn" onclick="setQuickUniversalTime('${prefix}', 'year')" title="Reset to current year">✕</button>` : ''}
+        `;
     } else {
-        container.innerHTML = '';
-    }
-
-    updateSalesResetBtn();
-    loadSales();
-};
-
-window.updateSalesResetBtn = function() {
-    const filterSelect = document.getElementById('salesDateFilter');
-    const resetBtn = document.getElementById('salesResetFilterBtn');
-    if (!filterSelect || !resetBtn) return;
-
-    const filter = filterSelect.value;
-    const dateInput = document.getElementById('salesDateInput');
-    const todayStr = getLocalISODate();
-
-    let isDefault = (filter === 'today' && (!dateInput || dateInput.value === todayStr));
-    resetBtn.style.display = isDefault ? 'none' : 'inline-flex';
-};
-
-window.resetSalesFilter = function() {
-    const filterSelect = document.getElementById('salesDateFilter');
-    if (filterSelect) {
-        filterSelect.value = 'today';
-        handleSalesDateFilterChange();
+        // 'all' mode
+        controlsBox.style.display = 'none';
+        controlsBox.innerHTML = '';
     }
 };
 
-// Tax History Filter Handlers
-window.handleTaxHistoryFilterChange = function() {
-    const filterSelect = document.getElementById('taxHistoryFilter');
-    const container = document.getElementById('taxHistoryTimeValueContainer');
-    if (!filterSelect || !container) return;
+window.navigateUniversalTime = function(prefix, delta) {
+    const state = getTimeFilterState(prefix);
 
-    const filter = filterSelect.value;
-    const todayStr = getLocalISODate();
-    const monthStr = getLocalISOMonth();
-    const currentYear = new Date().getFullYear();
-
-    if (filter === 'today') {
-        container.innerHTML = `<input type="date" id="taxHistoryDateInput" value="${todayStr}" onchange="loadTaxHistory(); updateTaxHistoryResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif;">`;
-    } else if (filter === 'month') {
-        container.innerHTML = `<input type="month" id="taxHistoryMonthInput" value="${monthStr}" onchange="loadTaxHistory(); updateTaxHistoryResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif;">`;
-    } else if (filter === 'year') {
-        container.innerHTML = `<select id="taxHistoryYearInput" onchange="loadTaxHistory(); updateTaxHistoryResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif; cursor: pointer;">${getFilterYearOptions(currentYear)}</select>`;
-    } else {
-        container.innerHTML = '';
+    if (state.mode === 'today') {
+        const d = parseDateSafe(state.date) || new Date();
+        d.setDate(d.getDate() + delta);
+        state.date = getLocalISODate(d);
+        const input = document.getElementById(`${prefix}DateInput`);
+        if (input) input.value = state.date;
+    } else if (state.mode === 'month') {
+        let m = state.month + delta;
+        let y = state.year;
+        if (m < 0) {
+            m = 11;
+            y--;
+        } else if (m > 11) {
+            m = 0;
+            y++;
+        }
+        state.month = m;
+        state.year = y;
+        renderUniversalTimeControls(prefix);
+    } else if (state.mode === 'year') {
+        state.year += delta;
+        renderUniversalTimeControls(prefix);
     }
 
-    updateTaxHistoryResetBtn();
-    loadTaxHistory();
+    triggerUniversalFilterChange(prefix);
 };
 
-window.updateTaxHistoryResetBtn = function() {
-    const filterSelect = document.getElementById('taxHistoryFilter');
-    const resetBtn = document.getElementById('taxHistoryResetFilterBtn');
-    if (!filterSelect || !resetBtn) return;
+window.setQuickUniversalTime = function(prefix, type) {
+    const state = getTimeFilterState(prefix);
+    const now = new Date();
 
-    const filter = filterSelect.value;
-    const dateInput = document.getElementById('taxHistoryDateInput');
-    const todayStr = getLocalISODate();
+    if (type === 'today') {
+        state.date = getLocalISODate(now);
+        const input = document.getElementById(`${prefix}DateInput`);
+        if (input) input.value = state.date;
+    } else if (type === 'month') {
+        state.month = now.getMonth();
+        state.year = now.getFullYear();
+        renderUniversalTimeControls(prefix);
+    } else if (type === 'year') {
+        state.year = now.getFullYear();
+        renderUniversalTimeControls(prefix);
+    }
 
-    let isDefault = (filter === 'today' && (!dateInput || dateInput.value === todayStr));
-    resetBtn.style.display = isDefault ? 'none' : 'inline-flex';
+    triggerUniversalFilterChange(prefix);
 };
 
-window.resetTaxHistoryFilter = function() {
-    const filterSelect = document.getElementById('taxHistoryFilter');
-    if (filterSelect) {
-        filterSelect.value = 'today';
-        handleTaxHistoryFilterChange();
+window.onUniversalDateInputChange = function(prefix, val) {
+    const state = getTimeFilterState(prefix);
+    state.date = val || getLocalISODate();
+    triggerUniversalFilterChange(prefix);
+};
+
+window.onUniversalMonthSelectChange = function(prefix) {
+    const state = getTimeFilterState(prefix);
+    const mSelect = document.getElementById(`${prefix}MonthSelect`);
+    const ySelect = document.getElementById(`${prefix}MonthYearSelect`);
+    if (mSelect) state.month = parseInt(mSelect.value, 10);
+    if (ySelect) state.year = parseInt(ySelect.value, 10);
+
+    const hiddenMonthInput = document.getElementById(`${prefix}MonthInput`);
+    if (hiddenMonthInput) {
+        hiddenMonthInput.value = `${state.year}-${String(state.month + 1).padStart(2, '0')}`;
+    }
+
+    triggerUniversalFilterChange(prefix);
+};
+
+window.onUniversalYearSelectChange = function(prefix) {
+    const state = getTimeFilterState(prefix);
+    const ySelect = document.getElementById(`${prefix}YearInput`);
+    if (ySelect) state.year = parseInt(ySelect.value, 10);
+    triggerUniversalFilterChange(prefix);
+};
+
+window.triggerUniversalFilterChange = function(prefix) {
+    if (prefix === 'sales') {
+        if (typeof window.loadSales === 'function') window.loadSales();
+    } else if (prefix === 'itemsSales') {
+        if (typeof window.loadItemsSales === 'function') window.loadItemsSales();
+    } else if (prefix === 'expense') {
+        if (typeof window.loadExpenses === 'function') window.loadExpenses();
+    } else if (prefix === 'consumption') {
+        if (typeof window.renderConsumptionHistoryList === 'function') window.renderConsumptionHistoryList();
+    } else if (prefix === 'consumptionLog') {
+        if (typeof window.renderConsumptionHistoryList === 'function') window.renderConsumptionHistoryList();
+    } else if (prefix === 'taxHistory') {
+        if (typeof window.loadTaxHistory === 'function') window.loadTaxHistory();
+    } else if (prefix === 'table') {
+        const tableFilterType = document.getElementById('tableTimeFilterType');
+        const state = getTimeFilterState(prefix);
+        if (tableFilterType) {
+            tableFilterType.value = (state.mode === 'today' ? 'daily' : (state.mode === 'month' ? 'monthly' : (state.mode === 'year' ? 'annual' : 'alltime')));
+        }
+        if (typeof window.loadTables === 'function') window.loadTables();
     }
 };
 
-// Items Sales Filter Handlers
-window.handleItemsSalesDateFilterChange = function() {
-    const filterSelect = document.getElementById('itemsSalesDateFilter');
-    const container = document.getElementById('itemsSalesTimeValueContainer');
-    if (!filterSelect || !container) return;
-
-    const filter = filterSelect.value;
-    const todayStr = getLocalISODate();
-    const monthStr = getLocalISOMonth();
-    const currentYear = new Date().getFullYear();
-
-    if (filter === 'today') {
-        container.innerHTML = `<input type="date" id="itemsSalesDateInput" value="${todayStr}" onchange="loadItemsSales(); updateItemsSalesResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif;">`;
-    } else if (filter === 'month') {
-        container.innerHTML = `<input type="month" id="itemsSalesMonthInput" value="${monthStr}" onchange="loadItemsSales(); updateItemsSalesResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif;">`;
-    } else if (filter === 'year') {
-        container.innerHTML = `<select id="itemsSalesYearInput" onchange="loadItemsSales(); updateItemsSalesResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif; cursor: pointer;">${getFilterYearOptions(currentYear)}</select>`;
-    } else {
-        container.innerHTML = '';
-    }
-
-    updateItemsSalesResetBtn();
-    loadItemsSales();
+window.initAllUniversalTimeFilters = function() {
+    ['sales', 'itemsSales', 'expense', 'consumption', 'consumptionLog', 'table'].forEach(prefix => {
+        const widget = document.getElementById(`${prefix}FilterWidget`);
+        if (widget) {
+            renderUniversalTimeControls(prefix);
+        }
+    });
 };
 
-window.updateItemsSalesResetBtn = function() {
-    const filterSelect = document.getElementById('itemsSalesDateFilter');
-    const resetBtn = document.getElementById('itemsSalesResetFilterBtn');
-    if (!filterSelect || !resetBtn) return;
-
-    const filter = filterSelect.value;
-    const dateInput = document.getElementById('itemsSalesDateInput');
-    const todayStr = getLocalISODate();
-
-    let isDefault = (filter === 'today' && (!dateInput || dateInput.value === todayStr));
-    resetBtn.style.display = isDefault ? 'none' : 'inline-flex';
-};
-
-window.resetItemsSalesFilter = function() {
-    const filterSelect = document.getElementById('itemsSalesDateFilter');
-    if (filterSelect) {
-        filterSelect.value = 'today';
-        handleItemsSalesDateFilterChange();
+window.navigateConsumptionDate = function(delta) {
+    const input = document.getElementById('consumptionDate');
+    if (!input) return;
+    const current = parseDateSafe(input.value) || new Date();
+    current.setDate(current.getDate() + delta);
+    input.value = getLocalISODate(current);
+    if (typeof handleConsumptionModalDateChange === 'function') {
+        handleConsumptionModalDateChange();
     }
 };
 
-// Expense Filter Handlers
-window.handleExpenseDateFilterChange = function() {
-    const filterSelect = document.getElementById('expenseDateFilter');
-    const container = document.getElementById('expenseTimeValueContainer');
-    if (!filterSelect || !container) return;
+// Legacy Compatibility Wrappers
+window.handleSalesDateFilterChange = () => setUniversalTimeFilterMode('sales', document.getElementById('salesDateFilter')?.value || 'today');
+window.updateSalesResetBtn = () => {};
+window.resetSalesFilter = () => setUniversalTimeFilterMode('sales', 'today');
 
-    const filter = filterSelect.value;
-    const todayStr = getLocalISODate();
-    const monthStr = getLocalISOMonth();
-    const currentYear = new Date().getFullYear();
+window.handleTaxHistoryFilterChange = () => setUniversalTimeFilterMode('taxHistory', document.getElementById('taxHistoryFilter')?.value || 'today');
+window.updateTaxHistoryResetBtn = () => {};
+window.resetTaxHistoryFilter = () => setUniversalTimeFilterMode('taxHistory', 'today');
 
-    if (filter === 'today') {
-        container.innerHTML = `<input type="date" id="expenseDateInput" value="${todayStr}" onchange="loadExpenses(); updateExpenseResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif;">`;
-    } else if (filter === 'month') {
-        container.innerHTML = `<input type="month" id="expenseMonthInput" value="${monthStr}" onchange="loadExpenses(); updateExpenseResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif;">`;
-    } else if (filter === 'year') {
-        container.innerHTML = `<select id="expenseYearInput" onchange="loadExpenses(); updateExpenseResetBtn();" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; outline: none; font-family: 'Inter', sans-serif; cursor: pointer;">${getFilterYearOptions(currentYear)}</select>`;
-    } else {
-        container.innerHTML = '';
-    }
+window.handleItemsSalesDateFilterChange = () => setUniversalTimeFilterMode('itemsSales', document.getElementById('itemsSalesDateFilter')?.value || 'today');
+window.updateItemsSalesResetBtn = () => {};
+window.resetItemsSalesFilter = () => setUniversalTimeFilterMode('itemsSales', 'today');
 
-    updateExpenseResetBtn();
-    loadExpenses();
+window.handleExpenseDateFilterChange = () => setUniversalTimeFilterMode('expense', document.getElementById('expenseDateFilter')?.value || 'today');
+window.updateExpenseResetBtn = () => {};
+window.resetExpenseFilter = () => setUniversalTimeFilterMode('expense', 'today');
+
+window.handleConsumptionDateFilterChange = () => setUniversalTimeFilterMode('consumption', document.getElementById('consumptionDateFilter')?.value || 'today');
+window.updateConsumptionResetBtn = () => {};
+window.resetConsumptionFilter = () => setUniversalTimeFilterMode('consumption', 'today');
+
+window.handleTableTimeFilterTypeChange = function() {
+    const filterSelect = document.getElementById('tableTimeFilterType');
+    const filterType = filterSelect ? filterSelect.value : 'daily';
+    const mode = (filterType === 'daily' ? 'today' : (filterType === 'monthly' ? 'month' : (filterType === 'annual' ? 'year' : 'all')));
+    setUniversalTimeFilterMode('table', mode);
 };
-
-window.updateExpenseResetBtn = function() {
-    const filterSelect = document.getElementById('expenseDateFilter');
-    const resetBtn = document.getElementById('expenseResetFilterBtn');
-    if (!filterSelect || !resetBtn) return;
-
-    const filter = filterSelect.value;
-    const dateInput = document.getElementById('expenseDateInput');
-    const todayStr = getLocalISODate();
-
-    let isDefault = (filter === 'today' && (!dateInput || dateInput.value === todayStr));
-    resetBtn.style.display = isDefault ? 'none' : 'inline-flex';
-};
-
-window.resetExpenseFilter = function() {
-    const filterSelect = document.getElementById('expenseDateFilter');
-    if (filterSelect) {
-        filterSelect.value = 'today';
-        handleExpenseDateFilterChange();
-    }
-};
+window.updateTableResetBtn = () => {};
+window.resetTableTimeFilter = () => setUniversalTimeFilterMode('table', 'today');
 
 window.loadSales = function loadSales() {
     const sales = Storage.get('sales') || [];
@@ -9136,48 +9208,14 @@ window.closeConsumptionHistoryModal = function closeConsumptionHistoryModal() {
     switchStockView('inventory');
 };
 
-// Consumption Date Filters
+// Consumption Date Filters (Delegated to Universal Filter)
 window.handleConsumptionDateFilterChange = function handleConsumptionDateFilterChange() {
-    const filterSelect = document.getElementById('consumptionDateFilter');
-    const container = document.getElementById('consumptionTimeValueContainer');
-    if (!filterSelect || !container) return;
-
-    const filter = filterSelect.value;
-    const todayStr = getLocalISODate();
-    const monthStr = getLocalISOMonth();
-    const currentYear = new Date().getFullYear();
-
-    if (filter === 'today') {
-        container.innerHTML = `<input type="date" id="consumptionDateInput" value="${todayStr}" onchange="renderConsumptionHistoryList(); updateConsumptionResetBtn();" style="padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 13.5px; background: white; outline: none; font-family: 'Inter', sans-serif;">`;
-    } else if (filter === 'month') {
-        container.innerHTML = `<input type="month" id="consumptionMonthInput" value="${monthStr}" onchange="renderConsumptionHistoryList(); updateConsumptionResetBtn();" style="padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 13.5px; background: white; outline: none; font-family: 'Inter', sans-serif;">`;
-    } else if (filter === 'year') {
-        container.innerHTML = `<select id="consumptionYearInput" onchange="renderConsumptionHistoryList(); updateConsumptionResetBtn();" style="padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 13.5px; background: white; outline: none; font-family: 'Inter', sans-serif; cursor: pointer;">${getFilterYearOptions(currentYear)}</select>`;
-    } else {
-        container.innerHTML = '';
-    }
-
-    updateConsumptionResetBtn();
-    renderConsumptionHistoryList();
+    const filter = document.getElementById('consumptionDateFilter')?.value || 'today';
+    setUniversalTimeFilterMode('consumption', filter);
 };
-
-window.updateConsumptionResetBtn = function updateConsumptionResetBtn() {
-    const filterSelect = document.getElementById('consumptionDateFilter');
-    const resetBtn = document.getElementById('consumptionResetFilterBtn');
-    if (!filterSelect || !resetBtn) return;
-
-    const filter = filterSelect.value;
-    const dateInput = document.getElementById('consumptionDateInput');
-    const todayStr = getLocalISODate();
-
-    let isDefault = (filter === 'today' && (!dateInput || dateInput.value === todayStr));
-    resetBtn.style.display = isDefault ? 'none' : 'inline-flex';
-};
-
+window.updateConsumptionResetBtn = function updateConsumptionResetBtn() {};
 window.resetConsumptionFilter = function resetConsumptionFilter() {
-    const filterSelect = document.getElementById('consumptionDateFilter');
-    if (filterSelect) filterSelect.value = 'today';
-    handleConsumptionDateFilterChange();
+    setUniversalTimeFilterMode('consumption', 'today');
 };
 
 window.renderConsumptionHistoryList = function renderConsumptionHistoryList() {
@@ -10449,58 +10487,15 @@ function isOrderInTableTimeFilter(orderDateStr, filterType, filterValue) {
 
 window.handleTableTimeFilterTypeChange = function() {
     const filterSelect = document.getElementById('tableTimeFilterType');
-    const container = document.getElementById('tableTimeValueContainer');
-    if (!filterSelect || !container) return;
-
-    const filterType = filterSelect.value;
-    const todayStr = getLocalISODate();
-    const monthStr = getLocalISOMonth();
-    const currentYear = new Date().getFullYear();
-
-    container.innerHTML = '';
-
-    if (filterType === 'daily') {
-        container.innerHTML = `
-            <label style="font-size: 12px; font-weight: 600; color: #4b5563; font-family: 'Inter', sans-serif;">Select Date</label>
-            <input type="date" id="tableTimeDateInput" value="${todayStr}" onchange="loadTables(); updateTableResetBtn();" style="padding: 8px 12px; border: 1.5px solid #d1d5db; border-radius: 8px; font-size: 14px; outline: none; font-family: 'Inter', sans-serif; height: 38px;">
-        `;
-    } else if (filterType === 'monthly') {
-        container.innerHTML = `
-            <label style="font-size: 12px; font-weight: 600; color: #4b5563; font-family: 'Inter', sans-serif;">Select Month</label>
-            <input type="month" id="tableTimeMonthInput" value="${monthStr}" onchange="loadTables(); updateTableResetBtn();" style="padding: 8px 12px; border: 1.5px solid #d1d5db; border-radius: 8px; font-size: 14px; outline: none; font-family: 'Inter', sans-serif; height: 38px;">
-        `;
-    } else if (filterType === 'annual') {
-        container.innerHTML = `
-            <label style="font-size: 12px; font-weight: 600; color: #4b5563; font-family: 'Inter', sans-serif;">Select Year</label>
-            <select id="tableTimeYearInput" onchange="loadTables(); updateTableResetBtn();" style="padding: 8px 12px; border: 1.5px solid #d1d5db; border-radius: 8px; font-size: 14px; outline: none; background: white; font-family: 'Inter', sans-serif; height: 38px; cursor: pointer;">
-                ${getFilterYearOptions(currentYear)}
-            </select>
-        `;
-    }
-
-    updateTableResetBtn();
-    loadTables();
+    const filterType = filterSelect ? filterSelect.value : 'daily';
+    const mode = (filterType === 'daily' ? 'today' : (filterType === 'monthly' ? 'month' : (filterType === 'annual' ? 'year' : 'all')));
+    setUniversalTimeFilterMode('table', mode);
 };
 
-window.updateTableResetBtn = function() {
-    const filterSelect = document.getElementById('tableTimeFilterType');
-    const resetBtn = document.getElementById('tableResetFilterBtn');
-    if (!filterSelect || !resetBtn) return;
-
-    const filterType = filterSelect.value;
-    const dateInput = document.getElementById('tableTimeDateInput');
-    const todayStr = getLocalISODate();
-
-    let isDefault = (filterType === 'daily' && (!dateInput || dateInput.value === todayStr));
-    resetBtn.style.display = isDefault ? 'none' : 'inline-flex';
-};
+window.updateTableResetBtn = function() {};
 
 window.resetTableTimeFilter = function() {
-    const filterSelect = document.getElementById('tableTimeFilterType');
-    if (filterSelect) {
-        filterSelect.value = 'daily';
-        handleTableTimeFilterTypeChange();
-    }
+    setUniversalTimeFilterMode('table', 'today');
 };
 
 function toggleOrdersRow(tableId, parentTr) {
@@ -10551,13 +10546,13 @@ function loadTables() {
     const timeFilterType = document.getElementById('tableTimeFilterType')?.value || 'alltime';
     let timeFilterValue = '';
     if (timeFilterType === 'daily') {
-        timeFilterValue = document.getElementById('tableTimeDateInput')?.value || '';
+        timeFilterValue = document.getElementById('tableDateInput')?.value || document.getElementById('tableTimeDateInput')?.value || '';
     } else if (timeFilterType === 'weekly') {
         timeFilterValue = document.getElementById('tableTimeWeekInput')?.value || '';
     } else if (timeFilterType === 'monthly') {
-        timeFilterValue = document.getElementById('tableTimeMonthInput')?.value || '';
+        timeFilterValue = document.getElementById('tableMonthInput')?.value || document.getElementById('tableTimeMonthInput')?.value || '';
     } else if (timeFilterType === 'annual') {
-        timeFilterValue = document.getElementById('tableTimeYearInput')?.value || '';
+        timeFilterValue = document.getElementById('tableYearInput')?.value || document.getElementById('tableTimeYearInput')?.value || '';
     }
 
     // Match orders for each table and compute aggregate statistics
@@ -16531,10 +16526,12 @@ onDOMReady(() => {
     initializeMenuStructure();
 
     // Initialize unified dynamic time filters
+    if (typeof initAllUniversalTimeFilters === 'function') initAllUniversalTimeFilters();
     if (typeof handleSalesDateFilterChange === 'function') handleSalesDateFilterChange();
     if (typeof handleTaxHistoryFilterChange === 'function') handleTaxHistoryFilterChange();
     if (typeof handleItemsSalesDateFilterChange === 'function') handleItemsSalesDateFilterChange();
     if (typeof handleExpenseDateFilterChange === 'function') handleExpenseDateFilterChange();
+    if (typeof handleConsumptionDateFilterChange === 'function') handleConsumptionDateFilterChange();
     if (typeof handleTableTimeFilterTypeChange === 'function') handleTableTimeFilterTypeChange();
 
     // Seed 50 dummy tables data if tables list is less than 40

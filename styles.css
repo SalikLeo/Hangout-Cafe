@@ -4139,3 +4139,154 @@ select.pos-form-control {
 .btn-clear-red:hover {
     background: #b91c1c;
 }
+
+/* ==========================================================================
+   Modern Unified Time Filter Widget (Daily, Monthly, Annual, All)
+   ========================================================================== */
+.time-filter-widget {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.time-filter-pills {
+    display: inline-flex;
+    background: #eef2f6;
+    border-radius: 10px;
+    padding: 3px;
+    border: 1px solid #e2e8f0;
+    gap: 3px;
+    align-items: center;
+}
+
+.time-filter-pill-btn {
+    background: transparent;
+    color: #64748b;
+    font-weight: 500;
+    font-size: 13.5px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+    outline: none;
+    font-family: inherit;
+    line-height: 1.2;
+    user-select: none;
+}
+
+.time-filter-pill-btn:hover {
+    color: #1e293b;
+}
+
+.time-filter-pill-btn.active {
+    background: #ffffff;
+    color: #0f172a;
+    font-weight: 700;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.time-filter-control-box {
+    display: inline-flex;
+    align-items: center;
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 2px 8px;
+    gap: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    height: 38px;
+    box-sizing: border-box;
+}
+
+.time-filter-arrow-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: all 0.15s;
+    outline: none;
+    user-select: none;
+}
+
+.time-filter-arrow-btn:hover {
+    color: #0f172a;
+    background: #f1f5f9;
+}
+
+.time-filter-quick-btn {
+    background: #eef2f6;
+    color: #334155;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    transition: all 0.15s;
+    outline: none;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.time-filter-quick-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.time-filter-native-input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #0f172a;
+    cursor: pointer;
+    padding: 0 4px;
+    height: 100%;
+}
+
+.time-filter-select {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #0f172a;
+    cursor: pointer;
+    padding: 0 4px;
+    height: 100%;
+}
+
+.time-filter-clear-btn {
+    background: transparent;
+    color: #94a3b8;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 2px 4px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: color 0.15s;
+}
+
+.time-filter-clear-btn:hover {
+    color: #ef4444;
+}
