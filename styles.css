@@ -2058,19 +2058,19 @@ input[type="text"].pos-search-input::placeholder {
 }
 
 .order-item-qty-input {
-    width: 52px;
-    height: 28px;
+    width: 66px;
+    height: 30px;
     text-align: center;
     border: 1.5px solid #cbd5e1;
     border-radius: 6px;
-    padding: 0 2px 0 6px;
+    padding: 0 4px 0 8px;
     margin: 0;
-    font-size: 13.5px;
+    font-size: 14px;
     font-weight: 700;
     background: #ffffff;
     color: #0f172a;
     box-sizing: border-box;
-    line-height: 26px;
+    line-height: 28px;
     vertical-align: middle;
 }
 
