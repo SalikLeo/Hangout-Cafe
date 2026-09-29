@@ -866,19 +866,23 @@
                         <div class="filter-section"
                             style="margin-bottom: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 15px; background: #f8f9fa; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                <div class="time-filter-widget" id="salesFilterWidget">
-                                    <input type="hidden" id="salesDateFilter" value="today">
-                                    <div class="time-filter-pills">
-                                        <button type="button" class="time-filter-pill-btn active" data-mode="today" onclick="setUniversalTimeFilterMode('sales', 'today')">Daily</button>
-                                        <button type="button" class="time-filter-pill-btn" data-mode="month" onclick="setUniversalTimeFilterMode('sales', 'month')">Monthly</button>
-                                        <button type="button" class="time-filter-pill-btn" data-mode="year" onclick="setUniversalTimeFilterMode('sales', 'year')">Annual</button>
-                                        <button type="button" class="time-filter-pill-btn" data-mode="all" onclick="setUniversalTimeFilterMode('sales', 'all')">All</button>
+                                <div class="modern-time-filter-wrapper" id="salesTimeFilterWrapper">
+                                    <select id="salesDateFilter" style="display: none;">
+                                        <option value="today" selected>Daily</option>
+                                        <option value="month">Monthly</option>
+                                        <option value="year">Annual</option>
+                                        <option value="all">All Time</option>
+                                    </select>
+                                    <div class="time-pills-group">
+                                        <button type="button" class="time-pill-btn active" data-filter="today" onclick="setModernTimeFilterMode('sales', 'today')">Daily</button>
+                                        <button type="button" class="time-pill-btn" data-filter="month" onclick="setModernTimeFilterMode('sales', 'month')">Monthly</button>
+                                        <button type="button" class="time-pill-btn" data-filter="year" onclick="setModernTimeFilterMode('sales', 'year')">Annual</button>
+                                        <button type="button" class="time-pill-btn" data-filter="all" onclick="setModernTimeFilterMode('sales', 'all')">All</button>
                                     </div>
-                                    <div class="time-filter-control-box" id="salesTimeControls"></div>
+                                    <div id="salesTimeValueContainer" class="time-navigator-container"></div>
+                                    <button id="salesResetFilterBtn" class="btn-reset-filter" title="Reset to today"
+                                        onclick="resetModernTimeFilter('sales')" style="display: none;">✕</button>
                                 </div>
-                                <div id="salesTimeValueContainer" style="display: none;"></div>
-                                <button id="salesResetFilterBtn" class="btn-reset-filter" title="Reset to today"
-                                    onclick="resetSalesFilter()" style="display: none;">✕</button>
                             </div>
 
                             <div style="display: flex; align-items: center; gap: 8px;">
@@ -944,17 +948,25 @@
                     <div id="itemsSalesSection" style="display: none;">
                         <div class="filter-section"
                             style="margin-bottom: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 15px; background: #f8f9fa; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                                <div class="time-filter-widget" id="itemsSalesFilterWidget">
-                                    <input type="hidden" id="itemsSalesDateFilter" value="today">
-                                    <div class="time-filter-pills">
-                                        <button type="button" class="time-filter-pill-btn active" data-mode="today" onclick="setUniversalTimeFilterMode('itemsSales', 'today')">Daily</button>
-                                        <button type="button" class="time-filter-pill-btn" data-mode="month" onclick="setUniversalTimeFilterMode('itemsSales', 'month')">Monthly</button>
-                                        <button type="button" class="time-filter-pill-btn" data-mode="year" onclick="setUniversalTimeFilterMode('itemsSales', 'year')">Annual</button>
-                                        <button type="button" class="time-filter-pill-btn" data-mode="all" onclick="setUniversalTimeFilterMode('itemsSales', 'all')">All</button>
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <div class="modern-time-filter-wrapper" id="itemsSalesTimeFilterWrapper">
+                                    <select id="itemsSalesDateFilter" style="display: none;">
+                                        <option value="today" selected>Daily</option>
+                                        <option value="month">Monthly</option>
+                                        <option value="year">Annual</option>
+                                        <option value="all">All Time</option>
+                                    </select>
+                                    <div class="time-pills-group">
+                                        <button type="button" class="time-pill-btn active" data-filter="today" onclick="setModernTimeFilterMode('itemsSales', 'today')">Daily</button>
+                                        <button type="button" class="time-pill-btn" data-filter="month" onclick="setModernTimeFilterMode('itemsSales', 'month')">Monthly</button>
+                                        <button type="button" class="time-pill-btn" data-filter="year" onclick="setModernTimeFilterMode('itemsSales', 'year')">Annual</button>
+                                        <button type="button" class="time-pill-btn" data-filter="all" onclick="setModernTimeFilterMode('itemsSales', 'all')">All</button>
                                     </div>
-                                    <div class="time-filter-control-box" id="itemsSalesTimeControls"></div>
+                                    <div id="itemsSalesTimeValueContainer" class="time-navigator-container"></div>
+                                    <button id="itemsSalesResetFilterBtn" class="btn-reset-filter" title="Reset to today"
+                                        onclick="resetModernTimeFilter('itemsSales')" style="display: none;">✕</button>
                                 </div>
-                                <div id="itemsSalesTimeValueContainer" style="display: none;"></div>
+                            </div>
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <label style="font-weight: 600; color: #495057; font-size: 14px;">Sort By:</label>
                                 <select id="itemsSalesSortFilter"
@@ -1381,17 +1393,25 @@
                     <h3>Expenses</h3>
                     <div class="filter-section"
                         style="margin-bottom: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 15px; background: #f8f9fa; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                        <div class="time-filter-widget" id="expenseFilterWidget">
-                            <input type="hidden" id="expenseDateFilter" value="today">
-                            <div class="time-filter-pills">
-                                <button type="button" class="time-filter-pill-btn active" data-mode="today" onclick="setUniversalTimeFilterMode('expense', 'today')">Daily</button>
-                                <button type="button" class="time-filter-pill-btn" data-mode="month" onclick="setUniversalTimeFilterMode('expense', 'month')">Monthly</button>
-                                <button type="button" class="time-filter-pill-btn" data-mode="year" onclick="setUniversalTimeFilterMode('expense', 'year')">Annual</button>
-                                <button type="button" class="time-filter-pill-btn" data-mode="all" onclick="setUniversalTimeFilterMode('expense', 'all')">All</button>
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <div class="modern-time-filter-wrapper" id="expenseTimeFilterWrapper">
+                                <select id="expenseDateFilter" style="display: none;">
+                                    <option value="today" selected>Daily</option>
+                                    <option value="month">Monthly</option>
+                                    <option value="year">Annual</option>
+                                    <option value="all">All Time</option>
+                                </select>
+                                <div class="time-pills-group">
+                                    <button type="button" class="time-pill-btn active" data-filter="today" onclick="setModernTimeFilterMode('expense', 'today')">Daily</button>
+                                    <button type="button" class="time-pill-btn" data-filter="month" onclick="setModernTimeFilterMode('expense', 'month')">Monthly</button>
+                                    <button type="button" class="time-pill-btn" data-filter="year" onclick="setModernTimeFilterMode('expense', 'year')">Annual</button>
+                                    <button type="button" class="time-pill-btn" data-filter="all" onclick="setModernTimeFilterMode('expense', 'all')">All</button>
+                                </div>
+                                <div id="expenseTimeValueContainer" class="time-navigator-container"></div>
+                                <button id="expenseResetFilterBtn" class="btn-reset-filter" title="Reset to today"
+                                    onclick="resetModernTimeFilter('expense')" style="display: none;">✕</button>
                             </div>
-                            <div class="time-filter-control-box" id="expenseTimeControls"></div>
                         </div>
-                        <div id="expenseTimeValueContainer" style="display: none;"></div>
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <label style="font-weight: 600; color: #495057; font-size: 14px;">Category:</label>
                             <select id="expenseCategoryFilter"
@@ -1672,12 +1692,13 @@
 
                             <!-- Date Selector (Right) -->
                             <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-                                <label style="font-weight: 700; color: #1e293b; font-size: 13.5px; white-space: nowrap;">📅 Usage Date:</label>
-                                <div class="time-filter-control-box">
-                                    <button type="button" class="time-filter-arrow-btn" onclick="navigateConsumptionDate(-1)" title="Previous Day">‹</button>
-                                    <input type="date" id="consumptionDate" class="time-filter-native-input" onchange="handleConsumptionModalDateChange()" oninput="handleConsumptionModalDateChange()">
-                                    <button type="button" class="time-filter-arrow-btn" onclick="navigateConsumptionDate(1)" title="Next Day">›</button>
-                                    <button type="button" class="time-filter-quick-btn" onclick="resetConsumptionModalDate()">TODAY</button>
+                                <label style="font-weight: 700; color: #1e293b; font-size: 13.5px; white-space: nowrap;">📅 Sales / Usage Date:</label>
+                                <div style="display: inline-flex; align-items: center; gap: 6px;">
+                                    <input type="date" id="consumptionDate" onchange="handleConsumptionModalDateChange()" oninput="handleConsumptionModalDateChange()"
+                                        style="padding: 6px 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-family: inherit; font-weight: 600; color: #0f172a; background: white; height: 36px;">
+                                    <button type="button" id="consumptionModalResetDateBtn" onclick="resetConsumptionModalDate()"
+                                        title="Reset to today's date"
+                                        style="display: none; background: #fee2e2; color: #dc2626; border: 1.5px solid #fca5a5; width: 30px; height: 30px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 700; align-items: center; justify-content: center;">✕</button>
                                 </div>
                             </div>
                         </div>
@@ -1730,17 +1751,25 @@
                         </div>
 
                         <div class="filter-section" style="margin-bottom: 15px; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 12px 16px; background: #f8f9fa; border-radius: 10px; border: 1px solid #e2e8f0;">
-                            <div class="time-filter-widget" id="consumptionFilterWidget">
-                                <input type="hidden" id="consumptionDateFilter" value="today">
-                                <div class="time-filter-pills">
-                                    <button type="button" class="time-filter-pill-btn active" data-mode="today" onclick="setUniversalTimeFilterMode('consumption', 'today')">Daily</button>
-                                    <button type="button" class="time-filter-pill-btn" data-mode="month" onclick="setUniversalTimeFilterMode('consumption', 'month')">Monthly</button>
-                                    <button type="button" class="time-filter-pill-btn" data-mode="year" onclick="setUniversalTimeFilterMode('consumption', 'year')">Annual</button>
-                                    <button type="button" class="time-filter-pill-btn" data-mode="all" onclick="setUniversalTimeFilterMode('consumption', 'all')">All</button>
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <div class="modern-time-filter-wrapper" id="consumptionTimeFilterWrapper">
+                                    <select id="consumptionDateFilter" style="display: none;">
+                                        <option value="today" selected>Daily</option>
+                                        <option value="month">Monthly</option>
+                                        <option value="year">Annual</option>
+                                        <option value="all">All Time</option>
+                                    </select>
+                                    <div class="time-pills-group">
+                                        <button type="button" class="time-pill-btn active" data-filter="today" onclick="setModernTimeFilterMode('consumption', 'today')">Daily</button>
+                                        <button type="button" class="time-pill-btn" data-filter="month" onclick="setModernTimeFilterMode('consumption', 'month')">Monthly</button>
+                                        <button type="button" class="time-pill-btn" data-filter="year" onclick="setModernTimeFilterMode('consumption', 'year')">Annual</button>
+                                        <button type="button" class="time-pill-btn" data-filter="all" onclick="setModernTimeFilterMode('consumption', 'all')">All</button>
+                                    </div>
+                                    <div id="consumptionTimeValueContainer" class="time-navigator-container"></div>
+                                    <button id="consumptionResetFilterBtn" class="btn-reset-filter" title="Reset to today"
+                                        onclick="resetModernTimeFilter('consumption')" style="display: none;">✕</button>
                                 </div>
-                                <div class="time-filter-control-box" id="consumptionTimeControls"></div>
                             </div>
-                            <div id="consumptionTimeValueContainer" style="display: none;"></div>
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <input type="text" id="consumptionPageSearch" placeholder="Search used items by name or note..." oninput="renderConsumptionHistoryList()"
                                     style="padding: 8px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 13.5px; width: 280px; background: white;">
@@ -1807,19 +1836,27 @@
 
                     <div class="table-section" style="margin-top: 18px;">
                         <div class="filter-section" style="margin-bottom: 15px; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 12px 16px; background: #f8f9fa; border-radius: 10px; border: 1px solid #e2e8f0;">
-                            <div class="time-filter-widget" id="consumptionLogFilterWidget">
-                                <input type="hidden" id="consumptionLogDateFilter" value="today">
-                                <div class="time-filter-pills">
-                                    <button type="button" class="time-filter-pill-btn active" data-mode="today" onclick="setUniversalTimeFilterMode('consumptionLog', 'today')">Daily</button>
-                                    <button type="button" class="time-filter-pill-btn" data-mode="month" onclick="setUniversalTimeFilterMode('consumptionLog', 'month')">Monthly</button>
-                                    <button type="button" class="time-filter-pill-btn" data-mode="year" onclick="setUniversalTimeFilterMode('consumptionLog', 'year')">Annual</button>
-                                    <button type="button" class="time-filter-pill-btn" data-mode="all" onclick="setUniversalTimeFilterMode('consumptionLog', 'all')">All</button>
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <div class="modern-time-filter-wrapper" id="consumptionLogsTimeFilterWrapper">
+                                    <select id="consumptionLogsDateFilter" style="display: none;">
+                                        <option value="today" selected>Daily</option>
+                                        <option value="month">Monthly</option>
+                                        <option value="year">Annual</option>
+                                        <option value="all">All Time</option>
+                                    </select>
+                                    <div class="time-pills-group">
+                                        <button type="button" class="time-pill-btn active" data-filter="today" onclick="setModernTimeFilterMode('consumptionLogs', 'today')">Daily</button>
+                                        <button type="button" class="time-pill-btn" data-filter="month" onclick="setModernTimeFilterMode('consumptionLogs', 'month')">Monthly</button>
+                                        <button type="button" class="time-pill-btn" data-filter="year" onclick="setModernTimeFilterMode('consumptionLogs', 'year')">Annual</button>
+                                        <button type="button" class="time-pill-btn" data-filter="all" onclick="setModernTimeFilterMode('consumptionLogs', 'all')">All</button>
+                                    </div>
+                                    <div id="consumptionLogsTimeValueContainer" class="time-navigator-container"></div>
+                                    <button id="consumptionLogsResetFilterBtn" class="btn-reset-filter" title="Reset to today"
+                                        onclick="resetModernTimeFilter('consumptionLogs')" style="display: none;">✕</button>
                                 </div>
-                                <div class="time-filter-control-box" id="consumptionLogTimeControls"></div>
                             </div>
-                            <div id="consumptionLogTimeValueContainer" style="display: none;"></div>
                             <div style="display: flex; align-items: center; gap: 10px;">
-                                <input type="text" id="consumptionPageSearch" placeholder="Search logs by ingredient or note..." oninput="renderConsumptionHistoryList()"
+                                <input type="text" id="consumptionLogSearch" placeholder="Search logs by ingredient or note..." oninput="renderConsumptionHistoryList()"
                                     style="padding: 8px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 13.5px; width: 280px; background: white;">
                             </div>
                         </div>
@@ -2105,22 +2142,34 @@
                 </div>
 
                 <!-- Tables Filter Toolbar -->
-                    <div class="time-filter-widget" id="tableFilterWidget">
-                        <input type="hidden" id="tableTimeFilterType" value="daily">
-                        <div class="time-filter-pills">
-                            <button type="button" class="time-filter-pill-btn active" data-mode="today" onclick="setUniversalTimeFilterMode('table', 'today')">Daily</button>
-                            <button type="button" class="time-filter-pill-btn" data-mode="month" onclick="setUniversalTimeFilterMode('table', 'month')">Monthly</button>
-                            <button type="button" class="time-filter-pill-btn" data-mode="year" onclick="setUniversalTimeFilterMode('table', 'year')">Annual</button>
-                            <button type="button" class="time-filter-pill-btn" data-mode="all" onclick="setUniversalTimeFilterMode('table', 'all')">All</button>
+                <div class="tables-toolbar" style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; background: #f8f9fa; padding: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+                    <!-- Time Filter Selector -->
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <div class="modern-time-filter-wrapper" id="tableTimeFilterWrapper">
+                            <select id="tableTimeFilterType" style="display: none;">
+                                <option value="daily" selected>Daily</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="annual">Annual</option>
+                                <option value="alltime">All-Time</option>
+                            </select>
+                            <div class="time-pills-group">
+                                <button type="button" class="time-pill-btn active" data-filter="today" onclick="setModernTimeFilterMode('table', 'today')">Daily</button>
+                                <button type="button" class="time-pill-btn" data-filter="month" onclick="setModernTimeFilterMode('table', 'month')">Monthly</button>
+                                <button type="button" class="time-pill-btn" data-filter="year" onclick="setModernTimeFilterMode('table', 'year')">Annual</button>
+                                <button type="button" class="time-pill-btn" data-filter="all" onclick="setModernTimeFilterMode('table', 'all')">All</button>
+                            </div>
+                            <div id="tableTimeValueContainer" class="time-navigator-container"></div>
+                            <button id="tableResetFilterBtn" class="btn-reset-filter" title="Reset to today"
+                                onclick="resetModernTimeFilter('table')" style="display: none;">✕</button>
                         </div>
-                        <div class="time-filter-control-box" id="tableTimeControls"></div>
                     </div>
-                    <div id="tableTimeValueContainer" style="display: none;"></div>
                     
                     <!-- Sorting Selector -->
-                    <div style="display: flex; flex-direction: column; gap: 5px;">
-                        <label style="font-size: 12px; font-weight: 600; color: #4b5563; font-family: 'Inter', sans-serif;">Sort By</label>
-                        <select id="tableSortBy" onchange="loadTables()" style="padding: 8px 12px; border: 1.5px solid #d1d5db; border-radius: 8px; font-size: 14px; outline: none; background: white; font-family: 'Inter', sans-serif; height: 38px; cursor: pointer;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="font-weight: 600; color: #495057; font-size: 14px; font-family: 'Inter', sans-serif;">Sort By:</label>
+                        <select id="tableSortBy" onchange="loadTables()" style="padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; outline: none; background: white; font-family: 'Inter', sans-serif; height: 42px; cursor: pointer; min-width: 180px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"
+                            onfocus="this.style.borderColor='#4a90e2'; this.style.boxShadow='0 0 0 3px rgba(74,144,226,0.1)'"
+                            onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)'">
                             <option value="number-asc">Table Number (Asc)</option>
                             <option value="number-desc">Table Number (Desc)</option>
                             <option value="seats-asc">Seats (Asc)</option>
@@ -2133,8 +2182,8 @@
                     </div>
                     
                     <!-- Print Button -->
-                    <div style="display: flex; flex-direction: column; justify-content: flex-end; margin-left: auto;">
-                        <button class="btn-primary" onclick="printTablesReport()" style="height: 38px; padding: 0 15px; font-family: 'Inter', sans-serif; display: flex; align-items: center; gap: 8px; cursor: pointer; border-radius: 8px; border: none; background: #4a90e2; color: white; font-weight: 600; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="display: flex; align-items: center; margin-left: auto;">
+                        <button class="btn-primary" onclick="printTablesReport()" style="height: 42px; padding: 0 18px; font-family: 'Inter', sans-serif; display: flex; align-items: center; gap: 8px; cursor: pointer; border-radius: 8px; border: none; background: #4a90e2; color: white; font-weight: 600; font-size: 14px; box-shadow: 0 2px 4px rgba(74,144,226,0.3);">
                             <span>🖨️</span> Print Report
                         </button>
                     </div>

@@ -3427,38 +3427,40 @@ function getFilterYearOptions(selectedYear) {
     return options;
 }
 
-// ==========================================================================
-// Modern Universal Time Filter Controller (Daily, Monthly, Annual, All)
-// ==========================================================================
-const monthNamesList = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-];
+// ==========================================
+// Modern Unified Time Filter System
+// ==========================================
+window.modernTimeFilterStates = window.modernTimeFilterStates || {};
 
-window.timeFilterStates = window.timeFilterStates || {};
-
-window.getTimeFilterState = function(prefix) {
-    if (!window.timeFilterStates[prefix]) {
-        const now = new Date();
-        window.timeFilterStates[prefix] = {
-            mode: 'today',
-            date: getLocalISODate(now),
-            month: now.getMonth(),
-            year: now.getFullYear()
+window.initModernTimeFilterState = function(prefix, defaultMode = 'today', callback = null) {
+    if (!window.modernTimeFilterStates[prefix]) {
+        window.modernTimeFilterStates[prefix] = {
+            mode: defaultMode,
+            date: new Date(),
+            onChange: callback
         };
+    } else if (callback) {
+        window.modernTimeFilterStates[prefix].onChange = callback;
     }
-    return window.timeFilterStates[prefix];
+    return window.modernTimeFilterStates[prefix];
 };
 
-window.setUniversalTimeFilterMode = function(prefix, mode) {
-    const state = getTimeFilterState(prefix);
-    state.mode = mode;
+window.renderModernTimeFilterUI = function(prefix) {
+    let state = window.modernTimeFilterStates[prefix];
+    if (!state) {
+        state = window.initModernTimeFilterState(prefix);
+    }
 
-    // Update Pills UI
-    const widget = document.getElementById(`${prefix}FilterWidget`);
-    if (widget) {
-        widget.querySelectorAll('.time-filter-pill-btn').forEach(btn => {
-            if (btn.getAttribute('data-mode') === mode) {
+    const selectEl = document.getElementById(prefix === 'table' ? 'tableTimeFilterType' : (prefix === 'taxHistory' ? 'taxHistoryFilter' : `${prefix}DateFilter`));
+    const container = document.getElementById(prefix === 'table' ? 'tableTimeValueContainer' : (prefix === 'taxHistory' ? 'taxHistoryTimeValueContainer' : `${prefix}TimeValueContainer`));
+    const wrapper = document.getElementById(`${prefix}TimeFilterWrapper`);
+
+    // Sync active class on segmented pill buttons
+    if (wrapper) {
+        const pillButtons = wrapper.querySelectorAll('.time-pill-btn');
+        pillButtons.forEach(btn => {
+            const fType = btn.getAttribute('data-filter');
+            if (fType === state.mode || (prefix === 'table' && ((fType === 'today' && state.mode === 'daily') || (fType === 'month' && state.mode === 'monthly') || (fType === 'year' && state.mode === 'annual') || (fType === 'all' && state.mode === 'alltime')))) {
                 btn.classList.add('active');
             } else {
                 btn.classList.remove('active');
@@ -3466,222 +3468,235 @@ window.setUniversalTimeFilterMode = function(prefix, mode) {
         });
     }
 
-    // Sync hidden select/input for backwards compatibility
-    const legacySelect = document.getElementById(`${prefix}DateFilter`) || document.getElementById(`${prefix}Filter`);
-    if (legacySelect) {
-        legacySelect.value = mode;
-    }
-
-    renderUniversalTimeControls(prefix);
-    triggerUniversalFilterChange(prefix);
-};
-
-window.renderUniversalTimeControls = function(prefix) {
-    const controlsBox = document.getElementById(`${prefix}TimeControls`);
-    if (!controlsBox) return;
-
-    const state = getTimeFilterState(prefix);
-    const mode = state.mode;
-    const currentYear = new Date().getFullYear();
-
-    if (mode === 'today') {
-        controlsBox.style.display = 'inline-flex';
-        controlsBox.innerHTML = `
-            <button type="button" class="time-filter-arrow-btn" onclick="navigateUniversalTime('${prefix}', -1)" title="Previous Day">‹</button>
-            <input type="date" id="${prefix}DateInput" class="time-filter-native-input" value="${state.date}" onchange="onUniversalDateInputChange('${prefix}', this.value)">
-            <button type="button" class="time-filter-arrow-btn" onclick="navigateUniversalTime('${prefix}', 1)" title="Next Day">›</button>
-            <button type="button" class="time-filter-quick-btn" onclick="setQuickUniversalTime('${prefix}', 'today')">TODAY</button>
-        `;
-    } else if (mode === 'month') {
-        controlsBox.style.display = 'inline-flex';
-        let monthOptions = monthNamesList.map((name, idx) => `<option value="${idx}" ${idx === state.month ? 'selected' : ''}>${name}</option>`).join('');
-        let yearOptions = getFilterYearOptions(state.year);
-        const isCurrentMonth = (state.month === new Date().getMonth() && state.year === currentYear);
-
-        controlsBox.innerHTML = `
-            <button type="button" class="time-filter-arrow-btn" onclick="navigateUniversalTime('${prefix}', -1)" title="Previous Month">‹</button>
-            <select id="${prefix}MonthSelect" class="time-filter-select" onchange="onUniversalMonthSelectChange('${prefix}')">
-                ${monthOptions}
-            </select>
-            <select id="${prefix}MonthYearSelect" class="time-filter-select" onchange="onUniversalMonthSelectChange('${prefix}')">
-                ${yearOptions}
-            </select>
-            <input type="hidden" id="${prefix}MonthInput" value="${state.year}-${String(state.month + 1).padStart(2, '0')}">
-            <button type="button" class="time-filter-arrow-btn" onclick="navigateUniversalTime('${prefix}', 1)" title="Next Month">›</button>
-            <button type="button" class="time-filter-quick-btn" onclick="setQuickUniversalTime('${prefix}', 'month')">THIS MONTH</button>
-            ${!isCurrentMonth ? `<button type="button" class="time-filter-clear-btn" onclick="setQuickUniversalTime('${prefix}', 'month')" title="Reset to current month">✕</button>` : ''}
-        `;
-    } else if (mode === 'year') {
-        controlsBox.style.display = 'inline-flex';
-        let yearOptions = getFilterYearOptions(state.year);
-        const isCurrentYear = (state.year === currentYear);
-
-        controlsBox.innerHTML = `
-            <button type="button" class="time-filter-arrow-btn" onclick="navigateUniversalTime('${prefix}', -1)" title="Previous Year">‹</button>
-            <select id="${prefix}YearInput" class="time-filter-select" onchange="onUniversalYearSelectChange('${prefix}')">
-                ${yearOptions}
-            </select>
-            <button type="button" class="time-filter-arrow-btn" onclick="navigateUniversalTime('${prefix}', 1)" title="Next Year">›</button>
-            <button type="button" class="time-filter-quick-btn" onclick="setQuickUniversalTime('${prefix}', 'year')">THIS YEAR</button>
-            ${!isCurrentYear ? `<button type="button" class="time-filter-clear-btn" onclick="setQuickUniversalTime('${prefix}', 'year')" title="Reset to current year">✕</button>` : ''}
-        `;
-    } else {
-        // 'all' mode
-        controlsBox.style.display = 'none';
-        controlsBox.innerHTML = '';
-    }
-};
-
-window.navigateUniversalTime = function(prefix, delta) {
-    const state = getTimeFilterState(prefix);
-
-    if (state.mode === 'today') {
-        const d = parseDateSafe(state.date) || new Date();
-        d.setDate(d.getDate() + delta);
-        state.date = getLocalISODate(d);
-        const input = document.getElementById(`${prefix}DateInput`);
-        if (input) input.value = state.date;
-    } else if (state.mode === 'month') {
-        let m = state.month + delta;
-        let y = state.year;
-        if (m < 0) {
-            m = 11;
-            y--;
-        } else if (m > 11) {
-            m = 0;
-            y++;
+    // Sync hidden compatibility select
+    if (selectEl) {
+        if (prefix === 'table') {
+            const tableVal = (state.mode === 'today' || state.mode === 'daily') ? 'daily' : ((state.mode === 'month' || state.mode === 'monthly') ? 'monthly' : ((state.mode === 'year' || state.mode === 'annual') ? 'annual' : 'alltime'));
+            selectEl.value = tableVal;
+        } else {
+            selectEl.value = state.mode;
         }
-        state.month = m;
-        state.year = y;
-        renderUniversalTimeControls(prefix);
-    } else if (state.mode === 'year') {
-        state.year += delta;
-        renderUniversalTimeControls(prefix);
     }
 
-    triggerUniversalFilterChange(prefix);
-};
+    if (!container) return;
 
-window.setQuickUniversalTime = function(prefix, type) {
-    const state = getTimeFilterState(prefix);
+    const mode = (prefix === 'table') ? (state.mode === 'daily' ? 'today' : (state.mode === 'monthly' ? 'month' : (state.mode === 'annual' ? 'year' : 'all'))) : state.mode;
     const now = new Date();
 
-    if (type === 'today') {
-        state.date = getLocalISODate(now);
-        const input = document.getElementById(`${prefix}DateInput`);
-        if (input) input.value = state.date;
-    } else if (type === 'month') {
-        state.month = now.getMonth();
-        state.year = now.getFullYear();
-        renderUniversalTimeControls(prefix);
-    } else if (type === 'year') {
-        state.year = now.getFullYear();
-        renderUniversalTimeControls(prefix);
+    if (mode === 'today') {
+        const year = state.date.getFullYear();
+        const month = String(state.date.getMonth() + 1).padStart(2, '0');
+        const day = String(state.date.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+        const isToday = (dateStr === getLocalISODate());
+
+        container.innerHTML = `
+            <div class="time-nav-box">
+                <button type="button" class="time-nav-arrow" onclick="stepModernTimeFilter('${prefix}', -1)" title="Previous Day">‹</button>
+                <input type="date" id="${prefix === 'table' ? 'tableTimeDateInput' : (prefix === 'taxHistory' ? 'taxHistoryDateInput' : `${prefix}DateInput`)}"
+                    value="${dateStr}"
+                    onchange="onModernTimeDateInputChange('${prefix}', this.value)"
+                    class="time-nav-date-input">
+                <button type="button" class="time-nav-arrow" onclick="stepModernTimeFilter('${prefix}', 1)" title="Next Day">›</button>
+                <button type="button" class="time-nav-quick-btn" onclick="jumpModernTimeFilterToday('${prefix}')">TODAY</button>
+                ${!isToday ? `<button type="button" class="time-nav-reset-icon" onclick="resetModernTimeFilter('${prefix}')" title="Reset to today">✕</button>` : ''}
+            </div>
+        `;
+    } else if (mode === 'month') {
+        const year = state.date.getFullYear();
+        const monthNum = state.date.getMonth() + 1;
+        const monthStr = String(monthNum).padStart(2, '0');
+        const ymStr = `${year}-${monthStr}`;
+        const isThisMonth = (year === now.getFullYear() && state.date.getMonth() === now.getMonth());
+
+        container.innerHTML = `
+            <div class="time-nav-box">
+                <input type="month" id="${prefix === 'table' ? 'tableTimeMonthInput' : (prefix === 'taxHistory' ? 'taxHistoryMonthInput' : `${prefix}MonthInput`)}" value="${ymStr}" style="display: none;">
+                <button type="button" class="time-nav-arrow" onclick="stepModernTimeFilter('${prefix}', -1)" title="Previous Month">‹</button>
+                <select id="${prefix}MonthSelect" class="time-nav-select" onchange="onModernTimeMonthSelectChange('${prefix}')">
+                    <option value="1" ${monthNum === 1 ? 'selected' : ''}>January</option>
+                    <option value="2" ${monthNum === 2 ? 'selected' : ''}>February</option>
+                    <option value="3" ${monthNum === 3 ? 'selected' : ''}>March</option>
+                    <option value="4" ${monthNum === 4 ? 'selected' : ''}>April</option>
+                    <option value="5" ${monthNum === 5 ? 'selected' : ''}>May</option>
+                    <option value="6" ${monthNum === 6 ? 'selected' : ''}>June</option>
+                    <option value="7" ${monthNum === 7 ? 'selected' : ''}>July</option>
+                    <option value="8" ${monthNum === 8 ? 'selected' : ''}>August</option>
+                    <option value="9" ${monthNum === 9 ? 'selected' : ''}>September</option>
+                    <option value="10" ${monthNum === 10 ? 'selected' : ''}>October</option>
+                    <option value="11" ${monthNum === 11 ? 'selected' : ''}>November</option>
+                    <option value="12" ${monthNum === 12 ? 'selected' : ''}>December</option>
+                </select>
+                <select id="${prefix}YearSelect" class="time-nav-select" onchange="onModernTimeMonthSelectChange('${prefix}')">
+                    ${getFilterYearOptions(year)}
+                </select>
+                <button type="button" class="time-nav-arrow" onclick="stepModernTimeFilter('${prefix}', 1)" title="Next Month">›</button>
+                <button type="button" class="time-nav-quick-btn" onclick="jumpModernTimeFilterThisMonth('${prefix}')">THIS MONTH</button>
+                ${!isThisMonth ? `<button type="button" class="time-nav-reset-icon" onclick="resetModernTimeFilter('${prefix}')" title="Reset to this month">✕</button>` : ''}
+            </div>
+        `;
+    } else if (mode === 'year') {
+        const year = state.date.getFullYear();
+        const isThisYear = (year === now.getFullYear());
+
+        container.innerHTML = `
+            <div class="time-nav-box">
+                <button type="button" class="time-nav-arrow" onclick="stepModernTimeFilter('${prefix}', -1)" title="Previous Year">‹</button>
+                <select id="${prefix === 'table' ? 'tableTimeYearInput' : (prefix === 'taxHistory' ? 'taxHistoryYearInput' : `${prefix}YearInput`)}" class="time-nav-select" onchange="onModernTimeYearChange('${prefix}', this.value)">
+                    ${getFilterYearOptions(year)}
+                </select>
+                <button type="button" class="time-nav-arrow" onclick="stepModernTimeFilter('${prefix}', 1)" title="Next Year">›</button>
+                <button type="button" class="time-nav-quick-btn" onclick="jumpModernTimeFilterThisYear('${prefix}')">THIS YEAR</button>
+                ${!isThisYear ? `<button type="button" class="time-nav-reset-icon" onclick="resetModernTimeFilter('${prefix}')" title="Reset to this year">✕</button>` : ''}
+            </div>
+        `;
+    } else {
+        container.innerHTML = '';
     }
 
-    triggerUniversalFilterChange(prefix);
+    const legacyResetBtn = document.getElementById(prefix === 'table' ? 'tableResetFilterBtn' : (prefix === 'taxHistory' ? 'taxHistoryResetFilterBtn' : `${prefix}ResetFilterBtn`));
+    if (legacyResetBtn) legacyResetBtn.style.display = 'none';
 };
 
-window.onUniversalDateInputChange = function(prefix, val) {
-    const state = getTimeFilterState(prefix);
-    state.date = val || getLocalISODate();
-    triggerUniversalFilterChange(prefix);
+window.setModernTimeFilterMode = function(prefix, mode) {
+    let state = window.modernTimeFilterStates[prefix];
+    if (!state) state = window.initModernTimeFilterState(prefix);
+
+    state.mode = (prefix === 'table' && mode === 'today') ? 'daily' : ((prefix === 'table' && mode === 'month') ? 'monthly' : ((prefix === 'table' && mode === 'year') ? 'annual' : ((prefix === 'table' && mode === 'all') ? 'alltime' : mode)));
+    state.date = new Date();
+    window.renderModernTimeFilterUI(prefix);
+    triggerModernTimeFilterCallback(prefix);
 };
 
-window.onUniversalMonthSelectChange = function(prefix) {
-    const state = getTimeFilterState(prefix);
-    const mSelect = document.getElementById(`${prefix}MonthSelect`);
-    const ySelect = document.getElementById(`${prefix}MonthYearSelect`);
-    if (mSelect) state.month = parseInt(mSelect.value, 10);
-    if (ySelect) state.year = parseInt(ySelect.value, 10);
+window.stepModernTimeFilter = function(prefix, delta) {
+    let state = window.modernTimeFilterStates[prefix];
+    if (!state) state = window.initModernTimeFilterState(prefix);
 
-    const hiddenMonthInput = document.getElementById(`${prefix}MonthInput`);
-    if (hiddenMonthInput) {
-        hiddenMonthInput.value = `${state.year}-${String(state.month + 1).padStart(2, '0')}`;
+    const mode = (prefix === 'table') ? (state.mode === 'daily' ? 'today' : (state.mode === 'monthly' ? 'month' : (state.mode === 'annual' ? 'year' : 'all'))) : state.mode;
+
+    if (mode === 'today') {
+        state.date.setDate(state.date.getDate() + delta);
+    } else if (mode === 'month') {
+        state.date.setMonth(state.date.getMonth() + delta);
+    } else if (mode === 'year') {
+        state.date.setFullYear(state.date.getFullYear() + delta);
     }
 
-    triggerUniversalFilterChange(prefix);
+    window.renderModernTimeFilterUI(prefix);
+    triggerModernTimeFilterCallback(prefix);
 };
 
-window.onUniversalYearSelectChange = function(prefix) {
-    const state = getTimeFilterState(prefix);
-    const ySelect = document.getElementById(`${prefix}YearInput`);
-    if (ySelect) state.year = parseInt(ySelect.value, 10);
-    triggerUniversalFilterChange(prefix);
+window.jumpModernTimeFilterToday = function(prefix) {
+    let state = window.modernTimeFilterStates[prefix];
+    if (!state) state = window.initModernTimeFilterState(prefix);
+    state.mode = (prefix === 'table') ? 'daily' : 'today';
+    state.date = new Date();
+    window.renderModernTimeFilterUI(prefix);
+    triggerModernTimeFilterCallback(prefix);
 };
 
-window.triggerUniversalFilterChange = function(prefix) {
-    if (prefix === 'sales') {
-        if (typeof window.loadSales === 'function') window.loadSales();
-    } else if (prefix === 'itemsSales') {
-        if (typeof window.loadItemsSales === 'function') window.loadItemsSales();
-    } else if (prefix === 'expense') {
-        if (typeof window.loadExpenses === 'function') window.loadExpenses();
-    } else if (prefix === 'consumption') {
-        if (typeof window.renderConsumptionHistoryList === 'function') window.renderConsumptionHistoryList();
-    } else if (prefix === 'consumptionLog') {
-        if (typeof window.renderConsumptionHistoryList === 'function') window.renderConsumptionHistoryList();
-    } else if (prefix === 'taxHistory') {
-        if (typeof window.loadTaxHistory === 'function') window.loadTaxHistory();
-    } else if (prefix === 'table') {
-        const tableFilterType = document.getElementById('tableTimeFilterType');
-        const state = getTimeFilterState(prefix);
-        if (tableFilterType) {
-            tableFilterType.value = (state.mode === 'today' ? 'daily' : (state.mode === 'month' ? 'monthly' : (state.mode === 'year' ? 'annual' : 'alltime')));
-        }
-        if (typeof window.loadTables === 'function') window.loadTables();
+window.jumpModernTimeFilterThisMonth = function(prefix) {
+    let state = window.modernTimeFilterStates[prefix];
+    if (!state) state = window.initModernTimeFilterState(prefix);
+    state.date = new Date();
+    window.renderModernTimeFilterUI(prefix);
+    triggerModernTimeFilterCallback(prefix);
+};
+
+window.jumpModernTimeFilterThisYear = function(prefix) {
+    let state = window.modernTimeFilterStates[prefix];
+    if (!state) state = window.initModernTimeFilterState(prefix);
+    state.date = new Date();
+    window.renderModernTimeFilterUI(prefix);
+    triggerModernTimeFilterCallback(prefix);
+};
+
+window.resetModernTimeFilter = function(prefix) {
+    let state = window.modernTimeFilterStates[prefix];
+    if (!state) state = window.initModernTimeFilterState(prefix);
+    state.mode = (prefix === 'table') ? 'daily' : 'today';
+    state.date = new Date();
+    window.renderModernTimeFilterUI(prefix);
+    triggerModernTimeFilterCallback(prefix);
+};
+
+window.onModernTimeDateInputChange = function(prefix, val) {
+    let state = window.modernTimeFilterStates[prefix];
+    if (!state) state = window.initModernTimeFilterState(prefix);
+
+    if (val) {
+        const [y, m, d] = val.split('-').map(Number);
+        state.date = new Date(y, m - 1, d, 12, 0, 0);
     }
+    window.renderModernTimeFilterUI(prefix);
+    triggerModernTimeFilterCallback(prefix);
 };
 
-window.initAllUniversalTimeFilters = function() {
-    ['sales', 'itemsSales', 'expense', 'consumption', 'consumptionLog', 'table'].forEach(prefix => {
-        const widget = document.getElementById(`${prefix}FilterWidget`);
-        if (widget) {
-            renderUniversalTimeControls(prefix);
-        }
-    });
-};
+window.onModernTimeMonthSelectChange = function(prefix) {
+    let state = window.modernTimeFilterStates[prefix];
+    if (!state) state = window.initModernTimeFilterState(prefix);
 
-window.navigateConsumptionDate = function(delta) {
-    const input = document.getElementById('consumptionDate');
-    if (!input) return;
-    const current = parseDateSafe(input.value) || new Date();
-    current.setDate(current.getDate() + delta);
-    input.value = getLocalISODate(current);
-    if (typeof handleConsumptionModalDateChange === 'function') {
-        handleConsumptionModalDateChange();
+    const monthEl = document.getElementById(`${prefix}MonthSelect`);
+    const yearEl = document.getElementById(`${prefix}YearSelect`);
+    if (monthEl && yearEl) {
+        const m = parseInt(monthEl.value, 10);
+        const y = parseInt(yearEl.value, 10);
+        state.date = new Date(y, m - 1, 1, 12, 0, 0);
     }
+    window.renderModernTimeFilterUI(prefix);
+    triggerModernTimeFilterCallback(prefix);
 };
 
-// Legacy Compatibility Wrappers
-window.handleSalesDateFilterChange = () => setUniversalTimeFilterMode('sales', document.getElementById('salesDateFilter')?.value || 'today');
+window.onModernTimeYearChange = function(prefix, val) {
+    let state = window.modernTimeFilterStates[prefix];
+    if (!state) state = window.initModernTimeFilterState(prefix);
+
+    const y = parseInt(val, 10);
+    if (!isNaN(y)) {
+        state.date = new Date(y, 0, 1, 12, 0, 0);
+    }
+    window.renderModernTimeFilterUI(prefix);
+    triggerModernTimeFilterCallback(prefix);
+};
+
+function triggerModernTimeFilterCallback(prefix) {
+    const state = window.modernTimeFilterStates[prefix];
+    if (state && typeof state.onChange === 'function') {
+        state.onChange();
+        return;
+    }
+    if (prefix === 'sales' && window.loadSales) window.loadSales();
+    else if (prefix === 'itemsSales' && window.loadItemsSales) window.loadItemsSales();
+    else if (prefix === 'expense' && window.loadExpenses) window.loadExpenses();
+    else if (prefix === 'consumption' && window.renderConsumptionHistoryList) window.renderConsumptionHistoryList();
+    else if (prefix === 'taxHistory' && window.loadTaxHistory) window.loadTaxHistory();
+    else if (prefix === 'table' && window.loadTables) window.loadTables();
+}
+
+// Backward-compatible global wrappers
+window.handleSalesDateFilterChange = () => window.renderModernTimeFilterUI('sales');
+window.resetSalesFilter = () => window.resetModernTimeFilter('sales');
 window.updateSalesResetBtn = () => {};
-window.resetSalesFilter = () => setUniversalTimeFilterMode('sales', 'today');
 
-window.handleTaxHistoryFilterChange = () => setUniversalTimeFilterMode('taxHistory', document.getElementById('taxHistoryFilter')?.value || 'today');
-window.updateTaxHistoryResetBtn = () => {};
-window.resetTaxHistoryFilter = () => setUniversalTimeFilterMode('taxHistory', 'today');
-
-window.handleItemsSalesDateFilterChange = () => setUniversalTimeFilterMode('itemsSales', document.getElementById('itemsSalesDateFilter')?.value || 'today');
+window.handleItemsSalesDateFilterChange = () => window.renderModernTimeFilterUI('itemsSales');
+window.resetItemsSalesFilter = () => window.resetModernTimeFilter('itemsSales');
 window.updateItemsSalesResetBtn = () => {};
-window.resetItemsSalesFilter = () => setUniversalTimeFilterMode('itemsSales', 'today');
 
-window.handleExpenseDateFilterChange = () => setUniversalTimeFilterMode('expense', document.getElementById('expenseDateFilter')?.value || 'today');
+window.handleExpenseDateFilterChange = () => window.renderModernTimeFilterUI('expense');
+window.resetExpenseFilter = () => window.resetModernTimeFilter('expense');
 window.updateExpenseResetBtn = () => {};
-window.resetExpenseFilter = () => setUniversalTimeFilterMode('expense', 'today');
 
-window.handleConsumptionDateFilterChange = () => setUniversalTimeFilterMode('consumption', document.getElementById('consumptionDateFilter')?.value || 'today');
+window.handleConsumptionDateFilterChange = () => window.renderModernTimeFilterUI('consumption');
+window.resetConsumptionFilter = () => window.resetModernTimeFilter('consumption');
 window.updateConsumptionResetBtn = () => {};
-window.resetConsumptionFilter = () => setUniversalTimeFilterMode('consumption', 'today');
 
-window.handleTableTimeFilterTypeChange = function() {
-    const filterSelect = document.getElementById('tableTimeFilterType');
-    const filterType = filterSelect ? filterSelect.value : 'daily';
-    const mode = (filterType === 'daily' ? 'today' : (filterType === 'monthly' ? 'month' : (filterType === 'annual' ? 'year' : 'all')));
-    setUniversalTimeFilterMode('table', mode);
-};
+window.handleTaxHistoryFilterChange = () => window.renderModernTimeFilterUI('taxHistory');
+window.resetTaxHistoryFilter = () => window.resetModernTimeFilter('taxHistory');
+window.updateTaxHistoryResetBtn = () => {};
+
+window.handleTableTimeFilterTypeChange = () => window.renderModernTimeFilterUI('table');
+window.resetTableTimeFilter = () => window.resetModernTimeFilter('table');
 window.updateTableResetBtn = () => {};
-window.resetTableTimeFilter = () => setUniversalTimeFilterMode('table', 'today');
 
 window.loadSales = function loadSales() {
     const sales = Storage.get('sales') || [];
@@ -9208,14 +9223,18 @@ window.closeConsumptionHistoryModal = function closeConsumptionHistoryModal() {
     switchStockView('inventory');
 };
 
-// Consumption Date Filters (Delegated to Universal Filter)
+// Consumption Date Filters
 window.handleConsumptionDateFilterChange = function handleConsumptionDateFilterChange() {
-    const filter = document.getElementById('consumptionDateFilter')?.value || 'today';
-    setUniversalTimeFilterMode('consumption', filter);
+    window.renderModernTimeFilterUI('consumption');
+    window.renderModernTimeFilterUI('consumptionLogs');
+    renderConsumptionHistoryList();
 };
+
 window.updateConsumptionResetBtn = function updateConsumptionResetBtn() {};
+
 window.resetConsumptionFilter = function resetConsumptionFilter() {
-    setUniversalTimeFilterMode('consumption', 'today');
+    window.resetModernTimeFilter('consumption');
+    window.resetModernTimeFilter('consumptionLogs');
 };
 
 window.renderConsumptionHistoryList = function renderConsumptionHistoryList() {
@@ -10486,16 +10505,14 @@ function isOrderInTableTimeFilter(orderDateStr, filterType, filterValue) {
 }
 
 window.handleTableTimeFilterTypeChange = function() {
-    const filterSelect = document.getElementById('tableTimeFilterType');
-    const filterType = filterSelect ? filterSelect.value : 'daily';
-    const mode = (filterType === 'daily' ? 'today' : (filterType === 'monthly' ? 'month' : (filterType === 'annual' ? 'year' : 'all')));
-    setUniversalTimeFilterMode('table', mode);
+    window.renderModernTimeFilterUI('table');
+    loadTables();
 };
 
 window.updateTableResetBtn = function() {};
 
 window.resetTableTimeFilter = function() {
-    setUniversalTimeFilterMode('table', 'today');
+    window.resetModernTimeFilter('table');
 };
 
 function toggleOrdersRow(tableId, parentTr) {
@@ -10546,13 +10563,13 @@ function loadTables() {
     const timeFilterType = document.getElementById('tableTimeFilterType')?.value || 'alltime';
     let timeFilterValue = '';
     if (timeFilterType === 'daily') {
-        timeFilterValue = document.getElementById('tableDateInput')?.value || document.getElementById('tableTimeDateInput')?.value || '';
+        timeFilterValue = document.getElementById('tableTimeDateInput')?.value || '';
     } else if (timeFilterType === 'weekly') {
         timeFilterValue = document.getElementById('tableTimeWeekInput')?.value || '';
     } else if (timeFilterType === 'monthly') {
-        timeFilterValue = document.getElementById('tableMonthInput')?.value || document.getElementById('tableTimeMonthInput')?.value || '';
+        timeFilterValue = document.getElementById('tableTimeMonthInput')?.value || '';
     } else if (timeFilterType === 'annual') {
-        timeFilterValue = document.getElementById('tableYearInput')?.value || document.getElementById('tableTimeYearInput')?.value || '';
+        timeFilterValue = document.getElementById('tableTimeYearInput')?.value || '';
     }
 
     // Match orders for each table and compute aggregate statistics
@@ -16464,21 +16481,14 @@ function setupEmployeeFilters() {
 }
 
 // Reset filter helper functions
-window.resetSalesFilter = () => {
-    const filterSelect = document.getElementById('salesDateFilter');
-    if (filterSelect) {
-        filterSelect.value = 'today';
-        filterSelect.dispatchEvent(new Event('change'));
-    }
+window.resetSalesFilter = () => window.resetModernTimeFilter('sales');
+window.resetExpenseFilter = () => window.resetModernTimeFilter('expense');
+window.resetItemsSalesFilter = () => window.resetModernTimeFilter('itemsSales');
+window.resetConsumptionFilter = () => {
+    window.resetModernTimeFilter('consumption');
+    window.resetModernTimeFilter('consumptionLogs');
 };
-
-window.resetExpenseFilter = () => {
-    const filterSelect = document.getElementById('expenseDateFilter');
-    if (filterSelect) {
-        filterSelect.value = 'today';
-        filterSelect.dispatchEvent(new Event('change'));
-    }
-};
+window.resetTableTimeFilter = () => window.resetModernTimeFilter('table');
 
 window.resetEmployeeFilter = () => {
     const monthFilter = document.getElementById('employeeMonthFilter');
@@ -16490,21 +16500,7 @@ window.resetEmployeeFilter = () => {
     }
 };
 
-window.resetTaxHistoryFilter = () => {
-    const filterSelect = document.getElementById('taxHistoryFilter');
-    if (filterSelect) {
-        filterSelect.value = 'today';
-        filterSelect.dispatchEvent(new Event('change'));
-    }
-};
-
-window.resetItemsSalesFilter = () => {
-    const filterSelect = document.getElementById('itemsSalesDateFilter');
-    if (filterSelect) {
-        filterSelect.value = 'today';
-        filterSelect.dispatchEvent(new Event('change'));
-    }
-};
+window.resetTaxHistoryFilter = () => window.resetModernTimeFilter('taxHistory');
 
 // Initialize
 // Set logo path for Electron (works in both dev and production)
@@ -16525,12 +16521,12 @@ onDOMReady(() => {
     // Initialize menu structure
     initializeMenuStructure();
 
-    // Initialize unified dynamic time filters
-    try {
-        if (typeof initAllUniversalTimeFilters === 'function') initAllUniversalTimeFilters();
-    } catch (e) {
-        console.error('Error initializing time filters:', e);
-    }
+    // Initialize unified dynamic modern time filters
+    ['sales', 'itemsSales', 'expense', 'consumption', 'consumptionLogs', 'table'].forEach(prefix => {
+        if (typeof window.renderModernTimeFilterUI === 'function') {
+            window.renderModernTimeFilterUI(prefix);
+        }
+    });
 
     // Seed 50 dummy tables data if tables list is less than 40
     let existingTables = Storage.get('tables') || [];
@@ -16563,12 +16559,12 @@ onDOMReady(() => {
         if (orderSectionWrapper) orderSectionWrapper.classList.add('show');
         if (mainContent) mainContent.classList.add('has-order-section');
         // Load initial POS data
-        try { loadCategories(); } catch (e) { console.error(e); }
-        try { loadMenuItems(); } catch (e) { console.error(e); }
-        try { loadWaitersDropdown(); } catch (e) { console.error(e); }
-        try { loadTablesDropdown(); } catch (e) { console.error(e); }
-        try { updateCart(); } catch (e) { console.error(e); }
-        try { updateOrderDate(); } catch (e) { console.error(e); }
+        loadCategories();
+        loadMenuItems();
+        loadWaitersDropdown();
+        loadTablesDropdown();
+        updateCart();
+        updateOrderDate();
     } else {
         if (orderSectionWrapper) orderSectionWrapper.classList.remove('show');
         if (mainContent) mainContent.classList.remove('has-order-section');
