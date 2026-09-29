@@ -8708,35 +8708,91 @@ window.initStockDeductView = function initStockDeductView() {
 
 window.updateDeductViewKPIs = function updateDeductViewKPIs() {
     const consumptions = Storage.get('stockConsumptions') || [];
-    const todayStr = getLocalISODate();
+    const filterSelect = document.getElementById('consumptionDateFilter');
+    const filter = filterSelect ? filterSelect.value : 'today';
+
     const stocks = syncAndGetStockItems();
     const stockMap = {};
     stocks.forEach(s => { stockMap[String(s.id)] = s; stockMap[(s.itemName || '').toLowerCase()] = s; });
 
-    let todayItemsCount = 0;
-    let todayEstimatedValue = 0;
+    let filtered = consumptions;
+    let periodLabel = 'Today';
 
-    consumptions.forEach(log => {
-        const cDate = log.date || (log.timestamp ? log.timestamp.split('T')[0] : '');
-        if (cDate === todayStr) {
-            (log.items || []).forEach(item => {
-                const qty = parseFloat(item.finalDeductQty || item.enteredQty || item.deductedQty) || 0;
-                todayItemsCount += qty > 0 ? 1 : 0;
-                const stock = stockMap[String(item.stockId)] || stockMap[(item.itemName || '').toLowerCase()];
-                const price = stock ? (parseFloat(stock.unitPrice) || 0) : 0;
-                todayEstimatedValue += (qty * price);
-            });
+    if (filter === 'today') {
+        const dateInput = document.getElementById('consumptionDateInput');
+        const selectedDate = dateInput ? dateInput.value : getLocalISODate();
+        const isToday = (selectedDate === getLocalISODate());
+        if (isToday) {
+            periodLabel = 'Today';
+        } else {
+            const parts = selectedDate.split('-');
+            if (parts.length === 3) {
+                const dObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                periodLabel = dObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            } else {
+                periodLabel = selectedDate;
+            }
         }
+        filtered = filtered.filter(c => {
+            const cDate = c.date || (c.timestamp ? c.timestamp.split('T')[0] : '');
+            return cDate === selectedDate;
+        });
+    } else if (filter === 'month') {
+        const monthInput = document.getElementById('consumptionMonthInput');
+        const selectedMonth = monthInput ? monthInput.value : getLocalISOMonth();
+        const parts = selectedMonth.split('-');
+        if (parts.length === 2) {
+            const dObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+            periodLabel = dObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        } else {
+            periodLabel = 'Monthly';
+        }
+        filtered = filtered.filter(c => {
+            const cDate = c.date || (c.timestamp ? c.timestamp.split('T')[0] : '');
+            return cDate.startsWith(selectedMonth);
+        });
+    } else if (filter === 'year') {
+        const yearInput = document.getElementById('consumptionYearInput');
+        const selectedYear = yearInput ? yearInput.value : String(new Date().getFullYear());
+        periodLabel = selectedYear;
+        filtered = filtered.filter(c => {
+            const cDate = c.date || (c.timestamp ? c.timestamp.split('T')[0] : '');
+            return cDate.startsWith(selectedYear);
+        });
+    } else {
+        periodLabel = 'All Time';
+    }
+
+    let itemsCount = 0;
+    let estimatedValue = 0;
+
+    filtered.forEach(log => {
+        (log.items || []).forEach(item => {
+            const qty = parseFloat(item.finalDeductQty || item.enteredQty || item.deductedQty) || 0;
+            itemsCount += qty > 0 ? 1 : 0;
+            const stock = stockMap[String(item.stockId)] || stockMap[(item.itemName || '').toLowerCase()];
+            const price = stock ? (parseFloat(stock.unitPrice) || 0) : 0;
+            estimatedValue += (qty * price);
+        });
     });
 
+    const itemsHeading = document.getElementById('deductSummaryItemsTitle');
+    if (itemsHeading) itemsHeading.textContent = `Deductions (${periodLabel})`;
+
+    const valueHeading = document.getElementById('deductSummaryValueTitle');
+    if (valueHeading) valueHeading.textContent = `Est. Ingredient Cost (${periodLabel})`;
+
+    const logsHeading = document.getElementById('deductSummaryLogsTitle');
+    if (logsHeading) logsHeading.textContent = `Recorded Deductions (${periodLabel})`;
+
     const todayItemsEl = document.getElementById('deductSummaryTodayItems');
-    if (todayItemsEl) todayItemsEl.textContent = `${todayItemsCount} item(s)`;
+    if (todayItemsEl) todayItemsEl.textContent = `${itemsCount} item(s)`;
 
     const todayValEl = document.getElementById('deductSummaryTodayValue');
-    if (todayValEl) todayValEl.textContent = `Rs. ${formatNumber(todayEstimatedValue)}`;
+    if (todayValEl) todayValEl.textContent = `Rs. ${formatNumber(estimatedValue)}`;
 
     const totalLogsEl = document.getElementById('deductSummaryTotalLogs');
-    if (totalLogsEl) totalLogsEl.textContent = `${consumptions.length} log(s)`;
+    if (totalLogsEl) totalLogsEl.textContent = `${filtered.length} log(s)`;
 };
 
 window.handleConsumptionModalDateChange = function handleConsumptionModalDateChange() {
@@ -9395,6 +9451,10 @@ window.renderConsumptionHistoryList = function renderConsumptionHistoryList() {
 
     const valEl = document.getElementById('totalConsumptionValueDeducted');
     if (valEl) valEl.textContent = `Rs. ${formatNumber(totalEstimatedValue)}`;
+
+    if (typeof updateDeductViewKPIs === 'function') {
+        updateDeductViewKPIs();
+    }
 
     const tfoot = document.getElementById('consumptionHistoryTableFoot');
     if (tfoot) tfoot.innerHTML = '';
