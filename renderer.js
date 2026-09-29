@@ -3592,6 +3592,7 @@ window.renderModernTimeFilterUI = function(prefix) {
 
     const mode = (prefix === 'table') ? (state.mode === 'daily' ? 'today' : (state.mode === 'monthly' ? 'month' : (state.mode === 'annual' ? 'year' : 'all'))) : state.mode;
     const now = new Date();
+    const currentRenderedMode = container.dataset.renderedMode;
 
     if (mode === 'today') {
         const year = state.date.getFullYear();
@@ -3599,68 +3600,138 @@ window.renderModernTimeFilterUI = function(prefix) {
         const day = String(state.date.getDate()).padStart(2, '0');
         const dateStr = `${year}-${month}-${day}`;
         const isToday = (dateStr === getLocalISODate());
+        const inputId = prefix === 'table' ? 'tableTimeDateInput' : (prefix === 'taxHistory' ? 'taxHistoryDateInput' : `${prefix}DateInput`);
 
-        container.innerHTML = `
-            <div class="time-nav-box">
-                <button type="button" class="time-nav-arrow" onclick="stepModernTimeFilter('${prefix}', -1)" title="Previous Day">‹</button>
-                <input type="date" id="${prefix === 'table' ? 'tableTimeDateInput' : (prefix === 'taxHistory' ? 'taxHistoryDateInput' : `${prefix}DateInput`)}"
-                    value="${dateStr}"
-                    onchange="onModernTimeDateInputChange('${prefix}', this.value)"
-                    class="time-nav-date-input">
-                <button type="button" class="time-nav-arrow" onclick="stepModernTimeFilter('${prefix}', 1)" title="Next Day">›</button>
-                <button type="button" class="time-nav-quick-btn" onclick="jumpModernTimeFilterToday('${prefix}')">TODAY</button>
-                ${!isToday ? `<button type="button" class="time-nav-reset-icon" onclick="resetModernTimeFilter('${prefix}')" title="Reset to today">✕</button>` : ''}
-            </div>
-        `;
+        if (currentRenderedMode === 'today') {
+            const inputEl = document.getElementById(inputId);
+            if (inputEl && inputEl.value !== dateStr) {
+                inputEl.value = dateStr;
+            }
+            const navBox = container.querySelector('.time-nav-box');
+            let resetBtn = container.querySelector('.time-nav-reset-icon');
+            if (!isToday && !resetBtn && navBox) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'time-nav-reset-icon';
+                btn.title = 'Reset to today';
+                btn.textContent = '✕';
+                btn.onclick = () => resetModernTimeFilter(prefix);
+                navBox.appendChild(btn);
+            } else if (isToday && resetBtn) {
+                resetBtn.remove();
+            }
+        } else {
+            container.dataset.renderedMode = 'today';
+            container.innerHTML = `
+                <div class="time-nav-box">
+                    <button type="button" class="time-nav-arrow" onclick="stepModernTimeFilter('${prefix}', -1)" title="Previous Day">‹</button>
+                    <input type="date" id="${inputId}"
+                        value="${dateStr}"
+                        oninput="onModernTimeDateInputChange('${prefix}', this.value)"
+                        onchange="onModernTimeDateInputChange('${prefix}', this.value)"
+                        class="time-nav-date-input">
+                    <button type="button" class="time-nav-arrow" onclick="stepModernTimeFilter('${prefix}', 1)" title="Next Day">›</button>
+                    <button type="button" class="time-nav-quick-btn" onclick="jumpModernTimeFilterToday('${prefix}')">TODAY</button>
+                    ${!isToday ? `<button type="button" class="time-nav-reset-icon" onclick="resetModernTimeFilter('${prefix}')" title="Reset to today">✕</button>` : ''}
+                </div>
+            `;
+        }
     } else if (mode === 'month') {
         const year = state.date.getFullYear();
         const monthNum = state.date.getMonth() + 1;
         const monthStr = String(monthNum).padStart(2, '0');
         const ymStr = `${year}-${monthStr}`;
         const isThisMonth = (year === now.getFullYear() && state.date.getMonth() === now.getMonth());
+        const monthInputId = prefix === 'table' ? 'tableTimeMonthInput' : (prefix === 'taxHistory' ? 'taxHistoryMonthInput' : `${prefix}MonthInput`);
 
-        container.innerHTML = `
-            <div class="time-nav-box">
-                <input type="month" id="${prefix === 'table' ? 'tableTimeMonthInput' : (prefix === 'taxHistory' ? 'taxHistoryMonthInput' : `${prefix}MonthInput`)}" value="${ymStr}" style="display: none;">
-                <button type="button" class="time-nav-arrow" onclick="stepModernTimeFilter('${prefix}', -1)" title="Previous Month">‹</button>
-                <select id="${prefix}MonthSelect" class="time-nav-select" onchange="onModernTimeMonthSelectChange('${prefix}')">
-                    <option value="1" ${monthNum === 1 ? 'selected' : ''}>January</option>
-                    <option value="2" ${monthNum === 2 ? 'selected' : ''}>February</option>
-                    <option value="3" ${monthNum === 3 ? 'selected' : ''}>March</option>
-                    <option value="4" ${monthNum === 4 ? 'selected' : ''}>April</option>
-                    <option value="5" ${monthNum === 5 ? 'selected' : ''}>May</option>
-                    <option value="6" ${monthNum === 6 ? 'selected' : ''}>June</option>
-                    <option value="7" ${monthNum === 7 ? 'selected' : ''}>July</option>
-                    <option value="8" ${monthNum === 8 ? 'selected' : ''}>August</option>
-                    <option value="9" ${monthNum === 9 ? 'selected' : ''}>September</option>
-                    <option value="10" ${monthNum === 10 ? 'selected' : ''}>October</option>
-                    <option value="11" ${monthNum === 11 ? 'selected' : ''}>November</option>
-                    <option value="12" ${monthNum === 12 ? 'selected' : ''}>December</option>
-                </select>
-                <select id="${prefix}YearSelect" class="time-nav-select" onchange="onModernTimeMonthSelectChange('${prefix}')">
-                    ${getFilterYearOptions(year)}
-                </select>
-                <button type="button" class="time-nav-arrow" onclick="stepModernTimeFilter('${prefix}', 1)" title="Next Month">›</button>
-                <button type="button" class="time-nav-quick-btn" onclick="jumpModernTimeFilterThisMonth('${prefix}')">THIS MONTH</button>
-                ${!isThisMonth ? `<button type="button" class="time-nav-reset-icon" onclick="resetModernTimeFilter('${prefix}')" title="Reset to this month">✕</button>` : ''}
-            </div>
-        `;
+        if (currentRenderedMode === 'month') {
+            const hiddenMonthInput = document.getElementById(monthInputId);
+            if (hiddenMonthInput) hiddenMonthInput.value = ymStr;
+            const monthSelect = document.getElementById(`${prefix}MonthSelect`);
+            if (monthSelect && Number(monthSelect.value) !== monthNum) monthSelect.value = String(monthNum);
+            const yearSelect = document.getElementById(`${prefix}YearSelect`);
+            if (yearSelect && Number(yearSelect.value) !== year) yearSelect.value = String(year);
+
+            const navBox = container.querySelector('.time-nav-box');
+            let resetBtn = container.querySelector('.time-nav-reset-icon');
+            if (!isThisMonth && !resetBtn && navBox) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'time-nav-reset-icon';
+                btn.title = 'Reset to this month';
+                btn.textContent = '✕';
+                btn.onclick = () => resetModernTimeFilter(prefix);
+                navBox.appendChild(btn);
+            } else if (isThisMonth && resetBtn) {
+                resetBtn.remove();
+            }
+        } else {
+            container.dataset.renderedMode = 'month';
+            container.innerHTML = `
+                <div class="time-nav-box">
+                    <input type="month" id="${monthInputId}" value="${ymStr}" style="display: none;">
+                    <button type="button" class="time-nav-arrow" onclick="stepModernTimeFilter('${prefix}', -1)" title="Previous Month">‹</button>
+                    <select id="${prefix}MonthSelect" class="time-nav-select" onchange="onModernTimeMonthSelectChange('${prefix}')">
+                        <option value="1" ${monthNum === 1 ? 'selected' : ''}>January</option>
+                        <option value="2" ${monthNum === 2 ? 'selected' : ''}>February</option>
+                        <option value="3" ${monthNum === 3 ? 'selected' : ''}>March</option>
+                        <option value="4" ${monthNum === 4 ? 'selected' : ''}>April</option>
+                        <option value="5" ${monthNum === 5 ? 'selected' : ''}>May</option>
+                        <option value="6" ${monthNum === 6 ? 'selected' : ''}>June</option>
+                        <option value="7" ${monthNum === 7 ? 'selected' : ''}>July</option>
+                        <option value="8" ${monthNum === 8 ? 'selected' : ''}>August</option>
+                        <option value="9" ${monthNum === 9 ? 'selected' : ''}>September</option>
+                        <option value="10" ${monthNum === 10 ? 'selected' : ''}>October</option>
+                        <option value="11" ${monthNum === 11 ? 'selected' : ''}>November</option>
+                        <option value="12" ${monthNum === 12 ? 'selected' : ''}>December</option>
+                    </select>
+                    <select id="${prefix}YearSelect" class="time-nav-select" onchange="onModernTimeMonthSelectChange('${prefix}')">
+                        ${getFilterYearOptions(year)}
+                    </select>
+                    <button type="button" class="time-nav-arrow" onclick="stepModernTimeFilter('${prefix}', 1)" title="Next Month">›</button>
+                    <button type="button" class="time-nav-quick-btn" onclick="jumpModernTimeFilterThisMonth('${prefix}')">THIS MONTH</button>
+                    ${!isThisMonth ? `<button type="button" class="time-nav-reset-icon" onclick="resetModernTimeFilter('${prefix}')" title="Reset to this month">✕</button>` : ''}
+                </div>
+            `;
+        }
     } else if (mode === 'year') {
         const year = state.date.getFullYear();
         const isThisYear = (year === now.getFullYear());
+        const yearInputId = prefix === 'table' ? 'tableTimeYearInput' : (prefix === 'taxHistory' ? 'taxHistoryYearInput' : `${prefix}YearInput`);
 
-        container.innerHTML = `
-            <div class="time-nav-box">
-                <button type="button" class="time-nav-arrow" onclick="stepModernTimeFilter('${prefix}', -1)" title="Previous Year">‹</button>
-                <select id="${prefix === 'table' ? 'tableTimeYearInput' : (prefix === 'taxHistory' ? 'taxHistoryYearInput' : `${prefix}YearInput`)}" class="time-nav-select" onchange="onModernTimeYearChange('${prefix}', this.value)">
-                    ${getFilterYearOptions(year)}
-                </select>
-                <button type="button" class="time-nav-arrow" onclick="stepModernTimeFilter('${prefix}', 1)" title="Next Year">›</button>
-                <button type="button" class="time-nav-quick-btn" onclick="jumpModernTimeFilterThisYear('${prefix}')">THIS YEAR</button>
-                ${!isThisYear ? `<button type="button" class="time-nav-reset-icon" onclick="resetModernTimeFilter('${prefix}')" title="Reset to this year">✕</button>` : ''}
-            </div>
-        `;
+        if (currentRenderedMode === 'year') {
+            const yearSelect = document.getElementById(yearInputId);
+            if (yearSelect && Number(yearSelect.value) !== year) yearSelect.value = String(year);
+
+            const navBox = container.querySelector('.time-nav-box');
+            let resetBtn = container.querySelector('.time-nav-reset-icon');
+            if (!isThisYear && !resetBtn && navBox) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'time-nav-reset-icon';
+                btn.title = 'Reset to this year';
+                btn.textContent = '✕';
+                btn.onclick = () => resetModernTimeFilter(prefix);
+                navBox.appendChild(btn);
+            } else if (isThisYear && resetBtn) {
+                resetBtn.remove();
+            }
+        } else {
+            container.dataset.renderedMode = 'year';
+            container.innerHTML = `
+                <div class="time-nav-box">
+                    <button type="button" class="time-nav-arrow" onclick="stepModernTimeFilter('${prefix}', -1)" title="Previous Year">‹</button>
+                    <select id="${yearInputId}" class="time-nav-select" onchange="onModernTimeYearChange('${prefix}', this.value)">
+                        ${getFilterYearOptions(year)}
+                    </select>
+                    <button type="button" class="time-nav-arrow" onclick="stepModernTimeFilter('${prefix}', 1)" title="Next Year">›</button>
+                    <button type="button" class="time-nav-quick-btn" onclick="jumpModernTimeFilterThisYear('${prefix}')">THIS YEAR</button>
+                    ${!isThisYear ? `<button type="button" class="time-nav-reset-icon" onclick="resetModernTimeFilter('${prefix}')" title="Reset to this year">✕</button>` : ''}
+                </div>
+            `;
+        }
     } else {
+        container.dataset.renderedMode = 'all';
         container.innerHTML = '';
     }
 
@@ -3734,12 +3805,15 @@ window.onModernTimeDateInputChange = function(prefix, val) {
     let state = window.modernTimeFilterStates[prefix];
     if (!state) state = window.initModernTimeFilterState(prefix);
 
-    if (val) {
-        const [y, m, d] = val.split('-').map(Number);
-        state.date = new Date(y, m - 1, d, 12, 0, 0);
+    if (val && typeof val === 'string' && val.includes('-')) {
+        const parts = val.split('-').map(Number);
+        if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+            const [y, m, d] = parts;
+            state.date = new Date(y, m - 1, d, 12, 0, 0);
+            window.renderModernTimeFilterUI(prefix);
+            triggerModernTimeFilterCallback(prefix);
+        }
     }
-    window.renderModernTimeFilterUI(prefix);
-    triggerModernTimeFilterCallback(prefix);
 };
 
 window.onModernTimeMonthSelectChange = function(prefix) {
