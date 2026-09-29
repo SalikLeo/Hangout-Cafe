@@ -244,73 +244,73 @@
                 </div>
 
                 <!-- End of Day Financial Closing & Summary Card -->
-                <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 16px; padding: 20px 24px; color: white; margin-bottom: 22px; box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15); border: 1px solid rgba(255, 255, 255, 0.08);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; font-size: 22px; border: 1px solid rgba(59, 130, 246, 0.4);">
+                <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 12px; padding: 14px 18px; color: white; margin-bottom: 14px; box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12); border: 1px solid rgba(255, 255, 255, 0.08);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 36px; height: 36px; border-radius: 9px; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; font-size: 18px; border: 1px solid rgba(59, 130, 246, 0.4);">
                                 🌙
                             </div>
                             <div>
-                                <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #ffffff; letter-spacing: 0.2px;">Daily Closing & Financial Summary</h3>
-                                <div id="dashboardClosingDateText" style="font-size: 12.5px; color: #94a3b8; font-weight: 500; margin-top: 2px;">Real-time cash in hand, ingredient costs & net profit</div>
+                                <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #ffffff; letter-spacing: 0.1px;">Daily Closing & Financial Summary</h3>
+                                <div id="dashboardClosingDateText" style="font-size: 11.5px; color: #94a3b8; font-weight: 500; margin-top: 1px;">Real-time cash in hand, ingredient costs & net profit</div>
                             </div>
                         </div>
-                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                             <button type="button" onclick="openDailyConsumptionModal()"
-                                style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);">
+                                style="background: #10b981; color: white; border: none; padding: 6px 14px; border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);">
                                 📉 Deduct Stock
                             </button>
                             <button type="button" onclick="printDailyClosingSummaryReport()"
-                                style="background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);">
+                                style="background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);">
                                 🖨️ Print Daily Closing
                             </button>
                         </div>
                     </div>
 
                     <!-- 4 Main Financial KPI Columns -->
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px;">
                         <!-- 1. Cash in Hand & Revenue -->
-                        <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px 16px;">
-                            <div style="font-size: 12px; font-weight: 600; color: #93c5fd; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                        <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 10px 14px;">
+                            <div style="font-size: 11px; font-weight: 700; color: #93c5fd; text-transform: uppercase; margin-bottom: 3px; display: flex; align-items: center; gap: 5px; letter-spacing: 0.4px;">
                                 💵 Total Sales Revenue
                             </div>
-                            <div id="eodGrossSales" style="font-size: 24px; font-weight: 800; color: #ffffff;">Rs. 0</div>
-                            <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: #cbd5e1; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                            <div id="eodGrossSales" style="font-size: 19px; font-weight: 800; color: #ffffff; line-height: 1.2;">Rs. 0</div>
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #cbd5e1; margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
                                 <span>Cash: <strong id="eodCashSales" style="color: #6ee7b7;">Rs. 0</strong></span>
                                 <span>Online: <strong id="eodOnlineSales" style="color: #93c5fd;">Rs. 0</strong></span>
                             </div>
                         </div>
 
                         <!-- 2. Ingredient Cost -->
-                        <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px 16px;">
-                            <div style="font-size: 12px; font-weight: 600; color: #fca5a5; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                        <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 10px 14px;">
+                            <div style="font-size: 11px; font-weight: 700; color: #fca5a5; text-transform: uppercase; margin-bottom: 3px; display: flex; align-items: center; gap: 5px; letter-spacing: 0.4px;">
                                 🥩 Ingredient Cost (Stock)
                             </div>
-                            <div id="eodIngredientsCost" style="font-size: 24px; font-weight: 800; color: #f87171;">Rs. 0</div>
-                            <div style="font-size: 11.5px; color: #94a3b8; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                            <div id="eodIngredientsCost" style="font-size: 19px; font-weight: 800; color: #f87171; line-height: 1.2;">Rs. 0</div>
+                            <div style="font-size: 11px; color: #94a3b8; margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
                                 <span id="eodIngredientsItemsCount">0 ingredients deducted</span>
                             </div>
                         </div>
 
                         <!-- 3. Operating Expenses -->
-                        <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px 16px;">
-                            <div style="font-size: 12px; font-weight: 600; color: #fdba74; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                        <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 10px 14px;">
+                            <div style="font-size: 11px; font-weight: 700; color: #fdba74; text-transform: uppercase; margin-bottom: 3px; display: flex; align-items: center; gap: 5px; letter-spacing: 0.4px;">
                                 🏷️ Operating Expenses
                             </div>
-                            <div id="eodExpenses" style="font-size: 24px; font-weight: 800; color: #fb923c;">Rs. 0</div>
-                            <div style="font-size: 11.5px; color: #94a3b8; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                            <div id="eodExpenses" style="font-size: 19px; font-weight: 800; color: #fb923c; line-height: 1.2;">Rs. 0</div>
+                            <div style="font-size: 11px; color: #94a3b8; margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
                                 <span>Shop expenses & bills</span>
                             </div>
                         </div>
 
                         <!-- 4. Net Actual Profit -->
-                        <div style="background: rgba(16, 185, 129, 0.12); border: 1.5px solid rgba(16, 185, 129, 0.4); border-radius: 12px; padding: 14px 16px;">
-                            <div style="font-size: 12px; font-weight: 700; color: #6ee7b7; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="background: rgba(16, 185, 129, 0.12); border: 1.5px solid rgba(16, 185, 129, 0.4); border-radius: 10px; padding: 10px 14px;">
+                            <div style="font-size: 11px; font-weight: 700; color: #6ee7b7; text-transform: uppercase; margin-bottom: 3px; display: flex; align-items: center; justify-content: space-between; letter-spacing: 0.4px;">
                                 <span>📈 Net Actual Profit</span>
-                                <span id="eodProfitMarginBadge" style="font-size: 11px; padding: 1px 7px; border-radius: 12px; background: rgba(16, 185, 129, 0.25); color: #a7f3d0; font-weight: 700;">0% Margin</span>
+                                <span id="eodProfitMarginBadge" style="font-size: 10.5px; padding: 1px 6px; border-radius: 10px; background: rgba(16, 185, 129, 0.25); color: #a7f3d0; font-weight: 700;">0% Margin</span>
                             </div>
-                            <div id="eodNetProfit" style="font-size: 24px; font-weight: 900; color: #34d399;">Rs. 0</div>
-                            <div style="font-size: 11.5px; color: #a7f3d0; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(16, 185, 129, 0.2);">
+                            <div id="eodNetProfit" style="font-size: 19px; font-weight: 900; color: #34d399; line-height: 1.2;">Rs. 0</div>
+                            <div style="font-size: 11px; color: #a7f3d0; margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(16, 185, 129, 0.2);">
                                 <span>Revenue - Ingredients - Expenses</span>
                             </div>
                         </div>
@@ -319,113 +319,113 @@
 
                 <!-- Summary Cards Row 1 -->
                 <div
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 14px;">
                     <div
-                        style="background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-left: 3px solid #4a90e2;">
+                        style="background: white; padding: 10px 14px; border-radius: 9px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 3px solid #4a90e2; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #e2e8f0;">
                         <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
                             <h3
-                                style="margin: 0; font-size: 14px; color: #666; font-weight: 600; text-transform: uppercase;">
+                                style="margin: 0; font-size: 11.5px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
                                 Today's Sales</h3>
-                            <span style="font-size: 24px;">💰</span>
+                            <span style="font-size: 18px;">💰</span>
                         </div>
                         <p id="dashboardTodaySales"
-                            style="margin: 0; font-size: 32px; font-weight: 700; color: #1e3a5f;">Rs. 0</p>
+                            style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.2;">Rs. 0</p>
                     </div>
 
                     <div
-                        style="background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-left: 3px solid #e74c3c;">
+                        style="background: white; padding: 10px 14px; border-radius: 9px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 3px solid #e74c3c; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #e2e8f0;">
                         <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
                             <h3
-                                style="margin: 0; font-size: 14px; color: #666; font-weight: 600; text-transform: uppercase;">
+                                style="margin: 0; font-size: 11.5px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
                                 Today's Expenses</h3>
-                            <span style="font-size: 24px;">💸</span>
+                            <span style="font-size: 18px;">💸</span>
                         </div>
                         <p id="dashboardTodayExpenses"
-                            style="margin: 0; font-size: 32px; font-weight: 700; color: #1e3a5f;">Rs. 0</p>
+                            style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.2;">Rs. 0</p>
                     </div>
 
                     <div
-                        style="background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-left: 3px solid #27ae60;">
+                        style="background: white; padding: 10px 14px; border-radius: 9px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 3px solid #27ae60; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #e2e8f0;">
                         <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
                             <h3
-                                style="margin: 0; font-size: 14px; color: #666; font-weight: 600; text-transform: uppercase;">
+                                style="margin: 0; font-size: 11.5px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
                                 Today's Profit</h3>
-                            <span style="font-size: 24px;">📈</span>
+                            <span style="font-size: 18px;">📈</span>
                         </div>
                         <p id="dashboardTodayProfit"
-                            style="margin: 0; font-size: 32px; font-weight: 700; color: #1e3a5f;">Rs. 0</p>
+                            style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.2;">Rs. 0</p>
                     </div>
 
                     <div
-                        style="background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-left: 3px solid #f39c12;">
+                        style="background: white; padding: 10px 14px; border-radius: 9px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 3px solid #f39c12; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #e2e8f0;">
                         <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
                             <h3
-                                style="margin: 0; font-size: 14px; color: #666; font-weight: 600; text-transform: uppercase;">
+                                style="margin: 0; font-size: 11.5px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
                                 Hold Orders</h3>
-                            <span style="font-size: 24px;">⏸️</span>
+                            <span style="font-size: 18px;">⏸️</span>
                         </div>
                         <p id="dashboardHoldOrders"
-                            style="margin: 0; font-size: 32px; font-weight: 700; color: #1e3a5f;">0</p>
+                            style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.2;">0</p>
                     </div>
                 </div>
 
                 <!-- Summary Cards Row 2 -->
                 <div
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 14px;">
                     <div
-                        style="background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-left: 3px solid #e74c3c;">
+                        style="background: white; padding: 10px 14px; border-radius: 9px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 3px solid #e74c3c; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #e2e8f0;">
                         <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
                             <h3
-                                style="margin: 0; font-size: 14px; color: #666; font-weight: 600; text-transform: uppercase;">
+                                style="margin: 0; font-size: 11.5px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
                                 Today's Discounts</h3>
-                            <span style="font-size: 24px;">🏷️</span>
+                            <span style="font-size: 18px;">🏷️</span>
                         </div>
                         <p id="dashboardTodayDiscounts"
-                            style="margin: 0; font-size: 32px; font-weight: 700; color: #1e3a5f;">Rs. 0</p>
+                            style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.2;">Rs. 0</p>
                     </div>
 
                     <div
-                        style="background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-left: 3px solid #f39c12;">
+                        style="background: white; padding: 10px 14px; border-radius: 9px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 3px solid #f39c12; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #e2e8f0;">
                         <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
                             <h3
-                                style="margin: 0; font-size: 14px; color: #666; font-weight: 600; text-transform: uppercase;">
+                                style="margin: 0; font-size: 11.5px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
                                 Weekly Discounts</h3>
-                            <span style="font-size: 24px;">🏷️</span>
+                            <span style="font-size: 18px;">🏷️</span>
                         </div>
                         <p id="dashboardWeeklyDiscounts"
-                            style="margin: 0; font-size: 32px; font-weight: 700; color: #1e3a5f;">Rs. 0</p>
+                            style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.2;">Rs. 0</p>
                     </div>
 
                     <div
-                        style="background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-left: 3px solid #3498db;">
+                        style="background: white; padding: 10px 14px; border-radius: 9px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 3px solid #3498db; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #e2e8f0;">
                         <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
                             <h3
-                                style="margin: 0; font-size: 14px; color: #666; font-weight: 600; text-transform: uppercase;">
+                                style="margin: 0; font-size: 11.5px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
                                 Today's Orders</h3>
-                            <span style="font-size: 24px;">🧾</span>
+                            <span style="font-size: 18px;">🧾</span>
                         </div>
                         <p id="dashboardTodayOrdersCount"
-                            style="margin: 0; font-size: 32px; font-weight: 700; color: #1e3a5f;">0</p>
+                            style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.2;">0</p>
                     </div>
 
                     <div
-                        style="background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-left: 3px solid #16a085;">
+                        style="background: white; padding: 10px 14px; border-radius: 9px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 3px solid #16a085; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #e2e8f0;">
                         <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
                             <h3
-                                style="margin: 0; font-size: 14px; color: #666; font-weight: 600; text-transform: uppercase;">
+                                style="margin: 0; font-size: 11.5px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
                                 Weekly Orders</h3>
-                            <span style="font-size: 24px;">📊</span>
+                            <span style="font-size: 18px;">📊</span>
                         </div>
                         <p id="dashboardWeeklyOrdersCount"
-                            style="margin: 0; font-size: 32px; font-weight: 700; color: #1e3a5f;">0</p>
+                            style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.2;">0</p>
                     </div>
                 </div>
 

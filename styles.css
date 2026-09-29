@@ -269,19 +269,20 @@ body {
 }
 
 h2 {
-    color: #1e3a5f;
-    margin-bottom: 25px;
-    font-size: 2em;
-    font-weight: 600;
-    padding-bottom: 10px;
-    border-bottom: 3px solid #4a90e2;
+    color: #0f172a;
+    margin-bottom: 12px;
+    font-size: 1.35rem;
+    font-weight: 700;
+    padding-bottom: 6px;
+    border-bottom: 2.5px solid #3b82f6;
+    letter-spacing: -0.2px;
 }
 
 h3 {
-    color: #333;
-    margin-bottom: 15px;
-    font-size: 1.3em;
-    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 8px;
+    font-size: 1.05rem;
+    font-weight: 700;
 }
 
 .form-section {
@@ -371,7 +372,7 @@ button[type="submit"]:active {
 }
 
 .table-section {
-    margin-top: 30px;
+    margin-top: 14px;
 }
 
 .categories-buttons-container {
@@ -1223,33 +1224,48 @@ select {
 
 .summary-section {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 12px;
-    margin-bottom: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
 }
 
 .summary-card {
-    background: white;
-    padding: 15px;
-    border-radius: 10px;
+    background: #ffffff;
+    padding: 9px 12px;
+    border-radius: 9px;
     text-align: center;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    border-top: 3px solid #4a90e2;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border-top: 2.5px solid #3b82f6;
+    border-left: 1px solid #f1f5f9;
+    border-right: 1px solid #f1f5f9;
+    border-bottom: 1px solid #e2e8f0;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.summary-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.07);
 }
 
 .summary-card h4 {
-    font-size: 14px;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
-    color: #666;
-    font-weight: 600;
+    letter-spacing: 0.6px;
+    margin: 0 0 3px 0;
+    color: #64748b;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .summary-card p {
-    font-size: 2em;
-    font-weight: 700;
-    color: #1e3a5f;
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+    line-height: 1.2;
+    letter-spacing: -0.2px;
 }
 
 .filter-section {
