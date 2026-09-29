@@ -259,64 +259,64 @@
                     </div>
                 </div>
 
-                <!-- End of Day Financial Closing & Summary Card -->
-                <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 12px; padding: 14px 18px; color: white; margin-bottom: 16px; box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12); border: 1px solid rgba(255, 255, 255, 0.08);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                <!-- End of Day Financial Closing & Summary Card (Light Mode) -->
+                <div style="background: white; border-radius: 12px; padding: 16px 20px; color: #1e293b; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            <div style="width: 36px; height: 36px; border-radius: 9px; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; font-size: 18px; border: 1px solid rgba(59, 130, 246, 0.4);">
+                            <div style="width: 36px; height: 36px; border-radius: 9px; background: #eff6ff; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 1px solid #bfdbfe;">
                                 🌙
                             </div>
                             <div>
-                                <h3 id="dashboardClosingTitle" style="margin: 0; font-size: 15px; font-weight: 700; color: #ffffff; letter-spacing: 0.1px;">Daily Closing & Financial Summary</h3>
-                                <div id="dashboardClosingDateText" style="font-size: 11.5px; color: #94a3b8; font-weight: 500; margin-top: 1px;">Real-time cash in hand, ingredient costs & net profit</div>
+                                <h3 id="dashboardClosingTitle" style="margin: 0; font-size: 15px; font-weight: 700; color: #0f172a; letter-spacing: 0.1px;">Daily Closing & Financial Summary</h3>
+                                <div id="dashboardClosingDateText" style="font-size: 11.5px; color: #64748b; font-weight: 500; margin-top: 1px;">Real-time cash in hand, ingredient costs & net profit</div>
                             </div>
                         </div>
                     </div>
 
                     <!-- 4 Main Financial KPI Columns -->
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px;">
                         <!-- 1. Cash in Hand & Revenue -->
-                        <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 10px 14px;">
-                            <div style="font-size: 11px; font-weight: 700; color: #93c5fd; text-transform: uppercase; margin-bottom: 3px; display: flex; align-items: center; gap: 5px; letter-spacing: 0.4px;">
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px;">
+                            <div style="font-size: 11px; font-weight: 700; color: #0284c7; text-transform: uppercase; margin-bottom: 4px; display: flex; align-items: center; gap: 5px; letter-spacing: 0.4px;">
                                 💵 Total Sales Revenue
                             </div>
-                            <div id="eodGrossSales" style="font-size: 19px; font-weight: 800; color: #ffffff; line-height: 1.2;">Rs. 0</div>
-                            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #cbd5e1; margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
-                                <span>Cash: <strong id="eodCashSales" style="color: #6ee7b7;">Rs. 0</strong></span>
-                                <span>Online: <strong id="eodOnlineSales" style="color: #93c5fd;">Rs. 0</strong></span>
+                            <div id="eodGrossSales" style="font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.2;">Rs. 0</div>
+                            <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: #64748b; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e2e8f0;">
+                                <span>Cash: <strong id="eodCashSales" style="color: #16a34a;">Rs. 0</strong></span>
+                                <span>Online: <strong id="eodOnlineSales" style="color: #2563eb;">Rs. 0</strong></span>
                             </div>
                         </div>
 
                         <!-- 2. Ingredient Cost -->
-                        <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 10px 14px;">
-                            <div style="font-size: 11px; font-weight: 700; color: #fca5a5; text-transform: uppercase; margin-bottom: 3px; display: flex; align-items: center; gap: 5px; letter-spacing: 0.4px;">
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px;">
+                            <div style="font-size: 11px; font-weight: 700; color: #dc2626; text-transform: uppercase; margin-bottom: 4px; display: flex; align-items: center; gap: 5px; letter-spacing: 0.4px;">
                                 🥩 Ingredient Cost (Stock)
                             </div>
-                            <div id="eodIngredientsCost" style="font-size: 19px; font-weight: 800; color: #f87171; line-height: 1.2;">Rs. 0</div>
-                            <div style="font-size: 11px; color: #94a3b8; margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                            <div id="eodIngredientsCost" style="font-size: 20px; font-weight: 800; color: #dc2626; line-height: 1.2;">Rs. 0</div>
+                            <div style="font-size: 11.5px; color: #64748b; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e2e8f0;">
                                 <span id="eodIngredientsItemsCount">0 ingredients deducted</span>
                             </div>
                         </div>
 
                         <!-- 3. Operating Expenses -->
-                        <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 10px 14px;">
-                            <div style="font-size: 11px; font-weight: 700; color: #fdba74; text-transform: uppercase; margin-bottom: 3px; display: flex; align-items: center; gap: 5px; letter-spacing: 0.4px;">
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px;">
+                            <div style="font-size: 11px; font-weight: 700; color: #dc2626; text-transform: uppercase; margin-bottom: 4px; display: flex; align-items: center; gap: 5px; letter-spacing: 0.4px;">
                                 🏷️ Operating Expenses
                             </div>
-                            <div id="eodExpenses" style="font-size: 19px; font-weight: 800; color: #fb923c; line-height: 1.2;">Rs. 0</div>
-                            <div style="font-size: 11px; color: #94a3b8; margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                            <div id="eodExpenses" style="font-size: 20px; font-weight: 800; color: #dc2626; line-height: 1.2;">Rs. 0</div>
+                            <div style="font-size: 11.5px; color: #64748b; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e2e8f0;">
                                 <span>Shop expenses & bills</span>
                             </div>
                         </div>
 
                         <!-- 4. Net Actual Profit -->
-                        <div style="background: rgba(16, 185, 129, 0.12); border: 1.5px solid rgba(16, 185, 129, 0.4); border-radius: 10px; padding: 10px 14px;">
-                            <div style="font-size: 11px; font-weight: 700; color: #6ee7b7; text-transform: uppercase; margin-bottom: 3px; display: flex; align-items: center; justify-content: space-between; letter-spacing: 0.4px;">
+                        <div id="eodProfitCard" style="background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: 10px; padding: 12px 14px;">
+                            <div style="font-size: 11px; font-weight: 700; color: #047857; text-transform: uppercase; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; letter-spacing: 0.4px;">
                                 <span>📈 Net Actual Profit</span>
-                                <span id="eodProfitMarginBadge" style="font-size: 10.5px; padding: 1px 6px; border-radius: 10px; background: rgba(16, 185, 129, 0.25); color: #a7f3d0; font-weight: 700;">0% Margin</span>
+                                <span id="eodProfitMarginBadge" style="font-size: 10.5px; padding: 2px 7px; border-radius: 10px; background: #d1fae5; color: #047857; font-weight: 700;">0% Margin</span>
                             </div>
-                            <div id="eodNetProfit" style="font-size: 19px; font-weight: 900; color: #34d399; line-height: 1.2;">Rs. 0</div>
-                            <div style="font-size: 11px; color: #a7f3d0; margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(16, 185, 129, 0.2);">
+                            <div id="eodNetProfit" style="font-size: 20px; font-weight: 900; color: #16a34a; line-height: 1.2;">Rs. 0</div>
+                            <div id="eodProfitSubtitle" style="font-size: 11.5px; color: #059669; margin-top: 6px; padding-top: 6px; border-top: 1px solid #a7f3d0;">
                                 <span>Revenue - Ingredients - Expenses</span>
                             </div>
                         </div>

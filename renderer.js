@@ -11357,14 +11357,25 @@ function loadDashboard() {
     if (eodIngredientsCostEl) eodIngredientsCostEl.textContent = `Rs. ${formatNumber(bannerIngredientsCost)}`;
     if (eodIngredientsItemsCountEl) eodIngredientsItemsCountEl.textContent = `${bannerIngredientsCount} ingredient(s) deducted`;
     if (eodExpensesEl) eodExpensesEl.textContent = `Rs. ${formatNumber(bannerExpenses)}`;
+    const eodProfitCardEl = document.getElementById('eodProfitCard');
+    const eodProfitSubtitleEl = document.getElementById('eodProfitSubtitle');
+
     if (eodNetProfitEl) {
         eodNetProfitEl.textContent = `Rs. ${formatNumber(bannerProfit)}`;
-        eodNetProfitEl.style.color = bannerProfit >= 0 ? '#34d399' : '#f87171';
+        eodNetProfitEl.style.color = bannerProfit >= 0 ? '#16a34a' : '#dc2626';
     }
     if (eodProfitMarginBadgeEl) {
         eodProfitMarginBadgeEl.textContent = `${bannerMargin}% Margin`;
-        eodProfitMarginBadgeEl.style.background = bannerProfit >= 0 ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)';
-        eodProfitMarginBadgeEl.style.color = bannerProfit >= 0 ? '#a7f3d0' : '#fca5a5';
+        eodProfitMarginBadgeEl.style.background = bannerProfit >= 0 ? '#d1fae5' : '#fee2e2';
+        eodProfitMarginBadgeEl.style.color = bannerProfit >= 0 ? '#047857' : '#b91c1c';
+    }
+    if (eodProfitCardEl) {
+        eodProfitCardEl.style.background = bannerProfit >= 0 ? '#ecfdf5' : '#fef2f2';
+        eodProfitCardEl.style.borderColor = bannerProfit >= 0 ? '#a7f3d0' : '#fecaca';
+    }
+    if (eodProfitSubtitleEl) {
+        eodProfitSubtitleEl.style.color = bannerProfit >= 0 ? '#059669' : '#dc2626';
+        eodProfitSubtitleEl.style.borderColor = bannerProfit >= 0 ? '#a7f3d0' : '#fecaca';
     }
 
     // 2. Day Overview Card (Today / Selected Day)
